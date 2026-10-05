@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>useDebounce Hook — TypeScript Snippet · Pluck</title>
+  <meta name="description" content="Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+</head>
+
+<body>
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <!-- Public Navbar -->
+  <nav class="navbar" style="position: sticky; top: 0; background: rgba(14,5,40,0.92); border-bottom: 1px solid var(--purple-dim);">
+    <a href="index.html" class="nav-logo" title="Pluck Home">
+      <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="28" height="28" />
+      <span class="logo-wordmark">Pluck</span>
+    </a>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <a href="auth.html" class="btn-outline-pixel" style="font-size: 11px;">Sign In</a>
+      <button class="btn-solid-pixel" onclick="forkPublicSnippet()" style="font-size: 11px;">⑂ Fork to My Pluck</button>
+    </div>
+  </nav>
+
+  <main style="max-width: 960px; margin: 40px auto 100px; padding: 0 24px; position: relative; z-index: 2;">
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+
+      <!-- Public Snippet Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--purple-dim); padding-bottom: 20px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h1 style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--white);">useDebounce Hook</h1>
+            <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TypeScript</span>
+          </div>
+          <p style="font-size: 12px; color: var(--muted); margin-top: 8px;">
+            Published by <strong>@alex_dev</strong> · 14 forks · Verified AST dependencies
+          </p>
+          <p style="font-size: 13px; color: #ddd6fe; margin-top: 10px; line-height: 1.6;">
+            Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup.
+          </p>
+        </div>
+
+        <button class="btn-solid-pixel" onclick="copyPublicSnippet()" style="flex-shrink: 0;">Copy Code</button>
+      </div>
+
+      <!-- Interactive Variable Customizer -->
+      <div class="variable-bar pixel-border-box">
+        <span style="font-family: var(--pixel); font-size: 9px; color: var(--yellow);">CUSTOMIZE VARIABLES</span>
+        <div class="var-input-group">
+          <label class="var-label" for="pub-delay">delay:</label>
+          <input type="number" id="pub-delay" class="var-input" value="300" style="width: 80px;" oninput="updatePublicInterpolation(this.value)" />
+          <span style="font-size: 11px; color: var(--muted);">ms</span>
+        </div>
+      </div>
+
+      <!-- Dependency Bar -->
+      <div class="dependency-bar pixel-border-box">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 11px; color: var(--muted);">Install dependencies:</span>
+          <code class="dep-cmd">npm i react@^18.3.1</code>
+        </div>
+        <button class="btn-outline-pixel" style="font-size: 10px;" onclick="copySnippetText('npm i react@^18.3.1', 'Install command copied!')">Copy Command</button>
+      </div>
+
+      <!-- Code Box -->
+      <div style="background: rgba(10,3,30,0.95); border: 2px solid var(--purple-dim); box-shadow: 4px 4px 0 0 rgba(0,0,0,0.8); padding: 24px;">
+        <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
+
+<span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = <span id="pub-var-display" style="color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 1px 4px;">300</span>): T {
+  <span style="color:#f472b6;">const</span> [debouncedVal, setVal] = useState&lt;T&gt;(value);
+
+  useEffect(() =&gt; {
+    <span style="color:#f472b6;">const</span> t = setTimeout(() =&gt; setVal(value), delay);
+    <span style="color:#f472b6;">return</span> () =&gt; clearTimeout(t);
+  }, [value, delay]);
+
+  <span style="color:#f472b6;">return</span> debouncedVal;
+}</code></pre>
+      </div>
+
+      <!-- Public Footer -->
+      <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--purple-dim); font-size: 12px; color: var(--muted);">
+        <p>Created with <a href="index.html" style="color: var(--white); font-weight: 700;">Pluck</a> — Stop saving dead text. Pluck battle-tested code.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="app-script.js"></script>
+  <script>
+    function updatePublicInterpolation(val) {
+      document.getElementById('pub-var-display').textContent = val || '300';
+    }
+
+    function copyPublicSnippet() {
+      const delay = document.getElementById('pub-delay').value || '300';
+      const code = `import { useState, useEffect } from 'react';
+
+export function useDebounce<T>(value: T, delay: number = ${delay}): T {
+  const [debouncedVal, setVal] = useState<T>(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVal(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debouncedVal;
+}`;
+      copySnippetText(code, 'Code copied with your customized delay!');
+    }
+
+    function forkPublicSnippet() {
+      showToast('Redirecting to auth to fork snippet...', 'info');
+      setTimeout(() => {
+        window.location.href = 'auth.html?next=/studio.html?fork=use-debounce';
+      }, 700);
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Workspace — Acme Core Eng | Pluck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+</head>
+
+<body>
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-shell">
+
+    <!-- Mini Sidebar -->
+    <aside class="app-sidebar" style="width: 240px;">
+      <div class="app-sidebar-header">
+        <a href="app.html" class="nav-logo" title="Back to Vault">
+          <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="24" height="24" />
+          <span class="logo-wordmark" style="font-size: 12px;">Pluck</span>
+        </a>
+      </div>
+      <div class="app-sidebar-content">
+        <a href="app.html" class="folder-item">
+          <span>← Back to Personal Vault</span>
+        </a>
+        <div style="margin-top: 14px;">
+          <div class="nav-section-title">Team Tabs</div>
+          <div class="folder-tree">
+            <a href="#" class="folder-item active" id="tab-nav-collections" onclick="switchTeamTab('collections', event)">📁 Collections</a>
+            <a href="#" class="folder-item" id="tab-nav-members" onclick="switchTeamTab('members', event)">👥 Members (4)</a>
+            <a href="#" class="folder-item" id="tab-nav-activity" onclick="switchTeamTab('activity', event)">⚡ Audit Activity</a>
+            <a href="#" class="folder-item" id="tab-nav-settings" onclick="switchTeamTab('settings', event)">⚙️ Team Settings</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main View -->
+    <main class="app-main">
+      <header class="app-topbar">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Acme Core Eng</h2>
+          <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">Team Admin</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn-solid-pixel" onclick="inviteMemberPrompt()">+ Invite Member</button>
+        </div>
+      </header>
+
+      <div class="app-content" style="max-width: 1040px;">
+
+        <!-- ░░░ TAB 1: COLLECTIONS ░░░ -->
+        <div id="team-section-collections" style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <h3 style="font-size: 18px; color: var(--white);">Team Collections</h3>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Shared snippet folders accessible to all Acme Core Eng engineers.</p>
+            </div>
+            <button class="btn-outline-pixel" onclick="showToast('Created new collection')">+ New Collection</button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
+            <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95); cursor: pointer;" onclick="window.location.href='app.html'">
+              <div style="font-size: 20px; margin-bottom: 8px;">🔐</div>
+              <h4 style="font-size: 14px; color: var(--white);">auth-middleware</h4>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">JWT verification, RBAC guards, and session decryptors.</p>
+              <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">8 verified snippets</div>
+            </div>
+
+            <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95); cursor: pointer;" onclick="window.location.href='app.html'">
+              <div style="font-size: 20px; margin-bottom: 8px;">☁️</div>
+              <h4 style="font-size: 14px; color: var(--white);">aws-infrastructure</h4>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Boto3 client setups, DynamoDB pagination, and S3 uploaders.</p>
+              <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">12 verified snippets</div>
+            </div>
+
+            <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95); cursor: pointer;" onclick="window.location.href='app.html'">
+              <div style="font-size: 20px; margin-bottom: 8px;">🗄️</div>
+              <h4 style="font-size: 14px; color: var(--white);">prisma-extensions</h4>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Soft delete, audit logging triggers, and read-replica routers.</p>
+              <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">5 verified snippets</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ░░░ TAB 2: MEMBERS (PRD §2.3.8) ░░░ -->
+        <div id="team-section-members" style="display: none; flex-direction: column; gap: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <h3 style="font-size: 18px; color: var(--white);">Team Members</h3>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Role-based access control. Server-authoritative write permissions.</p>
+            </div>
+            <button class="btn-solid-pixel" onclick="inviteMemberPrompt()">+ Invite Member</button>
+          </div>
+
+          <div style="background: rgba(16,6,48,0.95); border: 1px solid var(--purple-dim); box-shadow: 4px 4px 0 0 rgba(0,0,0,0.6); overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--purple-dim); background: rgba(12,4,36,0.8); color: var(--muted); font-size: 10px;">
+                  <th style="padding: 12px 16px;">MEMBER</th>
+                  <th style="padding: 12px 16px;">EMAIL</th>
+                  <th style="padding: 12px 16px;">ROLE</th>
+                  <th style="padding: 12px 16px; text-align: right;">ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
+                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Alex Developer (You)</td>
+                  <td style="padding: 14px 16px; color: var(--muted);">alex@pluck.dev</td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">Admin</span></td>
+                  <td style="padding: 14px 16px; text-align: right; color: var(--muted); font-size: 11px;">Owner</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
+                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Sarah Jenkins</td>
+                  <td style="padding: 14px 16px; color: var(--muted);">sarah@company.com</td>
+                  <td style="padding: 14px 16px;">
+                    <select class="select-pixel" style="font-size: 11px;">
+                      <option selected>Editor</option>
+                      <option>Admin</option>
+                      <option>Viewer</option>
+                    </select>
+                  </td>
+                  <td style="padding: 14px 16px; text-align: right;">
+                    <button class="btn-outline-danger" onclick="removeMember(this)">Remove</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Leo Chen</td>
+                  <td style="padding: 14px 16px; color: var(--muted);">leo@company.com</td>
+                  <td style="padding: 14px 16px;">
+                    <select class="select-pixel" style="font-size: 11px;">
+                      <option>Editor</option>
+                      <option>Admin</option>
+                      <option selected>Viewer</option>
+                    </select>
+                  </td>
+                  <td style="padding: 14px 16px; text-align: right;">
+                    <button class="btn-outline-danger" onclick="removeMember(this)">Remove</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ░░░ TAB 3: AUDIT ACTIVITY FEED (PRD §2.3.8) ░░░ -->
+        <div id="team-section-activity" style="display: none; flex-direction: column; gap: 20px;">
+          <div>
+            <h3 style="font-size: 18px; color: var(--white);">Team Audit Log</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Live feed polling every 30s. Every snippet modification is version-tracked.</p>
+          </div>
+
+          <div style="background: rgba(16,6,48,0.95); border: 1px solid var(--purple-dim); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="color: var(--cyan);">●</span>
+                <span style="color: var(--white); font-size: 12px;"><strong>Sarah Jenkins</strong> updated <code style="color: var(--purple-light);">auth-middleware</code> (v1.3)</span>
+              </div>
+              <span style="font-size: 10px; color: var(--muted);">12m ago</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="color: var(--green);">●</span>
+                <span style="color: var(--white); font-size: 12px;"><strong>Alex Developer</strong> created snippet <code style="color: var(--purple-light);">redis-ratelimit</code></span>
+              </div>
+              <span style="font-size: 10px; color: var(--muted);">2h ago</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="color: var(--pink);">●</span>
+                <span style="color: var(--white); font-size: 12px;"><strong>Leo Chen</strong> copied <code style="color: var(--purple-light);">s3-presigned-upload</code> via CLI</span>
+              </div>
+              <span style="font-size: 10px; color: var(--muted);">5h ago</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ░░░ TAB 4: TEAM SETTINGS ░░░ -->
+        <div id="team-section-settings" style="display: none; flex-direction: column; gap: 20px;">
+          <div>
+            <h3 style="font-size: 18px; color: var(--white);">Team Policy &amp; Security Controls</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Configure workspace-wide security guardrails.</p>
+          </div>
+
+          <div class="pixel-border-box" style="padding: 20px; background: rgba(16,6,48,0.95); display: flex; flex-direction: column; gap: 16px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
+              <input type="checkbox" checked />
+              <span>Strict Secret Gating: Block saving snippets with detected high/critical secrets</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
+              <input type="checkbox" checked />
+              <span>Only Team Admins can publish snippets to Public or Unlisted scope</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
+              <input type="checkbox" checked />
+              <span>Enable AI MCP Server Access for Team Collections</span>
+            </label>
+            <div style="margin-top: 10px;">
+              <button class="btn-solid-pixel" onclick="showToast('Team policies updated', 'success')">Save Policies</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="app-script.js"></script>
+  <script>
+    function switchTeamTab(tab, e) {
+      if (e) e.preventDefault();
+      ['collections', 'members', 'activity', 'settings'].forEach(t => {
+        const navEl = document.getElementById(`tab-nav-${t}`);
+        if (navEl) navEl.classList.toggle('active', t === tab);
+        const secEl = document.getElementById(`team-section-${t}`);
+        if (secEl) secEl.style.display = t === tab ? 'flex' : 'none';
+      });
+    }
+
+    function inviteMemberPrompt() {
+      const email = prompt('Enter colleague email address:');
+      if (email) {
+        showToast(`Invitation sent to ${email} (Role: Editor)`, 'success');
+      }
+    }
+
+    function removeMember(btn) {
+      if (confirm('Remove this member from the team workspace?')) {
+        btn.closest('tr').remove();
+        showToast('Member removed from team', 'info');
+      }
+    }
+  </script>
+</body>
+
+</html>

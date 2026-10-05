@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vault Dashboard — Pluck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+</head>
+
+<body>
+  <!-- Full-page Matrix Rain Background -->
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-shell">
+
+    <!-- ░░░ SIDEBAR ░░░ -->
+    <aside class="app-sidebar">
+      <!-- App Brand & Logo -->
+      <div class="app-sidebar-header">
+        <a href="index.html" class="nav-logo" title="Back to Homepage">
+          <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="26" height="26" />
+          <span class="logo-wordmark" style="font-size: 13px;">Pluck</span>
+        </a>
+        <a href="settings.html" title="Settings" style="color: var(--muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></a>
+      </div>
+
+      <!-- Workspace Switcher -->
+      <div style="padding: 12px 14px 4px;">
+        <div class="ws-switcher pixel-border-box" onclick="showToast('Active Workspace: Personal Vault')">
+          <div class="ws-info">
+            <div class="ws-icon">P</div>
+            <div>
+              <div class="ws-name">Personal Vault</div>
+              <div style="font-size: 10px; color: var(--muted);">6 snippets · 0 leaks</div>
+            </div>
+          </div>
+          <span style="font-size: 10px; color: var(--purple-light);">▾</span>
+        </div>
+      </div>
+
+      <div class="app-sidebar-content">
+        <!-- Folders Section -->
+        <div>
+          <div class="nav-section-title">Collections / Folders</div>
+          <div class="folder-tree">
+            <a href="app.html" class="folder-item active">
+              <div class="folder-left"><span>📁</span> <span>All Snippets</span></div>
+              <span class="folder-count">6</span>
+            </a>
+            <a href="#" class="folder-item" onclick="filterFolder('hooks', event)">
+              <div class="folder-left"><span>🪝</span> <span>hooks</span></div>
+              <span class="folder-count">2</span>
+            </a>
+            <a href="#" class="folder-item" onclick="filterFolder('auth', event)">
+              <div class="folder-left"><span>🔐</span> <span>auth</span></div>
+              <span class="folder-count">2</span>
+            </a>
+            <a href="#" class="folder-item" onclick="filterFolder('aws-infra', event)">
+              <div class="folder-left"><span>☁️</span> <span>aws-infra</span></div>
+              <span class="folder-count">1</span>
+            </a>
+            <a href="#" class="folder-item" onclick="filterFolder('database', event)">
+              <div class="folder-left"><span>🗄️</span> <span>database</span></div>
+              <span class="folder-count">1</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Language Filters -->
+        <div>
+          <div class="nav-section-title">Languages</div>
+          <div class="filter-group">
+            <span class="filter-chip active" onclick="toggleChip(this)">TypeScript (4)</span>
+            <span class="filter-chip" onclick="toggleChip(this)">Python (2)</span>
+            <span class="filter-chip" onclick="toggleChip(this)">Go (0)</span>
+            <span class="filter-chip" onclick="toggleChip(this)">SQL (0)</span>
+          </div>
+        </div>
+
+        <!-- Tag Filters -->
+        <div>
+          <div class="nav-section-title">Tags</div>
+          <div class="filter-group">
+            <span class="filter-chip" onclick="toggleChip(this)">#react18</span>
+            <span class="filter-chip" onclick="toggleChip(this)">#security</span>
+            <span class="filter-chip" onclick="toggleChip(this)">#redis</span>
+            <span class="filter-chip" onclick="toggleChip(this)">#jwt</span>
+          </div>
+        </div>
+
+        <!-- Package Dependencies -->
+        <div>
+          <div class="nav-section-title">Detected Packages</div>
+          <div class="filter-group">
+            <span class="filter-chip" onclick="toggleChip(this)">react</span>
+            <span class="filter-chip" onclick="toggleChip(this)">zod</span>
+            <span class="filter-chip" onclick="toggleChip(this)">boto3</span>
+            <span class="filter-chip" onclick="toggleChip(this)">ioredis</span>
+            <span class="filter-chip" onclick="toggleChip(this)">fastapi</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Footer -->
+      <div class="app-sidebar-footer">
+        <div class="sidebar-user">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="user-avatar">A</div>
+            <div class="user-meta">
+              <span class="user-name">Alex Developer</span>
+              <span class="user-email">alex@pluck.dev</span>
+            </div>
+          </div>
+          <a href="auth.html" title="Sign Out" style="color: var(--muted); font-size: 11px;">🚪</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ░░░ MAIN VAULT VIEW ░░░ -->
+    <main class="app-main">
+
+      <!-- Topbar with Search Trigger & New Snippet CTA -->
+      <header class="app-topbar">
+        <button class="search-trigger-btn js-open-cmdk">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span>Search snippets by intent...</span>
+          </div>
+          <span class="kbd-badge">⌘K</span>
+        </button>
+
+        <div class="topbar-actions">
+          <a href="team.html" class="btn-outline-pixel" style="font-size: 11px; padding: 7px 12px;">👥 Team</a>
+          <a href="settings.html" class="btn-outline-pixel" style="font-size: 11px; padding: 7px 12px;">⚙️ CLI &amp; MCP</a>
+          <a href="studio.html" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">+ New Snippet</a>
+        </div>
+      </header>
+
+      <!-- Vault Content Area -->
+      <div class="app-content">
+
+        <!-- Controls: View heading, Sort & Layout Switcher -->
+        <div class="view-controls">
+          <div class="view-heading">
+            <h2 id="current-folder-title">Personal Vault</h2>
+            <span id="item-count-label">6 battle-tested snippets</span>
+          </div>
+
+          <div class="view-tools">
+            <select class="select-pixel" onchange="sortSnippets(this.value)">
+              <option value="updated">Sort by: Recently Updated</option>
+              <option value="created">Sort by: Date Created</option>
+              <option value="title">Sort by: Title (A-Z)</option>
+              <option value="copies">Sort by: Most Copied</option>
+            </select>
+            <div class="btn-icon-pixel active" title="Grid View">⊞</div>
+            <div class="btn-icon-pixel" title="List View" onclick="showToast('List view activated')">☰</div>
+          </div>
+        </div>
+
+        <!-- Snippets Grid -->
+        <div class="snippet-grid" id="snippet-grid">
+
+          <!-- Card 1: useDebounce -->
+          <div class="snippet-card pixel-border-box">
+            <div class="snippet-card-header">
+              <div class="snippet-card-title-group">
+                <div class="snippet-title-row">
+                  <a href="snippet.html?id=use-debounce" class="snippet-title">useDebounce Hook</a>
+                  <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TS</span>
+                </div>
+                <span class="snippet-crumb">📁 hooks / react-hooks</span>
+              </div>
+              <span title="Private" style="font-size: 12px;">🔒</span>
+            </div>
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=use-debounce'" style="cursor: pointer;">
+              <pre><code><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
+
+<span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = 300): T {
+  <span style="color:#f472b6;">const</span> [debouncedVal, setVal] = useState&lt;T&gt;(value);
+  useEffect(() =&gt; {
+    <span style="color:#f472b6;">const</span> t = setTimeout(() =&gt; setVal(value), delay);
+    <span style="color:#f472b6;">return</span> () =&gt; clearTimeout(t);
+  }, [value, delay]);
+  <span style="color:#f472b6;">return</span> debouncedVal;
+}</code></pre>
+            </div>
+            <div class="snippet-card-footer">
+              <div class="snippet-deps-chips">
+                <span class="dep-chip">react ^18.3.1</span>
+              </div>
+              <div class="snippet-meta-right">
+                <span class="snippet-updated">2h ago</span>
+                <button class="btn-copy-card" onclick="copySnippetText('export function useDebounce...', 'Copied useDebounce with dependencies!')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: JWT Auth Middleware -->
+          <div class="snippet-card pixel-border-box">
+            <div class="snippet-card-header">
+              <div class="snippet-card-title-group">
+                <div class="snippet-title-row">
+                  <a href="snippet.html?id=jwt-auth" class="snippet-title">JWT Sign &amp; Verify</a>
+                  <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TS</span>
+                </div>
+                <span class="snippet-crumb">📁 auth / tokens</span>
+              </div>
+              <span title="Team shared" style="font-size: 12px;">👥</span>
+            </div>
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=jwt-auth'" style="cursor: pointer;">
+              <pre><code><span style="color:#f472b6;">import</span> jwt <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'jsonwebtoken'</span>;
+<span style="color:#f472b6;">import</span> { z } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'zod'</span>;
+
+<span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">verifyToken</span>(token: string) {
+  <span style="color:#f472b6;">return</span> jwt.verify(token, process.env.JWT_SECRET!);
+}</code></pre>
+            </div>
+            <div class="snippet-card-footer">
+              <div class="snippet-deps-chips">
+                <span class="dep-chip">jsonwebtoken ^9.0.2</span>
+                <span class="dep-chip">zod ^3.23</span>
+              </div>
+              <div class="snippet-meta-right">
+                <span class="snippet-updated">1d ago</span>
+                <button class="btn-copy-card" onclick="copySnippetText('export function verifyToken...', 'Copied JWT Auth!')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: S3 Presigned URL Uploader -->
+          <div class="snippet-card pixel-border-box">
+            <div class="snippet-card-header">
+              <div class="snippet-card-title-group">
+                <div class="snippet-title-row">
+                  <a href="snippet.html?id=s3-upload" class="snippet-title">S3 Presigned Uploader</a>
+                  <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">PY</span>
+                </div>
+                <span class="snippet-crumb">📁 aws-infra / storage</span>
+              </div>
+              <span title="Public" style="font-size: 12px;">🌐</span>
+            </div>
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=s3-upload'" style="cursor: pointer;">
+              <pre><code><span style="color:#f472b6;">import</span> boto3
+<span style="color:#f472b6;">from</span> botocore.config <span style="color:#f472b6;">import</span> Config
+
+<span style="color:#f472b6;">def</span> <span style="color:#60a5fa;">generate_presigned_post</span>(bucket_name, key, expires_in=3600):
+    s3 = boto3.client(<span style="color:#a7f3d0;">'s3'</span>, config=Config(signature_version=<span style="color:#a7f3d0;">'s3v4'</span>))
+    <span style="color:#f472b6;">return</span> s3.generate_presigned_post(bucket_name, key, ExpiresIn=expires_in)</code></pre>
+            </div>
+            <div class="snippet-card-footer">
+              <div class="snippet-deps-chips">
+                <span class="dep-chip-cyan">boto3 &gt;= 1.34</span>
+              </div>
+              <div class="snippet-meta-right">
+                <span class="snippet-updated">3d ago</span>
+                <button class="btn-copy-card" onclick="copySnippetText('import boto3...', 'Copied S3 Uploader!')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Redis Sliding Window Rate Limiter -->
+          <div class="snippet-card pixel-border-box">
+            <div class="snippet-card-header">
+              <div class="snippet-card-title-group">
+                <div class="snippet-title-row">
+                  <a href="snippet.html?id=redis-ratelimit" class="snippet-title">Sliding Window Limiter</a>
+                  <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TS</span>
+                </div>
+                <span class="snippet-crumb">📁 utils / security</span>
+              </div>
+              <span title="Private" style="font-size: 12px;">🔒</span>
+            </div>
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=redis-ratelimit'" style="cursor: pointer;">
+              <pre><code><span style="color:#f472b6;">import</span> Redis <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'ioredis'</span>;
+
+<span style="color:#f472b6;">export async function</span> <span style="color:#60a5fa;">checkRateLimit</span>(redis: Redis, key: string, limit: number, windowMs: number) {
+  <span style="color:#f472b6;">const</span> now = Date.now();
+  <span style="color:#f472b6;">const</span> clearBefore = now - windowMs;
+  <span style="color:#f472b6;">const</span> multi = redis.multi();
+  multi.zremrangebyscore(key, 0, clearBefore);
+  multi.zadd(key, now, `${now}-${Math.random()}`);
+  multi.zcard(key);
+  <span style="color:#f472b6;">const</span> [, , count] = <span style="color:#f472b6;">await</span> multi.exec();
+  <span style="color:#f472b6;">return</span> (count <span style="color:#f472b6;">as</span> number) &lt;= limit;
+}</code></pre>
+            </div>
+            <div class="snippet-card-footer">
+              <div class="snippet-deps-chips">
+                <span class="dep-chip">ioredis ^5.4</span>
+              </div>
+              <div class="snippet-meta-right">
+                <span class="snippet-updated">4d ago</span>
+                <button class="btn-copy-card" onclick="copySnippetText('export async function checkRateLimit...', 'Copied Rate Limiter!')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: Prisma Soft Delete Extension -->
+          <div class="snippet-card pixel-border-box">
+            <div class="snippet-card-header">
+              <div class="snippet-card-title-group">
+                <div class="snippet-title-row">
+                  <a href="snippet.html?id=prisma-soft-delete" class="snippet-title">Prisma Soft Delete</a>
+                  <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TS</span>
+                </div>
+                <span class="snippet-crumb">📁 database / orm</span>
+              </div>
+              <span title="Private" style="font-size: 12px;">🔒</span>
+            </div>
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=prisma-soft-delete'" style="cursor: pointer;">
+              <pre><code><span style="color:#f472b6;">import</span> { Prisma } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'@prisma/client'</span>;
+
+<span style="color:#f472b6;">export const</span> softDelete = Prisma.defineExtension({
+  name: <span style="color:#a7f3d0;">'softDelete'</span>,
+  query: {
+    $allModels: {
+      <span style="color:#f472b6;">async</span> delete({ args, query }) {
+        <span style="color:#f472b6;">return</span> query({ ...args, data: { deletedAt: <span style="color:#f472b6;">new</span> Date() } });
+      }
+    }
+  }
+});</code></pre>
+            </div>
+            <div class="snippet-card-footer">
+              <div class="snippet-deps-chips">
+                <span class="dep-chip">@prisma/client ^5.14</span>
+              </div>
+              <div class="snippet-meta-right">
+                <span class="snippet-updated">5d ago</span>
+                <button class="btn-copy-card" onclick="copySnippetText('export const softDelete...', 'Copied Prisma Extension!')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6: FastAPI CORS -->
+          <div class="snippet-card pixel-border-box">
+            <div class="snippet-card-header">
+              <div class="snippet-card-title-group">
+                <div class="snippet-title-row">
+                  <a href="snippet.html?id=fastapi-cors" class="snippet-title">FastAPI Error Handler</a>
+                  <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">PY</span>
+                </div>
+                <span class="snippet-crumb">📁 auth / api</span>
+              </div>
+              <span title="Public" style="font-size: 12px;">🌐</span>
+            </div>
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=fastapi-cors'" style="cursor: pointer;">
+              <pre><code><span style="color:#f472b6;">from</span> fastapi <span style="color:#f472b6;">import</span> FastAPI, Request
+<span style="color:#f472b6;">from</span> fastapi.responses <span style="color:#f472b6;">import</span> JSONResponse
+
+app = FastAPI()
+
+<span style="color:#f472b6;">@app.exception_handler</span>(Exception)
+<span style="color:#f472b6;">async def</span> global_exception_handler(request: Request, exc: Exception):
+    <span style="color:#f472b6;">return</span> JSONResponse(
+        status_code=500,
+        content={<span style="color:#a7f3d0;">"error"</span>: <span style="color:#a7f3d0;">"INTERNAL_ERROR"</span>, <span style="color:#a7f3d0;">"detail"</span>: str(exc)},
+    )</code></pre>
+            </div>
+            <div class="snippet-card-footer">
+              <div class="snippet-deps-chips">
+                <span class="dep-chip-cyan">fastapi &gt;= 0.111</span>
+                <span class="dep-chip-cyan">uvicorn</span>
+              </div>
+              <div class="snippet-meta-right">
+                <span class="snippet-updated">1w ago</span>
+                <button class="btn-copy-card" onclick="copySnippetText('from fastapi import FastAPI...', 'Copied FastAPI Handler!')">Copy</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ░░░ GLOBAL COMMAND PALETTE (⌘K) ░░░ -->
+  <div class="cmdk-overlay" id="cmdk-modal">
+    <div class="cmdk-dialog pixel-border-box">
+      <div class="cmdk-input-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="cmdk-input" class="cmdk-input" placeholder="Describe what the code does or type / for filters..." autofocus />
+        <span class="kbd-badge">ESC</span>
+      </div>
+      <div class="cmdk-results" id="cmdk-results"></div>
+      <div class="cmdk-footer">
+        <div style="display: flex; gap: 14px;">
+          <span>↑↓ to navigate</span>
+          <span>↵ to open</span>
+          <span>⌘C copy code</span>
+          <span>⌘⇧C copy install</span>
+        </div>
+        <span style="color: var(--cyan);">Hybrid Vector + Keyword Search</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="app-script.js"></script>
+  <script>
+    function toggleChip(el) {
+      el.classList.toggle('active');
+      showToast(`Filter applied: ${el.textContent.trim()}`);
+    }
+
+    function filterFolder(folderName, e) {
+      e.preventDefault();
+      document.querySelectorAll('.folder-item').forEach(f => f.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      document.getElementById('current-folder-title').textContent = `Folder: ${folderName}`;
+      showToast(`Filtering by folder: ${folderName}`);
+    }
+
+    function sortSnippets(val) {
+      showToast(`Sorted by: ${val}`);
+    }
+  </script>
+</body>
+
+</html>

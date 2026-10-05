@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings &amp; CLI Keys — Pluck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+</head>
+
+<body>
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-shell">
+
+    <!-- Mini Sidebar -->
+    <aside class="app-sidebar" style="width: 240px;">
+      <div class="app-sidebar-header">
+        <a href="app.html" class="nav-logo" title="Back to Vault">
+          <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="24" height="24" />
+          <span class="logo-wordmark" style="font-size: 12px;">Pluck</span>
+        </a>
+      </div>
+      <div class="app-sidebar-content">
+        <a href="app.html" class="folder-item">
+          <span>← Back to Vault</span>
+        </a>
+        <div style="margin-top: 14px;">
+          <div class="nav-section-title">Settings Navigation</div>
+          <div class="folder-tree">
+            <a href="#" class="folder-item active" id="side-tab-tokens" onclick="switchSettingsTab('tokens', event)">🔑 Access Tokens (PAT)</a>
+            <a href="#" class="folder-item" id="side-tab-climcp" onclick="switchSettingsTab('climcp', event)">🤖 CLI &amp; MCP Config</a>
+            <a href="#" class="folder-item" id="side-tab-pref" onclick="switchSettingsTab('pref', event)">⚡ Preferences</a>
+            <a href="#" class="folder-item" id="side-tab-account" onclick="switchSettingsTab('account', event)">👤 Account Profile</a>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main View -->
+    <main class="app-main">
+      <header class="app-topbar">
+        <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Settings &amp; Developer Access</h2>
+        <div class="topbar-actions">
+          <a href="app.html" class="btn-outline-pixel" style="font-size: 11px;">Done</a>
+        </div>
+      </header>
+
+      <div class="app-content" style="max-width: 980px;">
+
+        <!-- ░░░ TAB 1: TOKENS (PRD §2.3.8) ░░░ -->
+        <div id="section-tokens" style="display: flex; flex-direction: column; gap: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <h3 style="font-size: 18px; color: var(--white);">Personal Access Tokens (PAT)</h3>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Tokens allow the <code style="color:var(--cyan);">pluck-cli</code> and AI Coding Assistants (Claude/Cursor MCP) to access your vault.</p>
+            </div>
+            <button class="btn-solid-pixel" onclick="openTokenModal()">+ Generate New Token</button>
+          </div>
+
+          <!-- Tokens Table -->
+          <div style="background: rgba(16,6,48,0.95); border: 1px solid var(--purple-dim); box-shadow: 4px 4px 0 0 rgba(0,0,0,0.6); overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--purple-dim); background: rgba(12,4,36,0.8); color: var(--muted); font-size: 10px;">
+                  <th style="padding: 12px 16px;">NAME</th>
+                  <th style="padding: 12px 16px;">PREFIX</th>
+                  <th style="padding: 12px 16px;">SCOPES</th>
+                  <th style="padding: 12px 16px;">LAST USED</th>
+                  <th style="padding: 12px 16px;">EXPIRES</th>
+                  <th style="padding: 12px 16px; text-align: right;">ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="token-table-body">
+                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
+                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">MacBook Cursor Agent</td>
+                  <td style="padding: 14px 16px; color: var(--purple-light);">pluck_pat_8f19...</td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip" style="font-size: 9px;">mcp</span> <span class="dep-chip" style="font-size: 9px;">snippets:read</span></td>
+                  <td style="padding: 14px 16px; color: var(--muted);">12m ago</td>
+                  <td style="padding: 14px 16px; color: #a7f3d0;">in 88 days</td>
+                  <td style="padding: 14px 16px; text-align: right;">
+                    <button class="btn-outline-danger" onclick="revokeToken(this)">Revoke</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">CLI Terminal Token</td>
+                  <td style="padding: 14px 16px; color: var(--purple-light);">pluck_pat_4a22...</td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip" style="font-size: 9px;">all scopes</span></td>
+                  <td style="padding: 14px 16px; color: var(--muted);">3d ago</td>
+                  <td style="padding: 14px 16px; color: #a7f3d0;">Never</td>
+                  <td style="padding: 14px 16px; text-align: right;">
+                    <button class="btn-outline-danger" onclick="revokeToken(this)">Revoke</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ░░░ TAB 2: CLI & MCP CONFIG (PRD §2.3.8) ░░░ -->
+        <div id="section-climcp" style="display: none; flex-direction: column; gap: 24px;">
+          <div>
+            <h3 style="font-size: 18px; color: var(--white);">CLI &amp; AI MCP Configuration</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Integrate Pluck directly into Claude Desktop, Cursor, and your command line.</p>
+          </div>
+
+          <!-- CLI Quickstart -->
+          <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95);">
+            <div class="nav-section-title">1. Pluck CLI Quickstart</div>
+            <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Authenticate your terminal in one command:</p>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #070216; padding: 10px 14px; border: 1px solid var(--purple-dim); margin-top: 8px;">
+              <code style="color: var(--cyan);">npx pluck-cli login</code>
+              <button class="btn-copy-card" onclick="copySnippetText('npx pluck-cli login', 'Command copied!')">Copy</button>
+            </div>
+          </div>
+
+          <!-- Stdio MCP Config -->
+          <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95);">
+            <div class="nav-section-title">2. Claude Desktop &amp; Cursor (Stdio MCP)</div>
+            <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Add this block to your <code>claude_desktop_config.json</code>:</p>
+            <div style="position: relative; margin-top: 8px;">
+              <pre style="background: #070216; padding: 14px; border: 1px solid var(--purple-dim); color: #a78bfa; font-size: 12px; margin: 0; overflow-x: auto;"><code>{
+  "mcpServers": {
+    "pluck": {
+      "command": "npx",
+      "args": ["-y", "pluck-cli", "mcp"],
+      "env": {
+        "PLUCK_TOKEN": "pluck_pat_YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}</code></pre>
+              <button class="btn-copy-card" style="position: absolute; top: 10px; right: 10px;" onclick="copySnippetText('{\n  &quot;mcpServers&quot;: {\n    &quot;pluck&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;pluck-cli&quot;, &quot;mcp&quot;],\n      &quot;env&quot;: {\n        &quot;PLUCK_TOKEN&quot;: &quot;pluck_pat_...&quot;\n      }\n    }\n  }\n}', 'MCP Config copied!')">Copy JSON</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ░░░ TAB 3: PREFERENCES (PRD §2.3.8) ░░░ -->
+        <div id="section-pref" style="display: none; flex-direction: column; gap: 24px;">
+          <div>
+            <h3 style="font-size: 18px; color: var(--white);">Developer Preferences</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Custom defaults applied to all snippet install and copy actions.</p>
+          </div>
+
+          <div class="pixel-border-box" style="padding: 20px; background: rgba(16,6,48,0.95); display: flex; flex-direction: column; gap: 18px;">
+            <div class="form-group">
+              <label class="form-label">DEFAULT NODE PACKAGE MANAGER</label>
+              <div style="display: flex; gap: 10px; margin-top: 6px;">
+                <button class="btn-solid-pixel" style="font-size: 11px;">npm</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('pnpm selected as default')">pnpm</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('yarn selected as default')">yarn</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('bun selected as default')">bun</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">PYTHON PACKAGE INSTALLER</label>
+              <div style="display: flex; gap: 10px; margin-top: 6px;">
+                <button class="btn-solid-pixel" style="font-size: 11px;">pip</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('uv selected as default')">uv</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">STUDIO EDITOR KEYMAP</label>
+              <select class="select-pixel" style="max-width: 240px; margin-top: 6px;">
+                <option>Standard (VS Code)</option>
+                <option>Vim Modal</option>
+                <option>Emacs</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ░░░ TAB 4: ACCOUNT (PRD §2.3.8) ░░░ -->
+        <div id="section-account" style="display: none; flex-direction: column; gap: 24px;">
+          <div>
+            <h3 style="font-size: 18px; color: var(--white);">Account Profile</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity and OAuth provider links.</p>
+          </div>
+
+          <div class="pixel-border-box" style="padding: 20px; background: rgba(16,6,48,0.95); display: flex; flex-direction: column; gap: 18px;">
+            <div class="form-group">
+              <label class="form-label">FULL NAME</label>
+              <input type="text" class="var-input" value="Alex Developer" style="max-width: 320px;" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">WORK EMAIL</label>
+              <input type="email" class="var-input" value="alex@pluck.dev" style="max-width: 320px;" disabled />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">LINKED AUTHENTICATION PROVIDERS</label>
+              <div style="display: flex; gap: 12px; margin-top: 6px;">
+                <div style="padding: 6px 12px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #a7f3d0; font-size: 11px;">
+                  ✓ GitHub Linked (@alexdev)
+                </div>
+                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('Connecting Google account...')">Connect Google</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="app-script.js"></script>
+  <script>
+    function switchSettingsTab(tab, e) {
+      if (e) e.preventDefault();
+      ['tokens', 'climcp', 'pref', 'account'].forEach(t => {
+        const sideEl = document.getElementById(`side-tab-${t}`);
+        if (sideEl) sideEl.classList.toggle('active', t === tab);
+        const secEl = document.getElementById(`section-${t}`);
+        if (secEl) secEl.style.display = t === tab ? 'flex' : 'none';
+      });
+    }
+
+    function openTokenModal() {
+      const name = prompt('Enter a descriptor for this Personal Access Token:');
+      if (name) {
+        showToast(`Token generated: pluck_pat_9a8f... (Saved)`, 'success');
+      }
+    }
+
+    function revokeToken(btn) {
+      if (confirm('Revoke this access token? Any connected CLI or MCP instances will immediately lose access.')) {
+        btn.closest('tr').remove();
+        showToast('Token revoked successfully', 'info');
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>useDebounce Hook — Snippet Detail | Pluck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+</head>
+
+<body>
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-shell">
+
+    <!-- Mini Sidebar -->
+    <aside class="app-sidebar" style="width: 240px;">
+      <div class="app-sidebar-header">
+        <a href="app.html" class="nav-logo" title="Back to Vault">
+          <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="24" height="24" />
+          <span class="logo-wordmark" style="font-size: 12px;">Pluck</span>
+        </a>
+      </div>
+      <div class="app-sidebar-content">
+        <a href="app.html" class="folder-item">
+          <span>← Back to Vault</span>
+        </a>
+        <div style="margin-top: 14px;">
+          <div class="nav-section-title">Actions</div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <a href="studio.html" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">✎ Edit Snippet</a>
+            <a href="share.html?id=use-debounce" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">🌐 Share Link</a>
+            <button class="btn-solid-pixel" onclick="forkSnippet()" style="font-size: 11px; padding: 7px;">⑂ Fork Snippet</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main View -->
+    <main class="app-main">
+      <header class="app-topbar">
+        <button class="search-trigger-btn js-open-cmdk" style="min-width: 260px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>Search (⌘K)...</span>
+        </button>
+        <div class="topbar-actions">
+          <button class="btn-icon-pixel" title="Copy CLI slug" onclick="copySnippetText('pluck get use-debounce', 'CLI Command Copied!')">CLI</button>
+          <a href="studio.html" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">✎ Edit</a>
+        </div>
+      </header>
+
+      <div class="app-content">
+        <div class="snippet-detail-shell">
+
+          <!-- Snippet Header -->
+          <div class="snippet-detail-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h1 style="font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--white);">useDebounce Hook</h1>
+                <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TypeScript</span>
+                <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">🔒 Private</span>
+              </div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 6px;">
+                <span>📁 hooks / react-hooks</span> · <span>slug: <code style="color: var(--purple-light);">use-debounce</code></span> · <span>Updated 2 hours ago by Alex</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-solid-pixel" onclick="copyInterpolatedCode()">Copy Code</button>
+            </div>
+          </div>
+
+          <!-- Live Variable Mutator Bar (PRD §2.3.6) -->
+          <div class="variable-bar pixel-border-box">
+            <span style="font-family: var(--pixel); font-size: 9px; color: var(--yellow);">{{VARIABLES}}</span>
+            <div class="var-input-group">
+              <label class="var-label" for="var-delay">delay:</label>
+              <input type="number" id="var-delay" class="var-input" value="300" style="width: 80px;" oninput="updateLiveInterpolation()" />
+              <span style="font-size: 11px; color: var(--muted);">ms</span>
+            </div>
+            <button class="btn-outline-pixel" style="font-size: 10px; padding: 3px 8px; margin-left: auto;" onclick="resetDefaults()">Reset Defaults</button>
+          </div>
+
+          <!-- Dependency Bar (PRD §2.3.6) -->
+          <div class="dependency-bar pixel-border-box">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <select class="select-pixel" id="select-pm" onchange="updatePmCommand(this.value)">
+                <option value="npm">npm</option>
+                <option value="pnpm">pnpm</option>
+                <option value="yarn">yarn</option>
+                <option value="bun">bun</option>
+              </select>
+              <code class="dep-cmd" id="dep-install-cmd">npm i react@^18.3.1</code>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 10px;" onclick="copyEnvExample()">.env keys (1)</button>
+              <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 10px;" onclick="copyInstallCmd()">Copy Install</button>
+            </div>
+          </div>
+
+          <!-- Tab Navigation (Code, Sandbox Runner, History, Details) -->
+          <div class="inspector-tabs" style="border-bottom: 2px solid var(--purple-dim);">
+            <button class="inspector-tab active" id="tab-nav-code" onclick="switchSnippetTab('code')">Code View</button>
+            <button class="inspector-tab" id="tab-nav-run" onclick="switchSnippetTab('run')">▶ In-Browser Runner</button>
+            <button class="inspector-tab" id="tab-nav-history" onclick="switchSnippetTab('history')">History / Diffs (3)</button>
+            <button class="inspector-tab" id="tab-nav-details" onclick="switchSnippetTab('details')">AI Summary &amp; Details</button>
+          </div>
+
+          <!-- Tab 1: Code View -->
+          <div id="view-code" style="background: rgba(10, 3, 30, 0.95); border: 1px solid var(--purple-dim); padding: 20px;">
+            <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code id="interpolated-code-display"><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
+
+<span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = <span id="code-var-delay" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 1px 4px; border: 1px dashed #f59e0b;">300</span>): T {
+  <span style="color:#f472b6;">const</span> [debouncedVal, setVal] = useState&lt;T&gt;(value);
+
+  useEffect(() =&gt; {
+    <span style="color:#f472b6;">const</span> t = setTimeout(() =&gt; setVal(value), delay);
+    <span style="color:#f472b6;">return</span> () =&gt; clearTimeout(t);
+  }, [value, delay]);
+
+  <span style="color:#f472b6;">return</span> debouncedVal;
+}</code></pre>
+          </div>
+
+          <!-- Tab 2: Runner Panel (Sandbox PRD §2.3.12) -->
+          <div id="view-run" style="display: none; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim);">
+              <span style="font-size: 12px; color: var(--white);">QuickJS Isolated Sandbox · Max 64MB · 5s timeout</span>
+              <button class="btn-solid-pixel" onclick="executeSandbox()" style="font-size: 11px; padding: 6px 14px;">▶ Execute In Sandbox</button>
+            </div>
+            <div class="runner-console" id="runner-output">// Sandbox ready. Click "Execute In Sandbox" to test.
+// QuickJS-WASM running in isolated origin web worker.</div>
+          </div>
+
+          <!-- Tab 3: History & Diffs (PRD §2.3.6) -->
+          <div id="view-history" style="display: none; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13px; font-weight: 700; color: var(--white);">Version History</span>
+              <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">Optimistic Concurrency</span>
+            </div>
+            <div class="pixel-border-box mockup-diff" style="background: #09031c; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--purple-dim); padding-bottom: 8px;">
+                <span style="color: var(--white); font-weight: 700;">Diff: v1.1 → v1.2 (Current)</span>
+                <button class="btn-outline-pixel" style="font-size: 10px;" onclick="showToast('Restored version v1.1', 'info')">Restore v1.1</button>
+              </div>
+              <div class="diff-line diff-context"><span class="diff-ln">1</span>&nbsp;&nbsp;<span class="diff-code">import { useState, useEffect } from 'react';</span></div>
+              <div class="diff-line diff-del"><span class="diff-ln">2</span> - <span class="diff-code">export function useDebounce&lt;T&gt;(value: T, delay: number = 250): T {</span></div>
+              <div class="diff-line diff-add"><span class="diff-ln">2</span> + <span class="diff-code">export function useDebounce&lt;T&gt;(value: T, delay: number = {{delay|300}}): T {</span></div>
+              <div class="diff-line diff-context"><span class="diff-ln">3</span>&nbsp;&nbsp;<span class="diff-code">  const [debouncedVal, setVal] = useState&lt;T&gt;(value);</span></div>
+            </div>
+          </div>
+
+          <!-- Tab 4: Details Tab -->
+          <div id="view-details" style="display: none; flex-direction: column; gap: 14px; background: rgba(14,5,40,0.8); border: 1px solid var(--purple-dim); padding: 20px;">
+            <div>
+              <div class="nav-section-title">AI Intent Summary (Embedding Model)</div>
+              <p style="font-size: 12px; color: #ddd6fe; line-height: 1.6; margin-top: 6px;">
+                "Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup to eliminate race conditions and redundant network requests."
+              </p>
+            </div>
+            <div style="margin-top: 10px;">
+              <div class="nav-section-title">Keywords &amp; Vector Tokens</div>
+              <div class="filter-group" style="margin-top: 6px;">
+                <span class="filter-chip">react-hook</span>
+                <span class="filter-chip">debounce</span>
+                <span class="filter-chip">delay</span>
+                <span class="filter-chip">timing</span>
+                <span class="filter-chip">throttle</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app-script.js"></script>
+  <script>
+    function updateLiveInterpolation() {
+      const delayVal = document.getElementById('var-delay').value || '300';
+      document.getElementById('code-var-delay').textContent = delayVal;
+    }
+
+    function resetDefaults() {
+      document.getElementById('var-delay').value = '300';
+      updateLiveInterpolation();
+      showToast('Variables reset to defaults');
+    }
+
+    function switchSnippetTab(tab) {
+      ['code', 'run', 'history', 'details'].forEach(t => {
+        document.getElementById(`tab-nav-${t}`).classList.toggle('active', t === tab);
+        document.getElementById(`view-${t}`).style.display = t === tab ? (t === 'code' ? 'block' : 'flex') : 'none';
+      });
+    }
+
+    function updatePmCommand(pm) {
+      const pkg = 'react@^18.3.1';
+      let cmd = `npm i ${pkg}`;
+      if (pm === 'pnpm') cmd = `pnpm add ${pkg}`;
+      if (pm === 'yarn') cmd = `yarn add ${pkg}`;
+      if (pm === 'bun') cmd = `bun add ${pkg}`;
+      document.getElementById('dep-install-cmd').textContent = cmd;
+    }
+
+    function copyInstallCmd() {
+      const cmd = document.getElementById('dep-install-cmd').textContent;
+      copySnippetText(cmd, 'Install command copied to clipboard!');
+    }
+
+    function copyEnvExample() {
+      copySnippetText('# Pluck .env.example\nSTRIPE_KEY=your_key_here\n', '.env.example copied to clipboard!');
+    }
+
+    function copyInterpolatedCode() {
+      const delayVal = document.getElementById('var-delay').value || '300';
+      const code = `import { useState, useEffect } from 'react';
+
+export function useDebounce<T>(value: T, delay: number = ${delayVal}): T {
+  const [debouncedVal, setVal] = useState<T>(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVal(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debouncedVal;
+}`;
+      copySnippetText(code, 'Interpolated code copied to clipboard!');
+    }
+
+    function executeSandbox() {
+      const out = document.getElementById('runner-output');
+      out.textContent = `[SANDBOX START] Initializing QuickJS-WASM runtime...\n`;
+      setTimeout(() => {
+        out.textContent += `[INFO] Language: TypeScript (Sucrase stripped)\n`;
+        out.textContent += `[TEST] Simulating test value 'query' over 300ms window...\n`;
+        out.textContent += `[LOG] setVal called with: 'query'\n`;
+        out.textContent += `[PASS] Debounce verified clean. Memory: 1.4MB, Execution: 3.8ms.\n[SANDBOX EXIT 0]`;
+        showToast('Snippet executed cleanly in sandbox!', 'success');
+      }, 500);
+    }
+
+    function forkSnippet() {
+      showToast('Snippet forked to your personal collection!', 'success');
+      setTimeout(() => {
+        window.location.href = 'studio.html';
+      }, 700);
+    }
+  </script>
+</body>
+
+</html>

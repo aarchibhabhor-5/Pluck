@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snippet Studio — Pluck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="app-style.css" />
+</head>
+
+<body>
+  <div class="studio-shell">
+
+    <!-- ░░░ STUDIO HEADER ░░░ -->
+    <header class="studio-header">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="app.html" title="Back to Vault" style="color: var(--muted); font-size: 14px;">← Vault</a>
+        <input type="text" id="snippet-title" class="studio-title-input" value="useDebounce Hook" placeholder="Snippet Title..." />
+        <span class="dep-chip" id="save-status-pill" style="font-size: 10px; color: var(--green); border-color: var(--green);">● Draft saved</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <select class="select-pixel" id="select-lang" onchange="changeLanguage(this.value)">
+          <option value="typescript" selected>TypeScript (.ts)</option>
+          <option value="python">Python (.py)</option>
+          <option value="go">Go (.go)</option>
+          <option value="sql">SQL (.sql)</option>
+        </select>
+
+        <select class="select-pixel" id="select-folder">
+          <option value="hooks" selected>Folder: hooks</option>
+          <option value="auth">Folder: auth</option>
+          <option value="aws-infra">Folder: aws-infra</option>
+          <option value="database">Folder: database</option>
+        </select>
+
+        <select class="select-pixel" id="select-visibility" onchange="checkVisibilityGating(this.value)">
+          <option value="private" selected>🔒 Private</option>
+          <option value="team">👥 Team</option>
+          <option value="unlisted">🔗 Unlisted</option>
+          <option value="public">🌐 Public</option>
+        </select>
+
+        <button class="btn-solid-pixel" id="btn-save" onclick="saveSnippet()" style="font-size: 11px; padding: 7px 16px;">
+          Save (⌘S)
+        </button>
+      </div>
+    </header>
+
+    <!-- ░░░ STUDIO MAIN BODY ░░░ -->
+    <div class="studio-body">
+
+      <!-- Center Code Editor Pane -->
+      <div class="studio-editor-pane">
+
+        <!-- Live Secret Detection Banner (Gating Alert) -->
+        <div class="secret-banner" id="secret-banner">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px;">⚠️</span>
+            <span><strong>Secret Detected:</strong> Potential Stripe API Key found on Line 6 (<code style="background: rgba(0,0,0,0.4); padding: 1px 4px;">sk_live_948a...</code>)</span>
+          </div>
+          <div class="secret-banner-actions">
+            <button class="btn-outline-danger" onclick="ignoreSecret()">Ignore</button>
+            <button class="btn-danger-pixel" onclick="redactSecret()">⚡ Redact → process.env.STRIPE_KEY</button>
+          </div>
+        </div>
+
+        <!-- Editor Canvas with Line Numbers & Textarea -->
+        <div class="studio-code-area">
+          <div class="studio-gutter">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+            <span>16</span><span>17</span><span>18</span>
+          </div>
+
+          <textarea class="studio-editor-textarea" id="studio-code" spellcheck="false" oninput="handleCodeInput(this.value)">import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+// Pluck template snippet with variable interpolation and secret check
+export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
+  const apiKey = "sk_live_948a8f1023ba192e44"; // simulated secret for scanner
+  const [debouncedVal, setVal] = useState<T>(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVal(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debouncedVal;
+}</textarea>
+        </div>
+
+      </div>
+
+      <!-- Right Inspector Panel -->
+      <aside class="studio-inspector">
+
+        <!-- Inspector Tabs -->
+        <div class="inspector-tabs">
+          <button class="inspector-tab active" id="tab-btn-pkgs" onclick="switchInspectorTab('pkgs')">Packages (2)</button>
+          <button class="inspector-tab" id="tab-btn-vars" onclick="switchInspectorTab('vars')">Variables (1)</button>
+          <button class="inspector-tab" id="tab-btn-env" onclick="switchInspectorTab('env')">Env Keys (1)</button>
+          <button class="inspector-tab" id="tab-btn-details" onclick="switchInspectorTab('details')">Details</button>
+        </div>
+
+        <!-- Inspector Content: Packages Tab -->
+        <div class="inspector-content" id="panel-pkgs">
+          <div>
+            <div class="nav-section-title">Detected Dependencies (AST)</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim);">
+                <span style="font-weight: 700; color: var(--pink-light);">react</span>
+                <input type="text" value="^18.3.1" class="var-input" style="width: 80px; font-size: 11px;" placeholder="version" />
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim);">
+                <span style="font-weight: 700; color: var(--pink-light);">axios</span>
+                <input type="text" value="^1.7.0" class="var-input" style="width: 80px; font-size: 11px;" placeholder="version" />
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px;">
+            <div class="nav-section-title">+ Add Manual Dependency</div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <input type="text" id="add-pkg-input" class="var-input" placeholder="e.g. lodash-es" style="flex: 1;" />
+              <button class="btn-outline-pixel" onclick="addManualPkg()" style="font-size: 11px;">Add</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--purple-dim); font-size: 11px; color: var(--muted);">
+            <div><strong>Ignored stdlib:</strong> <code>node:path</code>, <code>node:fs</code></div>
+          </div>
+        </div>
+
+        <!-- Inspector Content: Variables Tab -->
+        <div class="inspector-content" id="panel-vars" style="display: none;">
+          <div class="nav-section-title">Dynamic Interpolated Variables</div>
+          <p style="font-size: 11px; color: var(--muted); line-height: 1.5;">Syntax: <code>{{name|default}}</code>. Values can be filled before copying.</p>
+
+          <div style="padding: 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim); margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="color: var(--yellow); font-weight: 700;">{{delay}}</span>
+              <span class="dep-chip" style="font-size: 9px;">number</span>
+            </div>
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label">Default Value</label>
+              <input type="text" class="var-input" value="300" />
+            </div>
+            <div class="form-group" style="margin-top: 8px;">
+              <label class="form-label">Description</label>
+              <input type="text" class="var-input" value="Debounce time window in milliseconds" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Inspector Content: Env Tab -->
+        <div class="inspector-content" id="panel-env" style="display: none;">
+          <div class="nav-section-title">Environment Variables</div>
+          <div style="padding: 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim); margin-top: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--cyan); font-weight: 700;">STRIPE_KEY</span>
+              <span class="dep-chip" style="color: #ef4444; border-color: #ef4444;">Secret</span>
+            </div>
+            <div style="font-size: 11px; color: var(--muted); margin-top: 6px;">Auto-detected from redact action.</div>
+          </div>
+        </div>
+
+        <!-- Inspector Content: Details Tab -->
+        <div class="inspector-content" id="panel-details" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">DESCRIPTION (MARKDOWN)</label>
+            <textarea class="var-input" style="height: 90px; resize: none; font-size: 12px;">Debounces rapidly updating React state values (e.g. search inputs) using React 18 useEffect cleanup.</textarea>
+          </div>
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="form-label">TAGS (COMMA SEPARATED)</label>
+            <input type="text" class="var-input" value="react, debounce, hooks, performance" />
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </div>
+
+  <script src="app-script.js"></script>
+  <script>
+    function switchInspectorTab(tab) {
+      ['pkgs', 'vars', 'env', 'details'].forEach(t => {
+        document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
+        document.getElementById(`panel-${t}`).style.display = t === tab ? 'flex' : 'none';
+      });
+    }
+
+    function redactSecret() {
+      const codeArea = document.getElementById('studio-code');
+      codeArea.value = codeArea.value.replace(
+        'const apiKey = "sk_live_948a8f1023ba192e44";',
+        'const apiKey = process.env.STRIPE_KEY;'
+      );
+      document.getElementById('secret-banner').style.display = 'none';
+      showToast('Redacted secret → process.env.STRIPE_KEY added to EnvTab', 'success');
+      switchInspectorTab('env');
+    }
+
+    function ignoreSecret() {
+      document.getElementById('secret-banner').style.display = 'none';
+      showToast('Secret flagged as acknowledged for private scope', 'info');
+    }
+
+    function handleCodeInput(val) {
+      document.getElementById('save-status-pill').textContent = '● Saving...';
+      document.getElementById('save-status-pill').style.color = 'var(--yellow)';
+      document.getElementById('save-status-pill').style.borderColor = 'var(--yellow)';
+
+      setTimeout(() => {
+        document.getElementById('save-status-pill').textContent = '● Draft saved';
+        document.getElementById('save-status-pill').style.color = 'var(--green)';
+        document.getElementById('save-status-pill').style.borderColor = 'var(--green)';
+      }, 700);
+    }
+
+    function saveSnippet() {
+      showToast('Snippet saved successfully!', 'success');
+      setTimeout(() => {
+        window.location.href = 'snippet.html?id=use-debounce';
+      }, 600);
+    }
+
+    function checkVisibilityGating(val) {
+      if (val === 'public' && document.getElementById('secret-banner').style.display !== 'none') {
+        alert('Gating Violation: Snippets with active secrets cannot be published to Public scope.');
+        document.getElementById('select-visibility').value = 'private';
+      }
+    }
+
+    function addManualPkg() {
+      const input = document.getElementById('add-pkg-input');
+      if (input.value.trim()) {
+        showToast(`Added package dependency: ${input.value.trim()}`, 'success');
+        input.value = '';
+      }
+    }
+
+    function changeLanguage(lang) {
+      showToast(`Language set to ${lang}`);
+    }
+
+    // Keyboard shortcut Cmd+S
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveSnippet();
+      }
+    });
+  </script>
+</body>
+
+</html>
