@@ -1,0 +1,20 @@
+{
+  "name": "pluck-backend",
+  "version": "1.0.0",
+  "description": "Backend API server, AST analysis, Secret Scanner, and Token management for Pluck",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "pluck",
+    "snippet-manager",
+    "secret-scanner",
+    "ast-analyzer",
+    "mcp"
+  ],
+  "author": "Pluck Labs",
+  "license": "MIT"
+}
