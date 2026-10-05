@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pluck — Stop Saving Dead Text. Pluck Battle-Tested Code.</title>
+  <meta name="description" content="Stop saving dead text. Pluck battle-tested, dependency-aware code out of past projects and drop it straight into your browser, terminal, or AI coding assistant." />
+  <meta property="og:title" content="Pluck — Battle-Tested Code Snippets for Developers" />
+  <meta property="og:description" content="Dependency-aware snippets with secret detection, CLI access, and AI integration via MCP." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ░░░ MATRIX RAIN CANVAS ░░░ -->
+<canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+<!-- ░░░ NAVBAR ░░░ -->
+<nav class="navbar" id="navbar">
+  <a href="/" class="nav-logo" id="nav-logo-link" aria-label="Pluck home">
+    <!-- Pixel Pluck Octopus Logo -->
+    <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="28" height="28" />
+    <span class="logo-wordmark">Pluck</span>
+  </a>
+  <nav class="nav-links" aria-label="Primary navigation">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#how-it-works" class="nav-link">How It Works</a>
+    <a href="#cli" class="nav-link">CLI</a>
+    <a href="#plans" class="nav-link">Plans</a>
+    <a href="/docs" class="nav-link">Docs</a>
+  </nav>
+  <div class="nav-ctas">
+    <a href="/docs" class="btn-outline-pixel" id="nav-docs-btn">↓ Docs</a>
+    <a href="/signup" class="btn-solid-pixel" id="nav-try-btn">Try Pluck</a>
+  </div>
+</nav>
+
+<!-- ░░░ HERO ░░░ -->
+<section class="hero" id="hero">
+  <!-- Floating matrix chars injected by JS -->
+  <div class="matrix-floaters" id="matrix-floaters" aria-hidden="true"></div>
+
+  <!-- Hero ASCII Animated Logo Canvas (exact Jules dynamic agent animation) -->
+  <div class="hero-logo-wrapper" id="hero-logo-wrapper">
+    <canvas id="hero-logo-canvas" class="hero-logo-canvas" aria-label="Pluck"></canvas>
+    <h1 class="hero-tagline" id="hero-tagline">A Dependency-Aware Code Snippet Manager</h1>
+  </div>
+
+  <!-- Hero code editor -->
+  <div class="hero-editor-container">
+    <div class="pixel-border-box hero-editor" id="hero-editor">
+      <div class="editor-dot-grid" aria-hidden="true"></div>
+      <div class="editor-inner">
+        <div class="editor-gutter">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+          <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+          <span>16</span><span>17</span><span>18</span>
+        </div>
+        <pre class="editor-code"><code><span class="c">// Pluck snippet: useDebounce — react ^18</span>
+<span class="kw">import</span> <span class="p">{</span> <span class="id">useState</span><span class="p">,</span> <span class="id">useEffect</span> <span class="p">}</span> <span class="kw">from</span> <span class="s">'react'</span><span class="p">;</span>
+
+<span class="kw">export function</span> <span class="fn">useDebounce</span><span class="p">&lt;</span><span class="ty">T</span><span class="p">&gt;(</span>
+  <span class="id">value</span><span class="p">:</span> <span class="ty">T</span><span class="p">,</span>
+  <span class="id">delay</span><span class="p">:</span> <span class="ty">number</span> <span class="p">=</span> <span class="n">300</span>
+<span class="p">):</span> <span class="ty">T</span> <span class="p">{</span>
+  <span class="kw">const</span> <span class="p">[</span><span class="id">debouncedVal</span><span class="p">,</span> <span class="id">setVal</span><span class="p">]</span> <span class="p">=</span>
+    <span class="fn">useState</span><span class="p">&lt;</span><span class="ty">T</span><span class="p">&gt;(</span><span class="id">value</span><span class="p">);</span>
+
+  <span class="fn">useEffect</span><span class="p">(() =&gt; {</span>
+    <span class="kw">const</span> <span class="id">t</span> <span class="p">=</span> <span class="fn">setTimeout</span><span class="p">(()</span>
+      <span class="p">=&gt;</span> <span class="fn">setVal</span><span class="p">(</span><span class="id">value</span><span class="p">),</span> <span class="id">delay</span><span class="p">);</span>
+    <span class="kw">return</span> <span class="p">() =&gt;</span> <span class="fn">clearTimeout</span><span class="p">(</span><span class="id">t</span><span class="p">);</span>
+  <span class="p">}, [</span><span class="id">value</span><span class="p">,</span> <span class="id">delay</span><span class="p">]);</span>
+
+  <span class="kw">return</span> <span class="id">debouncedVal</span><span class="p">;</span>
+<span class="p">}</span></code></pre>
+      </div>
+      <!-- Peeking mascot pixel art -->
+      <div class="peeking-mascot" aria-hidden="true" id="peeking-mascot">
+        <img src="squid.png" alt="" class="peeking-octopus-img" width="56" height="56" />
+      </div>
+    </div>
+
+    <!-- Detection overlay card -->
+    <div class="detect-card pixel-border-box" id="detect-card">
+      <div class="detect-card-emoji">⚡</div>
+      <p class="detect-card-title">Pluck detected this <span class="underline-cyan">automatically.</span></p>
+      <div class="detect-tags">
+        <span class="detect-tag tag-pink">react ^18</span>
+        <span class="detect-tag tag-cyan">TypeScript</span>
+        <span class="detect-tag tag-yellow">0 secrets</span>
+        <span class="detect-tag tag-purple">0 env keys</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="hero-sub">Stop saving dead text. Pluck battle-tested, dependency-aware code<br/>out of past projects and drop it straight into your <span class="underline-cyan">browser</span>, <span class="underline-yellow">terminal</span>, or <span class="underline-pink">AI assistant</span>.</p>
+</section>
+
+<!-- ░░░ PIXEL CHARACTERS ░░░ -->
+<section class="pixel-chars-section" id="pixel-chars-section">
+  <p class="pixel-chars-tagline">More time for the code you <span class="underline-cyan">want</span> to write, and everything else.</p>
+  <div class="pixel-chars-row" id="pixel-chars-row" aria-hidden="true">
+    <!-- All 4 characters rendered on canvases by JS -->
+    <canvas class="pixel-char-canvas" id="char-coder"   width="120" height="120"></canvas>
+    <canvas class="pixel-char-canvas" id="char-cyclist" width="140" height="120"></canvas>
+    <canvas class="pixel-char-canvas" id="char-reader"  width="110" height="120"></canvas>
+    <canvas class="pixel-char-canvas" id="char-pong"    width="150" height="120"></canvas>
+  </div>
+</section>
+
+<!-- ░░░ MASCOT + FEATURES ░░░ -->
+<section class="mascot-section" id="features">
+  <!-- Animated pixel dot grid background -->
+  <canvas id="dot-grid-canvas" aria-hidden="true"></canvas>
+
+  <!-- Feature cards -->
+  <div class="mascot-layout">
+
+    <div class="feat-cards feat-cards-left">
+      <div class="feat-card pixel-border-box" id="feat-search">
+        <div class="feat-card-icon icon-pink">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2.5"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.5" stroke-linecap="square"/></svg>
+        </div>
+        <h3>Semantic Search</h3>
+        <p>Find snippets by intent with hybrid vector + keyword search. p95 &lt;400ms across 100k snippets.</p>
+      </div>
+      <div class="feat-card pixel-border-box" id="feat-deps">
+        <div class="feat-card-icon icon-yellow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"/></svg>
+        </div>
+        <h3>Auto Dep Detection</h3>
+        <p>AST-powered Tree-sitter analysis extracts every import, package, and env key — even from fragments.</p>
+      </div>
+    </div>
+
+    <!-- Central Mascot (Authentic Jules Octopus) -->
+    <div class="mascot-center" id="mascot-center">
+      <div class="mascot-frame">
+        <div class="mascot-speech-bubble" id="mascot-bubble">
+          <p>Battle-tested with <span class="highlight-pink">Tree-sitter AST</span> &amp; <span class="highlight-cyan">Pluck</span></p>
+        </div>
+        <img src="squid.png" alt="Pluck Octopus Mascot" class="mascot-octopus-img" id="mascot-octopus" width="280" height="280" />
+        <span class="mascot-pupil" id="mascot-pupil"></span>
+        <canvas id="mascot-energy-canvas" width="280" height="280" aria-hidden="true"></canvas>
+      </div>
+    </div>
+
+    <div class="feat-cards feat-cards-right">
+      <div class="feat-card pixel-border-box" id="feat-secret">
+        <div class="feat-card-icon icon-cyan">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="2" stroke-linejoin="miter"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+        </div>
+        <h3>Secret Scanner</h3>
+        <p>One-click redact squiggles catch API keys and tokens before they reach public scope.</p>
+      </div>
+      <div class="feat-card pixel-border-box" id="feat-mcp">
+        <div class="feat-card-icon icon-purple">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>
+        </div>
+        <h3>MCP for AI Assistants</h3>
+        <p>Expose snippets to Claude, Cursor, and VS Code. Your AI gets your verified code — not hallucinations.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ░░░ HOW IT WORKS (STEPS) ░░░ -->
+<section class="steps-section" id="how-it-works">
+
+  <!-- Step 1 -->
+  <div class="step-row step-row-right">
+    <div class="step-text">
+      <div class="step-badge step-badge-purple">1</div>
+      <p>Paste or write any snippet. Pluck's AST engine instantly detects imports, env keys, and secrets. Add a title, tags, and set visibility. Use the <span class="underline-cyan">coming soon</span> GitHub label or CLI to save it directly.</p>
+    </div>
+    <div class="step-mockup">
+      <div class="pixel-border-box mockup-box" id="mockup-step1">
+        <div class="mockup-row">
+          <select class="mockup-select">
+            <option>my-snippets / hooks</option>
+          </select>
+          <span class="mockup-branch">main</span>
+        </div>
+        <div class="mockup-prompt-area">
+          <p class="mockup-prompt-text">Save useDebounce with react ^18 detected as dependency.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-zigzag" aria-hidden="true" id="zigzag-1"></div>
+
+  <!-- Step 2 -->
+  <div class="step-row step-row-left">
+    <div class="step-text">
+      <div class="step-badge step-badge-yellow">2</div>
+      <p>Pluck analyses your snippet, generates a semantic embedding, and stores it alongside your dependencies using the latest embedding model. It then builds a plan showing exactly what was indexed.</p>
+    </div>
+    <div class="step-mockup">
+      <div class="step-chat-container" id="step-chat">
+        <div class="chat-ai-bubble pixel-border-box">
+          <div class="chat-avatar chat-avatar-ai" aria-hidden="true">
+            <img src="squid.png" alt="Pluck" class="chat-mascot-img" width="28" height="28" />
+          </div>
+          <div class="chat-bubble-content">
+            <p><strong>Here is my plan:</strong></p>
+            <p>I will embed useDebounce and index it with react ^18 as a dependency. No secrets found. Ready to save.</p>
+            <div class="chat-action-pill">Save &amp; Index Snippet <span class="pill-arrow">▾</span></div>
+          </div>
+        </div>
+        <div class="chat-user-bubble">
+          <p class="chat-user-text">Looks good. Proceed!</p>
+          <div class="chat-avatar chat-avatar-user" aria-hidden="true">
+            <span>U</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-zigzag" aria-hidden="true" id="zigzag-2"></div>
+
+  <!-- Step 3 -->
+  <div class="step-row step-row-right">
+    <div class="step-text">
+      <div class="step-badge step-badge-cyan">3</div>
+      <p>Pluck provides a live diff view of any snippet update. Browse changes, approve edits, and keep your snippet library always battle-tested and up to date.</p>
+    </div>
+    <div class="step-mockup">
+      <div class="pixel-border-box mockup-box mockup-diff" id="mockup-diff">
+        <div class="diff-line diff-context"><span class="diff-ln">9</span>&nbsp;&nbsp;<span class="diff-code">"dependencies": {</span></div>
+        <div class="diff-line diff-del"><span class="diff-ln">10</span> - <span class="diff-code">"react": "^17.0.2"</span></div>
+        <div class="diff-line diff-add"><span class="diff-ln">10</span> + <span class="diff-code">"react": "^18.3.1"</span></div>
+        <div class="diff-line diff-context"><span class="diff-ln">11</span>&nbsp;&nbsp;<span class="diff-code">"typescript": "^5.0.0"</span></div>
+        <div class="diff-line diff-context"><span class="diff-ln">12</span>&nbsp;&nbsp;<span class="diff-code">}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-zigzag" aria-hidden="true" id="zigzag-3"></div>
+
+  <!-- Step 4 -->
+  <div class="step-row step-row-left">
+    <div class="step-text">
+      <div class="step-badge step-badge-pink">4</div>
+      <p>Drop it anywhere. Run <code class="inline-code">pluck get &lt;slug&gt;</code> from the terminal, copy with correct deps in the web app, or let Claude and Cursor pull it directly via the MCP server. Also get an audio summary of changes.</p>
+    </div>
+    <div class="step-mockup">
+      <div class="pixel-border-box mockup-box mockup-deploy" id="mockup-deploy">
+        <div class="deploy-row">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#c084fc" stroke-width="2"/><path d="M9 12l2 2 4-4" stroke="#c084fc" stroke-width="2" stroke-linecap="square"/></svg>
+          <span class="deploy-label">Publish Snippet</span>
+        </div>
+        <div class="deploy-row deploy-row-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18V12l-2 2m2-2l2 2" stroke="#22d3ee" stroke-width="2" stroke-linecap="square"/><circle cx="12" cy="12" r="9" stroke="#22d3ee" stroke-width="2"/></svg>
+          <span class="deploy-label deploy-label-secondary">Audio Summary</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ░░░ PLANS ░░░ -->
+<section class="plans-section" id="plans">
+  <h2 class="plans-title">Find the Pluck plan that fits<br/>your workflow</h2>
+  <p class="plans-sub">Pluck scales with how you build, from quick personal snippets to fully async, team-wide snippet libraries. Choose the plan that gives you the speed, search depth, and AI integration you need.</p>
+
+  <div class="plans-grid">
+    <div class="plan-card pixel-border-box" id="plan-free">
+      <div class="plan-signal"><span class="bar bar-on"></span><span class="bar"></span><span class="bar"></span></div>
+      <h3>Pluck <span class="plan-tier-badge">Free</span></h3>
+      <p class="plan-desc">Get started with real snippet management.</p>
+      <ul class="plan-features">
+        <li>Up to 100 snippets</li>
+        <li>Semantic search (shared quota)</li>
+        <li>CLI access via PAT</li>
+        <li>1 personal collection</li>
+      </ul>
+    </div>
+    <div class="plan-card pixel-border-box plan-card-pro" id="plan-pro">
+      <div class="plan-signal"><span class="bar bar-on"></span><span class="bar bar-on"></span><span class="bar"></span></div>
+      <h3>Pluck <span class="plan-tier-badge plan-tier-pro">Pro</span></h3>
+      <p class="plan-desc">For devs who ship daily and want to stay in the flow.</p>
+      <ul class="plan-features">
+        <li>Unlimited snippets</li>
+        <li>Priority semantic search p95 &lt;200ms</li>
+        <li>Full CLI + MCP server access</li>
+        <li>Unlimited collections</li>
+        <li>Team workspace (up to 5 members)</li>
+      </ul>
+    </div>
+    <div class="plan-card pixel-border-box" id="plan-team">
+      <div class="plan-signal"><span class="bar bar-on"></span><span class="bar bar-on"></span><span class="bar bar-on"></span></div>
+      <h3>Pluck <span class="plan-tier-badge plan-tier-team">Team</span></h3>
+      <p class="plan-desc">For builders who run AI-assisted dev at scale.</p>
+      <ul class="plan-features">
+        <li>Everything in Pro</li>
+        <li>Unlimited team members + RBAC</li>
+        <li>In-browser sandbox (JS/TS + Python)</li>
+        <li>Advanced activity feed + version history</li>
+        <li>Priority MCP quota + SLA</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="plans-ctas">
+    <a href="/signup" class="btn-solid-pixel" id="plans-try-btn">Try Pluck</a>
+    <a href="/docs" class="btn-outline-pixel" id="plans-docs-btn">Documentation</a>
+  </div>
+
+  <!-- Retro pixel signal decoration -->
+  <div class="plans-pixel-deco" aria-hidden="true" id="plans-pixel-deco"></div>
+</section>
+
+<!-- ░░░ FOOTER ░░░ -->
+<footer class="footer" id="footer">
+  <div class="footer-inner">
+    <span class="footer-brand">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#7c3aed" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="#7c3aed" stroke-width="2" stroke-linecap="square"/></svg>
+      Pluck Labs
+    </span>
+    <a href="/terms" class="footer-link">Terms of Service</a>
+    <a href="/privacy" class="footer-link">Privacy Policy</a>
+    <a href="https://github.com/pluck-dev" class="footer-link">GitHub</a>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
