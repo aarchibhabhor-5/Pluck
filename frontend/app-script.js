@@ -72,12 +72,16 @@ function showToast(message, type = 'info') {
   const resultsContainer = document.getElementById('cmdk-results');
 
   const SAMPLE_ITEMS = [
-    { title: 'useDebounce Hook', lang: 'TypeScript', pkg: 'react ^18', path: '/snippet.html?id=use-debounce' },
-    { title: 'JWT Sign & Verify Middleware', lang: 'TypeScript', pkg: 'jsonwebtoken', path: '/snippet.html?id=jwt-auth' },
-    { title: 'S3 Presigned URL Uploader', lang: 'Python', pkg: 'boto3', path: '/snippet.html?id=s3-upload' },
-    { title: 'Sliding Window Rate Limiter', lang: 'TypeScript', pkg: 'ioredis', path: '/snippet.html?id=redis-ratelimit' },
-    { title: 'Prisma Soft Delete Extension', lang: 'TypeScript', pkg: '@prisma/client', path: '/snippet.html?id=prisma-soft-delete' },
-    { title: 'FastAPI CORS & Error Handler', lang: 'Python', pkg: 'fastapi', path: '/snippet.html?id=fastapi-cors' }
+    { title: 'useDebounce Hook', lang: 'TypeScript', pkg: 'react ^18', path: 'snippet.html?id=use-debounce' },
+    { title: 'JWT Sign & Verify Middleware', lang: 'TypeScript', pkg: 'jsonwebtoken', path: 'snippet.html?id=jwt-auth' },
+    { title: 'S3 Presigned URL Uploader', lang: 'Python', pkg: 'boto3', path: 'snippet.html?id=s3-upload' },
+    { title: 'Sliding Window Rate Limiter', lang: 'TypeScript', pkg: 'ioredis', path: 'snippet.html?id=redis-ratelimit' },
+    { title: 'Prisma Soft Delete Extension', lang: 'TypeScript', pkg: '@prisma/client', path: 'snippet.html?id=prisma-soft-delete' },
+    { title: 'FastAPI CORS & Error Handler', lang: 'Python', pkg: 'fastapi', path: 'snippet.html?id=fastapi-cors' },
+    { title: '+ Create New Snippet', lang: 'Action', pkg: 'Studio', path: 'studio.html' },
+    { title: 'Open Team Workspace (Acme Core Eng)', lang: 'Action', pkg: 'Teams', path: 'team.html' },
+    { title: 'API Access Tokens & MCP Config', lang: 'Action', pkg: 'Settings', path: 'settings.html' },
+    { title: 'Pluck Landing Page', lang: 'Action', pkg: 'Home', path: 'index.html' }
   ];
 
   function openPalette() {

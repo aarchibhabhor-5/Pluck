@@ -120,7 +120,7 @@ export function useDebounce<T>(value: T, delay: number = ${delay}): T {
     function forkPublicSnippet() {
       showToast('Redirecting to auth to fork snippet...', 'info');
       setTimeout(() => {
-        window.location.href = 'auth.html?next=/studio.html?fork=use-debounce';
+        window.location.href = 'auth.html?next=studio.html?fork=use-debounce';
       }, 700);
     }
   </script>

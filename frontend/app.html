@@ -31,17 +31,39 @@
         <a href="settings.html" title="Settings" style="color: var(--muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></a>
       </div>
 
-      <!-- Workspace Switcher -->
-      <div style="padding: 12px 14px 4px;">
-        <div class="ws-switcher pixel-border-box" onclick="showToast('Active Workspace: Personal Vault')">
+      <!-- Workspace Switcher with Interactive Dropdown -->
+      <div style="padding: 12px 14px 4px; position: relative;">
+        <div class="ws-switcher pixel-border-box" id="ws-switcher-btn" onclick="toggleWorkspaceDropdown()" style="cursor: pointer;">
           <div class="ws-info">
-            <div class="ws-icon">P</div>
+            <div class="ws-icon" id="current-ws-icon">P</div>
             <div>
-              <div class="ws-name">Personal Vault</div>
-              <div style="font-size: 10px; color: var(--muted);">6 snippets · 0 leaks</div>
+              <div class="ws-name" id="current-ws-name">Personal Vault</div>
+              <div style="font-size: 10px; color: var(--muted);" id="current-ws-sub">6 snippets · 0 leaks</div>
             </div>
           </div>
           <span style="font-size: 10px; color: var(--purple-light);">▾</span>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div id="ws-dropdown" class="pixel-border-box" style="display: none; position: absolute; top: calc(100% + 4px); left: 14px; right: 14px; background: #0e0528; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.8); padding: 6px;">
+          <div style="padding: 6px 10px; font-size: 10px; color: var(--muted); text-transform: uppercase;">Switch Workspace</div>
+          <div onclick="selectWorkspace('personal')" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; background: rgba(124,58,237,0.2); margin-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 18px; height: 18px; background: var(--purple); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">P</span>
+              <span style="font-size: 11px; font-weight: 700; color: #fff;">Personal Vault</span>
+            </div>
+            <span style="font-size: 10px; color: var(--green);">✓</span>
+          </div>
+          <a href="team.html" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; text-decoration: none; color: #ddd6fe; margin-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">A</span>
+              <span style="font-size: 11px; font-weight: 700; color: #fff;">Acme Core Eng (Team)</span>
+            </div>
+            <span style="font-size: 10px; color: var(--purple-light);">→</span>
+          </a>
+          <div onclick="window.location.href='team.html?action=new'" style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer;">
+            + Create New Team
+          </div>
         </div>
       </div>
 
@@ -50,7 +72,7 @@
         <div>
           <div class="nav-section-title">Collections / Folders</div>
           <div class="folder-tree">
-            <a href="app.html" class="folder-item active">
+            <a href="#" class="folder-item active" onclick="filterFolder('all', event)">
               <div class="folder-left"><span>📁</span> <span>All Snippets</span></div>
               <span class="folder-count">6</span>
             </a>
@@ -110,15 +132,15 @@
 
       <!-- User Profile Footer -->
       <div class="app-sidebar-footer">
-        <div class="sidebar-user">
-          <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="sidebar-user" style="cursor: pointer;" title="Account Profile">
+          <div style="display: flex; align-items: center; gap: 10px;" onclick="window.location.href='settings.html?tab=account'">
             <div class="user-avatar">A</div>
             <div class="user-meta">
               <span class="user-name">Alex Developer</span>
               <span class="user-email">alex@pluck.dev</span>
             </div>
           </div>
-          <a href="auth.html" title="Sign Out" style="color: var(--muted); font-size: 11px;">🚪</a>
+          <a href="auth.html" title="Sign Out" onclick="return confirmSignOut(event)" style="color: var(--muted); font-size: 11px; text-decoration: none;">🚪</a>
         </div>
       </div>
     </aside>
@@ -169,7 +191,7 @@
         <div class="snippet-grid" id="snippet-grid">
 
           <!-- Card 1: useDebounce -->
-          <div class="snippet-card pixel-border-box">
+          <div class="snippet-card pixel-border-box" data-folder="hooks" data-lang="typescript" data-title="useDebounce Hook">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -204,7 +226,7 @@
           </div>
 
           <!-- Card 2: JWT Auth Middleware -->
-          <div class="snippet-card pixel-border-box">
+          <div class="snippet-card pixel-border-box" data-folder="auth" data-lang="typescript" data-title="JWT Sign & Verify">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -236,7 +258,7 @@
           </div>
 
           <!-- Card 3: S3 Presigned URL Uploader -->
-          <div class="snippet-card pixel-border-box">
+          <div class="snippet-card pixel-border-box" data-folder="aws-infra" data-lang="python" data-title="S3 Presigned Uploader">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -267,7 +289,7 @@
           </div>
 
           <!-- Card 4: Redis Sliding Window Rate Limiter -->
-          <div class="snippet-card pixel-border-box">
+          <div class="snippet-card pixel-border-box" data-folder="hooks" data-lang="typescript" data-title="Sliding Window Limiter">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -304,7 +326,7 @@
           </div>
 
           <!-- Card 5: Prisma Soft Delete Extension -->
-          <div class="snippet-card pixel-border-box">
+          <div class="snippet-card pixel-border-box" data-folder="database" data-lang="typescript" data-title="Prisma Soft Delete">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -341,7 +363,7 @@
           </div>
 
           <!-- Card 6: FastAPI CORS -->
-          <div class="snippet-card pixel-border-box">
+          <div class="snippet-card pixel-border-box" data-folder="auth" data-lang="python" data-title="FastAPI Error Handler">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -405,21 +427,87 @@ app = FastAPI()
 
   <script src="app-script.js"></script>
   <script>
+    let activeFolder = 'all';
+
+    function toggleWorkspaceDropdown() {
+      const d = document.getElementById('ws-dropdown');
+      d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function selectWorkspace(ws) {
+      document.getElementById('ws-dropdown').style.display = 'none';
+      if (ws === 'personal') {
+        showToast('Active Workspace: Personal Vault');
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const btn = document.getElementById('ws-switcher-btn');
+      const d = document.getElementById('ws-dropdown');
+      if (d && btn && !btn.contains(e.target) && !d.contains(e.target)) {
+        d.style.display = 'none';
+      }
+    });
+
     function toggleChip(el) {
       el.classList.toggle('active');
-      showToast(`Filter applied: ${el.textContent.trim()}`);
+      applyFilters();
     }
 
     function filterFolder(folderName, e) {
-      e.preventDefault();
-      document.querySelectorAll('.folder-item').forEach(f => f.classList.remove('active'));
-      e.currentTarget.classList.add('active');
-      document.getElementById('current-folder-title').textContent = `Folder: ${folderName}`;
-      showToast(`Filtering by folder: ${folderName}`);
+      if (e) e.preventDefault();
+      activeFolder = folderName;
+      document.querySelectorAll('.folder-tree .folder-item').forEach(f => f.classList.remove('active'));
+      if (e && e.currentTarget) e.currentTarget.classList.add('active');
+      document.getElementById('current-folder-title').textContent = folderName === 'all' ? 'Personal Vault' : `Folder: ${folderName}`;
+      applyFilters();
+      showToast(`Showing ${folderName === 'all' ? 'all snippets' : 'folder: ' + folderName}`);
+    }
+
+    function applyFilters() {
+      const cards = document.querySelectorAll('.snippet-card');
+      let visibleCount = 0;
+
+      const activeChips = Array.from(document.querySelectorAll('.filter-group:nth-of-type(1) .filter-chip.active'))
+        .map(c => c.textContent.split(' ')[0].toLowerCase());
+
+      cards.forEach(card => {
+        const folder = card.getAttribute('data-folder');
+        const lang = card.getAttribute('data-lang');
+
+        let matchFolder = (activeFolder === 'all' || folder === activeFolder);
+        let matchLang = (activeChips.length === 0 || activeChips.includes(lang));
+
+        if (matchFolder && matchLang) {
+          card.style.display = 'flex';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      document.getElementById('item-count-label').textContent = `${visibleCount} battle-tested snippet${visibleCount === 1 ? '' : 's'}`;
     }
 
     function sortSnippets(val) {
+      const grid = document.getElementById('snippet-grid');
+      const cards = Array.from(grid.querySelectorAll('.snippet-card'));
+
+      if (val === 'title') {
+        cards.sort((a, b) => a.getAttribute('data-title').localeCompare(b.getAttribute('data-title')));
+      } else {
+        // default order
+      }
+      cards.forEach(c => grid.appendChild(c));
       showToast(`Sorted by: ${val}`);
+    }
+
+    function confirmSignOut(e) {
+      if (!confirm('Are you sure you want to sign out of Pluck?')) {
+        e.preventDefault();
+        return false;
+      }
+      return true;
     }
   </script>
 </body>

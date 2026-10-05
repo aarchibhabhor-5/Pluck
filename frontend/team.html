@@ -227,6 +227,12 @@
       });
     }
 
+    // Read ?tab= query parameter on load
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab')) {
+      switchTeamTab(params.get('tab'));
+    }
+
     function inviteMemberPrompt() {
       const email = prompt('Enter colleague email address:');
       if (email) {

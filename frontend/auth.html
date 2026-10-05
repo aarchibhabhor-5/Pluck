@@ -151,6 +151,9 @@
       }
     }
 
+    const params = new URLSearchParams(window.location.search);
+    const nextUrl = params.get('next') || 'app.html';
+
     function handleAuthSubmit(e) {
       e.preventDefault();
       const email = document.getElementById('email').value;
@@ -161,7 +164,7 @@
       setTimeout(() => {
         showToast('Authentication successful! Welcome to Pluck.', 'success');
         setTimeout(() => {
-          window.location.href = 'app.html';
+          window.location.href = nextUrl;
         }, 600);
       }, 700);
     }
@@ -169,7 +172,7 @@
     function simulateOAuth(provider) {
       showToast(`Redirecting to ${provider} OAuth...`, 'info');
       setTimeout(() => {
-        window.location.href = 'app.html';
+        window.location.href = nextUrl;
       }, 700);
     }
 
@@ -182,7 +185,6 @@
     }
 
     // Read query parameter ?mode=signup
-    const params = new URLSearchParams(window.location.search);
     if (params.get('mode') === 'signup') {
       switchAuthMode('signup');
     }

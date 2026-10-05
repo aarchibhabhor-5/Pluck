@@ -205,6 +205,9 @@
                 <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('Connecting Google account...')">Connect Google</button>
               </div>
             </div>
+            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--purple-dim);">
+              <a href="auth.html" class="btn-outline-danger" style="text-decoration: none; display: inline-block; padding: 8px 14px;">Sign Out of Pluck</a>
+            </div>
           </div>
         </div>
 
@@ -222,6 +225,12 @@
         const secEl = document.getElementById(`section-${t}`);
         if (secEl) secEl.style.display = t === tab ? 'flex' : 'none';
       });
+    }
+
+    // Read ?tab= query parameter on load
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab')) {
+      switchSettingsTab(params.get('tab'));
     }
 
     function openTokenModal() {
