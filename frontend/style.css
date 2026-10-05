@@ -1412,3 +1412,169 @@ footer {
     align-items: center;
   }
 }
+
+/* ── Video Explainer Walkthrough Player ────────────────── */
+.walkthrough-player-container {
+  max-width: 980px;
+  margin: 0 auto 60px;
+  position: relative;
+  z-index: 2;
+}
+
+.walkthrough-player-box {
+  background: #0c0422;
+  border: 2px solid var(--purple-dim);
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.walkthrough-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: #16083c;
+  border-bottom: 2px solid var(--purple-dim);
+}
+
+.walkthrough-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.w-dot {
+  width: 10px;
+  height: 10px;
+}
+.w-dot-red { background: #ef4444; }
+.w-dot-yellow { background: #f59e0b; }
+.w-dot-green { background: #10b981; }
+
+.walkthrough-title {
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--white);
+  letter-spacing: 0.5px;
+}
+
+.walkthrough-screen {
+  position: relative;
+  width: 100%;
+  background: #070214;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.walkthrough-media {
+  width: 100%;
+  max-height: 520px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  background: #09031c;
+}
+
+.walkthrough-screen::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+  z-index: 2;
+  background-size: 100% 3px, 6px 100%;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.walkthrough-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  background: #0f0528;
+  border-top: 2px solid var(--purple-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.walkthrough-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(124, 58, 237, 0.25);
+  position: relative;
+  cursor: pointer;
+  border: 1px solid var(--purple-dim);
+}
+
+.walkthrough-progress-fill {
+  height: 100%;
+  width: 25%;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  position: relative;
+  transition: width 0.3s ease;
+}
+
+.walkthrough-chapters-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.chapter-btn {
+  background: #11052f;
+  border: 1px solid var(--purple-dim);
+  padding: 12px 14px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--white);
+  transition: all 0.2s ease;
+}
+
+.chapter-btn:hover,
+.chapter-btn.active {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.12);
+  box-shadow: 2px 2px 0 0 var(--cyan);
+}
+
+.chapter-num {
+  font-family: var(--pixel);
+  font-size: 8px;
+  color: var(--yellow);
+  margin-bottom: 4px;
+}
+
+.chapter-title {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.walkthrough-guide-card {
+  margin-top: 16px;
+  background: #100630;
+  border: 2px solid var(--purple-dim);
+  padding: 18px 24px;
+  box-shadow: 4px 4px 0 0 rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .walkthrough-chapters-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .walkthrough-chapters-bar {
+    grid-template-columns: 1fr;
+  }
+}

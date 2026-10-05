@@ -994,3 +994,133 @@
     animate();
   });
 })();
+
+/* ── 14. Interactive Step-by-Step Video Walkthrough Player ────────── */
+const WALKTHROUGH_STEPS = {
+  1: {
+    badge: 'STEP 1 OF 4',
+    title: 'Discover & Search by Intent',
+    desc: 'Open your vault at /app and press ⌘K (or Ctrl+K). Describe in natural language what you need (e.g. "debounce input react" or "s3 upload python") — Pluck\'s hybrid vector engine matches code by semantic meaning, not just exact titles.',
+    link: 'app.html',
+    linkText: 'Try Step 1 in Vault →',
+    progress: 25,
+    time: '00:32 / 02:10'
+  },
+  2: {
+    badge: 'STEP 2 OF 4',
+    title: 'Studio & 1-Click Secret Redaction',
+    desc: 'Paste any snippet into the Studio (/studio). The AST engine scans imports in real-time and immediately highlights credentials (Stripe keys, AWS keys, PATs). Click "Redact → process.env.KEY" to safely convert hardcoded secrets into secure environment references.',
+    link: 'studio.html',
+    linkText: 'Open Studio to Test →',
+    progress: 50,
+    time: '01:05 / 02:10'
+  },
+  3: {
+    badge: 'STEP 3 OF 4',
+    title: 'Interactive Variables & In-Browser Runner',
+    desc: 'Need custom parameters? In the snippet detail page (/snippet), change dynamic {{variables}} like delay, port, or limits on the fly. Pluck updates the code in real-time and automatically derives exact npm, pnpm, and yarn install commands. Run QuickJS sandboxed tests directly in your browser.',
+    link: 'snippet.html?id=use-debounce',
+    linkText: 'Test Variables & Sandbox →',
+    progress: 75,
+    time: '01:42 / 02:10'
+  },
+  4: {
+    badge: 'STEP 4 OF 4',
+    title: 'Connect AI Coding Assistants (Claude / Cursor MCP)',
+    desc: 'Generate Personal Access Tokens (PAT) in Settings. Pluck provides ready-to-paste Model Context Protocol (MCP) JSON configurations for Claude Desktop and Cursor, so your AI pair-programmer retrieves your verified snippets instead of hallucinating outdated code.',
+    link: 'settings.html?tab=climcp',
+    linkText: 'View MCP Configuration →',
+    progress: 100,
+    time: '02:10 / 02:10'
+  }
+};
+
+let currentChapter = 1;
+let isPlaying = true;
+let currentProgress = 25;
+let playbackSpeed = 1.0;
+let progressTimer = null;
+
+function selectChapter(step) {
+  currentChapter = step;
+  const data = WALKTHROUGH_STEPS[step];
+  if (!data) return;
+
+  // Update tabs
+  for (let i = 1; i <= 4; i++) {
+    const btn = document.getElementById(`chap-btn-${i}`);
+    if (btn) btn.classList.toggle('active', i === step);
+  }
+
+  // Update explainer card
+  const badgeEl = document.getElementById('guide-step-badge');
+  const titleEl = document.getElementById('guide-step-title');
+  const descEl = document.getElementById('guide-step-desc');
+  const linkEl = document.getElementById('guide-step-link');
+
+  if (badgeEl) badgeEl.textContent = data.badge;
+  if (titleEl) titleEl.textContent = data.title;
+  if (descEl) descEl.innerHTML = data.desc;
+  if (linkEl) {
+    linkEl.href = data.link;
+    linkEl.textContent = data.linkText;
+  }
+
+  // Update progress bar
+  currentProgress = data.progress;
+  const fill = document.getElementById('walkthrough-progress-fill');
+  const time = document.getElementById('walkthrough-time');
+  if (fill) fill.style.width = `${currentProgress}%`;
+  if (time) time.textContent = data.time;
+}
+
+function toggleWalkthroughPlay() {
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('btn-video-play');
+  if (btn) {
+    btn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+  }
+}
+
+function restartWalkthrough() {
+  selectChapter(1);
+  isPlaying = true;
+  const btn = document.getElementById('btn-video-play');
+  if (btn) btn.textContent = '⏸ Pause';
+}
+
+function seekWalkthrough(e) {
+  const bar = document.getElementById('walkthrough-progress-bar');
+  if (!bar) return;
+  const rect = bar.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const step = Math.min(4, Math.max(1, Math.ceil(ratio * 4)));
+  selectChapter(step);
+}
+
+function toggleSpeed() {
+  const btn = document.getElementById('btn-speed');
+  if (playbackSpeed === 1.0) playbackSpeed = 1.5;
+  else if (playbackSpeed === 1.5) playbackSpeed = 2.0;
+  else playbackSpeed = 1.0;
+  if (btn) btn.textContent = `${playbackSpeed.toFixed(1)}x`;
+}
+
+function toggleFullscreen() {
+  const screen = document.getElementById('walkthrough-screen');
+  if (!screen) return;
+  if (!document.fullscreenElement) {
+    screen.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+// Auto-advance through chapters smoothly every 8 seconds when playing
+setInterval(() => {
+  if (!isPlaying) return;
+  let next = currentChapter + 1;
+  if (next > 4) next = 1;
+  selectChapter(next);
+}, 8000);
+

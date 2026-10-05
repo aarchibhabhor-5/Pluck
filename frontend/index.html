@@ -207,6 +207,105 @@
   <!-- ░░░ HOW IT WORKS (STEPS) ░░░ -->
   <section class="steps-section" id="how-it-works">
 
+    <!-- ░░░ HOW IT WORKS SECTION HEADER & VIDEO EXPLAINER ░░░ -->
+    <div style="text-align: center; max-width: 820px; margin: 0 auto 36px;">
+      <div style="font-family: var(--pixel); font-size: 9px; display: inline-block; padding: 6px 12px; margin-bottom: 12px; color: var(--cyan); border: 1px solid var(--cyan); background: rgba(6,182,212,0.1);">
+        ● STEP-BY-STEP VIDEO GUIDE
+      </div>
+      <h2 style="font-family: var(--pixel); font-size: 18px; color: var(--white); line-height: 1.6; margin-bottom: 12px;">
+        How To Use Pluck
+      </h2>
+      <p style="font-family: var(--mono); font-size: 13px; color: #ddd6fe; line-height: 1.7;">
+        New to Pluck? Watch this step-by-step product walkthrough to learn how to search by intent with ⌘K, auto-redact secrets in Studio, customize runtime variables, and connect your AI coding assistants.
+      </p>
+    </div>
+
+    <!-- Interactive Step-by-Step Video Walkthrough Player -->
+    <div class="walkthrough-player-container">
+      <div class="walkthrough-player-box">
+        <!-- CRT Window Header -->
+        <div class="walkthrough-player-header">
+          <div class="walkthrough-dots">
+            <span class="w-dot w-dot-red"></span>
+            <span class="w-dot w-dot-yellow"></span>
+            <span class="w-dot w-dot-green"></span>
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--purple-light); margin-left: 6px;">pluck_walkthrough_guide.mp4</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="dep-chip" style="color: #ef4444; border-color: #ef4444; font-size: 9px;">● REC</span>
+            <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan); font-size: 9px;">1080p RETRO</span>
+          </div>
+        </div>
+
+        <!-- Video Screen Viewport -->
+        <div class="walkthrough-screen" id="walkthrough-screen">
+          <img src="pluck-walkthrough.webp" alt="Pluck Step-by-Step Walkthrough" class="walkthrough-media" id="walkthrough-media-element" />
+        </div>
+
+        <!-- Custom Controls Bar -->
+        <div class="walkthrough-controls">
+          <button class="btn-solid-pixel" id="btn-video-play" onclick="toggleWalkthroughPlay()" style="font-size: 10px; padding: 4px 10px;">
+            ⏸ Pause
+          </button>
+          <button class="btn-outline-pixel" onclick="restartWalkthrough()" style="font-size: 10px; padding: 4px 8px;" title="Replay from start">
+            ↺ Replay
+          </button>
+
+          <!-- Timeline Scrubber -->
+          <div class="walkthrough-progress-bar" id="walkthrough-progress-bar" onclick="seekWalkthrough(event)">
+            <div class="walkthrough-progress-fill" id="walkthrough-progress-fill"></div>
+          </div>
+
+          <span id="walkthrough-time" style="color: var(--cyan); font-size: 11px; min-width: 80px;">00:35 / 02:10</span>
+          
+          <button class="btn-outline-pixel" id="btn-speed" onclick="toggleSpeed()" style="font-size: 10px; padding: 4px 8px;">
+            1.0x
+          </button>
+          <button class="btn-icon-pixel" onclick="toggleFullscreen()" title="Fullscreen" style="font-size: 12px; padding: 2px 6px;">
+            ⛶
+          </button>
+        </div>
+      </div>
+
+      <!-- Step-by-Step Chapter Selectors -->
+      <div class="walkthrough-chapters-bar">
+        <button class="chapter-btn active" id="chap-btn-1" onclick="selectChapter(1)">
+          <div class="chapter-num">STEP 01</div>
+          <div class="chapter-title">Vault &amp; ⌘K Search</div>
+        </button>
+        <button class="chapter-btn" id="chap-btn-2" onclick="selectChapter(2)">
+          <div class="chapter-num">STEP 02</div>
+          <div class="chapter-title">Studio &amp; Secret Redact</div>
+        </button>
+        <button class="chapter-btn" id="chap-btn-3" onclick="selectChapter(3)">
+          <div class="chapter-num">STEP 03</div>
+          <div class="chapter-title">Variables &amp; Sandbox</div>
+        </button>
+        <button class="chapter-btn" id="chap-btn-4" onclick="selectChapter(4)">
+          <div class="chapter-num">STEP 04</div>
+          <div class="chapter-title">AI MCP &amp; CLI Sync</div>
+        </button>
+      </div>
+
+      <!-- Active Step Explainer Guidance Card -->
+      <div class="walkthrough-guide-card" id="walkthrough-guide-card">
+        <div style="flex: 1; min-width: 280px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span id="guide-step-badge" class="dep-chip" style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">STEP 1 OF 4</span>
+            <h3 id="guide-step-title" style="font-family: var(--mono); font-size: 15px; color: var(--white); font-weight: 700;">Discover &amp; Search by Intent</h3>
+          </div>
+          <p id="guide-step-desc" style="font-size: 12px; color: #ddd6fe; line-height: 1.6;">
+            Open your vault at <code style="color: var(--cyan);">/app</code> and press <code style="color: var(--yellow);">⌘K</code> (or Ctrl+K). Describe in natural language what you need (e.g. <em>"debounce input react"</em> or <em>"s3 upload python"</em>) — Pluck's hybrid vector engine matches code by semantic meaning, not just exact titles.
+          </p>
+        </div>
+        <div style="flex-shrink: 0;">
+          <a id="guide-step-link" href="app.html" class="btn-solid-pixel" style="font-size: 11px; padding: 10px 18px; display: inline-block;">
+            Try Step 1 in Vault →
+          </a>
+        </div>
+      </div>
+    </div>
+
     <!-- Step 1 -->
     <div class="step-row step-row-right">
       <div class="step-text">
