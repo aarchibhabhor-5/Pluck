@@ -1,0 +1,35 @@
+/* =====================================================
+   PLUCK — Cursor Grid Background Engine (React Bits Variant)
+   Full-page interactive terminal lattice for Authentication
+   ===================================================== */
+
+.cursor-grid-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  background-color: #0A0A0A;
+  display: block;
+}
+
+/* Auth card frosted terminal elevation over CursorGrid */
+.auth-page {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-card {
+  background: rgba(17, 24, 39, 0.9) !important;
+  border: 1px solid #334155 !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.9),
+    0 0 24px rgba(0, 242, 254, 0.12) !important;
+}
+
+.auth-card:hover {
+  border-color: rgba(6, 182, 212, 0.4) !important;
+}

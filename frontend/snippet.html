@@ -12,6 +12,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="magic-bento.css" />
+  <link rel="stylesheet" href="border-glow.css" />
 </head>
 
 <body>
@@ -113,7 +115,7 @@
           </div>
 
           <!-- Tab 1: Code View -->
-          <div id="view-code" style="background: rgba(10, 3, 30, 0.95); border: 1px solid var(--purple-dim); padding: 20px;">
+          <div id="view-code" style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 20px;">
             <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code id="interpolated-code-display"><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
 
 <span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = <span id="code-var-delay" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 1px 4px; border: 1px dashed #f59e0b;">300</span>): T {
@@ -130,7 +132,7 @@
 
           <!-- Tab 2: Runner Panel (Sandbox PRD §2.3.12) -->
           <div id="view-run" style="display: none; flex-direction: column; gap: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim);">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(22, 22, 26, 0.7); border: 1px solid rgba(139, 92, 246, 0.25);">
               <span style="font-size: 12px; color: var(--white);">QuickJS Isolated Sandbox · Max 64MB · 5s timeout</span>
               <button class="btn-solid-pixel" onclick="executeSandbox()" style="font-size: 11px; padding: 6px 14px;">▶ Execute In Sandbox</button>
             </div>
@@ -144,7 +146,7 @@
               <span style="font-size: 13px; font-weight: 700; color: var(--white);">Version History</span>
               <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">Optimistic Concurrency</span>
             </div>
-            <div class="pixel-border-box mockup-diff" style="background: #09031c; padding: 16px;">
+            <div class="pixel-border-box mockup-diff" style="background: #101012; border: 1px solid rgba(139, 92, 246, 0.25); padding: 16px;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--purple-dim); padding-bottom: 8px;">
                 <span style="color: var(--white); font-weight: 700;">Diff: v1.1 → v1.2 (Current)</span>
                 <button class="btn-outline-pixel" style="font-size: 10px;" onclick="showToast('Restored version v1.1', 'info')">Restore v1.1</button>
@@ -157,7 +159,7 @@
           </div>
 
           <!-- Tab 4: Details Tab -->
-          <div id="view-details" style="display: none; flex-direction: column; gap: 14px; background: rgba(14,5,40,0.8); border: 1px solid var(--purple-dim); padding: 20px;">
+          <div id="view-details" style="display: none; flex-direction: column; gap: 14px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 20px;">
             <div>
               <div class="nav-section-title">AI Intent Summary (Embedding Model)</div>
               <p style="font-size: 12px; color: #ddd6fe; line-height: 1.6; margin-top: 6px;">
@@ -255,6 +257,8 @@ export function useDebounce<T>(value: T, delay: number = ${delayVal}): T {
       }, 700);
     }
   </script>
+  <script src="magic-bento.js"></script>
+  <script src="border-glow.js"></script>
 </body>
 
 </html>

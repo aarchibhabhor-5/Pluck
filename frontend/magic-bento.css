@@ -1,0 +1,191 @@
+/* =====================================================
+   PLUCK — Magic Bento Card Engine (React Bits Variant)
+   Active strictly on direct card hover:
+   Spotlight Glow, Border Highlight, Floating Twinkling Particles, 3D Tilt, Ripple
+   Strictly contained inside card boundaries without any bleed
+   ===================================================== */
+
+/* Base card styling enhancements for Magic Bento */
+.snippet-card,
+.feat-card,
+.plan-card,
+.magic-bento-card,
+.walkthrough-guide-card {
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  --glow-radius: 280px;
+  --glow-color: 6, 182, 212; /* Electric Cyan */
+  position: relative !important;
+  overflow: hidden !important;
+  contain: paint;
+  border-radius: var(--border-radius, 6px);
+  transform-style: preserve-3d;
+  will-change: transform, box-shadow;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Ensure inner card content is securely positioned above all dynamic glow layers */
+.snippet-card > *:not(.bento-fx-layer):not(.edge-light),
+.feat-card > *:not(.bento-fx-layer):not(.edge-light),
+.plan-card > *:not(.bento-fx-layer):not(.edge-light),
+.magic-bento-card > *:not(.bento-fx-layer):not(.edge-light),
+.walkthrough-guide-card > *:not(.bento-fx-layer):not(.edge-light) {
+  position: relative;
+  z-index: 5;
+}
+
+/* ── Isolated Internal FX Clipping Layer (Strict Containment) ── */
+.bento-fx-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden !important;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  contain: paint;
+}
+
+/* ── Magic Bento Ambient Spotlight Glow (Tracks Cursor Inside Card) ── */
+.bento-spotlight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    var(--glow-radius, 280px) circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(var(--glow-color, 6, 182, 212), calc(var(--glow-intensity, 0) * 0.18)) 0%,
+    rgba(var(--glow-color, 6, 182, 212), calc(var(--glow-intensity, 0) * 0.08)) 38%,
+    transparent 70%
+  );
+  opacity: var(--glow-intensity, 0);
+  transition: opacity 0.25s ease;
+  z-index: 1;
+}
+
+/* ── Magic Bento Electric Cyan Border Highlight (Tracks Cursor along Perimeter) ── */
+.bento-border-highlight {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  padding: 1.5px;
+  background: radial-gradient(
+    var(--glow-radius, 260px) circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(var(--glow-color, 6, 182, 212), calc(var(--glow-intensity, 0) * 0.95)) 0%,
+    rgba(var(--glow-color, 6, 182, 212), calc(var(--glow-intensity, 0) * 0.4)) 32%,
+    transparent 65%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: var(--glow-intensity, 0);
+  transition: opacity 0.25s ease;
+  z-index: 2;
+}
+
+/* Neutral Slate card backgrounds */
+.snippet-card {
+  background: #111827 !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.7) !important;
+}
+
+.snippet-card-header {
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.snippet-card-preview {
+  background: #0b0f19 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.snippet-card-footer {
+  background: rgba(15, 23, 42, 0.85) !important;
+}
+
+/* Card hover enhancements */
+.snippet-card:hover,
+.feat-card:hover,
+.plan-card:hover {
+  border-color: rgba(6, 182, 212, 0.45) !important;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.45),
+    0 16px 32px -4px rgba(0, 0, 0, 0.85),
+    0 0 24px rgba(6, 182, 212, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* ── Twinkling & Floating Star Particles (Strictly Contained Inside Card) ── */
+@keyframes bentoParticleDrift {
+  0% {
+    transform: translate(0, 0) scale(0.75);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate(var(--dx, 8px), var(--dy, -8px)) scale(1.3);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--dx2, -8px), var(--dy2, 8px)) scale(0.75);
+    opacity: 0.35;
+  }
+}
+
+.bento-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #22d3ee;
+  box-shadow: 0 0 6px 1px rgba(6, 182, 212, 0.95), 0 0 14px rgba(6, 182, 212, 0.5);
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  animation: bentoParticleDrift var(--duration, 2.6s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+  transition: opacity 0.3s ease;
+  contain: strict;
+}
+
+.bento-particle.active {
+  opacity: 1;
+}
+
+.bento-particle::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: rgba(6, 182, 212, 0.35);
+  border-radius: 50%;
+}
+
+/* ── Click Ripple Glow Effect (Strictly Contained Inside Card) ── */
+.bento-ripple {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.6) 0%, rgba(6, 182, 212, 0.2) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 5;
+  transform: scale(0);
+  opacity: 1;
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  contain: strict;
+}
+
+.bento-ripple.active {
+  opacity: 0;
+}

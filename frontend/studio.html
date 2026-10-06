@@ -12,6 +12,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="border-glow.css" />
 </head>
 
 <body>
@@ -115,11 +116,11 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
           <div>
             <div class="nav-section-title">Detected Dependencies (AST)</div>
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim);">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(24, 24, 28, 0.7); border: 1px solid rgba(139, 92, 246, 0.25);">
                 <span style="font-weight: 700; color: var(--pink-light);">react</span>
                 <input type="text" value="^18.3.1" class="var-input" style="width: 80px; font-size: 11px;" placeholder="version" />
               </div>
-              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim);">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(24, 24, 28, 0.7); border: 1px solid rgba(139, 92, 246, 0.25);">
                 <span style="font-weight: 700; color: var(--pink-light);">axios</span>
                 <input type="text" value="^1.7.0" class="var-input" style="width: 80px; font-size: 11px;" placeholder="version" />
               </div>
@@ -144,7 +145,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
           <div class="nav-section-title">Dynamic Interpolated Variables</div>
           <p style="font-size: 11px; color: var(--muted); line-height: 1.5;">Syntax: <code>{{name|default}}</code>. Values can be filled before copying.</p>
 
-          <div style="padding: 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim); margin-top: 8px;">
+          <div style="padding: 12px; background: rgba(24, 24, 28, 0.7); border: 1px solid rgba(139, 92, 246, 0.25); margin-top: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <span style="color: var(--yellow); font-weight: 700;">{{delay}}</span>
               <span class="dep-chip" style="font-size: 9px;">number</span>
@@ -163,7 +164,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
         <!-- Inspector Content: Env Tab -->
         <div class="inspector-content" id="panel-env" style="display: none;">
           <div class="nav-section-title">Environment Variables</div>
-          <div style="padding: 12px; background: rgba(20,7,56,0.6); border: 1px solid var(--purple-dim); margin-top: 8px;">
+          <div style="padding: 12px; background: rgba(24, 24, 28, 0.7); border: 1px solid rgba(139, 92, 246, 0.25); margin-top: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="color: var(--cyan); font-weight: 700;">STRIPE_KEY</span>
               <span class="dep-chip" style="color: #ef4444; border-color: #ef4444;">Secret</span>
@@ -260,6 +261,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
     });
   </script>
+  <script src="border-glow.js"></script>
 </body>
 
 </html>

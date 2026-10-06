@@ -12,11 +12,13 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="cursor-grid.css" />
+  <link rel="stylesheet" href="border-glow.css" />
 </head>
 
 <body>
-  <!-- Full-page Matrix Rain -->
-  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+  <!-- Interactive Terminal Cursor Grid Background -->
+  <canvas id="cursor-grid-canvas" class="cursor-grid-canvas" aria-hidden="true"></canvas>
 
   <div class="auth-page">
     <div class="auth-card pixel-border-box">
@@ -189,6 +191,8 @@
       switchAuthMode('signup');
     }
   </script>
+  <script src="cursor-grid.js"></script>
+  <script src="border-glow.js"></script>
 </body>
 
 </html>

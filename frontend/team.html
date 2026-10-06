@@ -12,6 +12,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="magic-bento.css" />
+  <link rel="stylesheet" href="border-glow.css" />
 </head>
 
 <body>
@@ -34,10 +36,14 @@
         <div style="margin-top: 14px;">
           <div class="nav-section-title">Team Tabs</div>
           <div class="folder-tree">
-            <a href="#" class="folder-item active" id="tab-nav-collections" onclick="switchTeamTab('collections', event)">📁 Collections</a>
-            <a href="#" class="folder-item" id="tab-nav-members" onclick="switchTeamTab('members', event)">👥 Members (4)</a>
-            <a href="#" class="folder-item" id="tab-nav-activity" onclick="switchTeamTab('activity', event)">⚡ Audit Activity</a>
-            <a href="#" class="folder-item" id="tab-nav-settings" onclick="switchTeamTab('settings', event)">⚙️ Team Settings</a>
+            <a href="#" class="folder-item active" id="tab-nav-collections"
+              onclick="switchTeamTab('collections', event)">📁 Collections</a>
+            <a href="#" class="folder-item" id="tab-nav-members" onclick="switchTeamTab('members', event)">👥 Members
+              (4)</a>
+            <a href="#" class="folder-item" id="tab-nav-activity" onclick="switchTeamTab('activity', event)">⚡ Audit
+              Activity</a>
+            <a href="#" class="folder-item" id="tab-nav-settings" onclick="switchTeamTab('settings', event)">⚙️ Team
+              Settings</a>
           </div>
         </div>
       </div>
@@ -47,8 +53,10 @@
     <main class="app-main">
       <header class="app-topbar">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Acme Core Eng</h2>
-          <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">Team Admin</span>
+          <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Acme Core Eng
+          </h2>
+          <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">Team
+            Admin</span>
         </div>
         <div class="topbar-actions">
           <button class="btn-solid-pixel" onclick="inviteMemberPrompt()">+ Invite Member</button>
@@ -62,30 +70,37 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
               <h3 style="font-size: 18px; color: var(--white);">Team Collections</h3>
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Shared snippet folders accessible to all Acme Core Eng engineers.</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Shared snippet folders accessible to all
+                Acme Core Eng engineers.</p>
             </div>
             <button class="btn-outline-pixel" onclick="showToast('Created new collection')">+ New Collection</button>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
-            <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95); cursor: pointer;" onclick="window.location.href='app.html'">
+            <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); cursor: pointer;"
+              onclick="window.location.href='app.html'">
               <div style="font-size: 20px; margin-bottom: 8px;">🔐</div>
               <h4 style="font-size: 14px; color: var(--white);">auth-middleware</h4>
-              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">JWT verification, RBAC guards, and session decryptors.</p>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">JWT verification, RBAC guards, and
+                session decryptors.</p>
               <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">8 verified snippets</div>
             </div>
 
-            <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95); cursor: pointer;" onclick="window.location.href='app.html'">
+            <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); cursor: pointer;"
+              onclick="window.location.href='app.html'">
               <div style="font-size: 20px; margin-bottom: 8px;">☁️</div>
               <h4 style="font-size: 14px; color: var(--white);">aws-infrastructure</h4>
-              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Boto3 client setups, DynamoDB pagination, and S3 uploaders.</p>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Boto3 client setups, DynamoDB
+                pagination, and S3 uploaders.</p>
               <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">12 verified snippets</div>
             </div>
 
-            <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95); cursor: pointer;" onclick="window.location.href='app.html'">
+            <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); cursor: pointer;"
+              onclick="window.location.href='app.html'">
               <div style="font-size: 20px; margin-bottom: 8px;">🗄️</div>
               <h4 style="font-size: 14px; color: var(--white);">prisma-extensions</h4>
-              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Soft delete, audit logging triggers, and read-replica routers.</p>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Soft delete, audit logging triggers, and
+                read-replica routers.</p>
               <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">5 verified snippets</div>
             </div>
           </div>
@@ -96,15 +111,19 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
               <h3 style="font-size: 18px; color: var(--white);">Team Members</h3>
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Role-based access control. Server-authoritative write permissions.</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Role-based access control.
+                Server-authoritative write permissions.</p>
             </div>
             <button class="btn-solid-pixel" onclick="inviteMemberPrompt()">+ Invite Member</button>
           </div>
 
-          <div style="background: rgba(16,6,48,0.95); border: 1px solid var(--purple-dim); box-shadow: 4px 4px 0 0 rgba(0,0,0,0.6); overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
+          <div
+            style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7), 4px 4px 0 0 rgba(0,0,0,0.8); overflow-x: auto;">
+            <table
+              style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
               <thead>
-                <tr style="border-bottom: 1px solid var(--purple-dim); background: rgba(12,4,36,0.8); color: var(--muted); font-size: 10px;">
+                <tr
+                  style="border-bottom: 1px solid rgba(139, 92, 246, 0.2); background: rgba(18, 18, 20, 0.9); color: var(--muted); font-size: 10px;">
                   <th style="padding: 12px 16px;">MEMBER</th>
                   <th style="padding: 12px 16px;">EMAIL</th>
                   <th style="padding: 12px 16px;">ROLE</th>
@@ -115,7 +134,8 @@
                 <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
                   <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Alex Developer (You)</td>
                   <td style="padding: 14px 16px; color: var(--muted);">alex@pluck.dev</td>
-                  <td style="padding: 14px 16px;"><span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">Admin</span></td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip"
+                      style="color: var(--yellow); border-color: var(--yellow);">Admin</span></td>
                   <td style="padding: 14px 16px; text-align: right; color: var(--muted); font-size: 11px;">Owner</td>
                 </tr>
                 <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
@@ -155,22 +175,28 @@
         <div id="team-section-activity" style="display: none; flex-direction: column; gap: 20px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Team Audit Log</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Live feed polling every 30s. Every snippet modification is version-tracked.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Live feed polling every 30s. Every snippet
+              modification is version-tracked.</p>
           </div>
 
-          <div style="background: rgba(16,6,48,0.95); border: 1px solid var(--purple-dim); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
+          <div
+            style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="color: var(--cyan);">●</span>
-                <span style="color: var(--white); font-size: 12px;"><strong>Sarah Jenkins</strong> updated <code style="color: var(--purple-light);">auth-middleware</code> (v1.3)</span>
+                <span style="color: var(--white); font-size: 12px;"><strong>Sarah Jenkins</strong> updated <code
+                    style="color: var(--purple-light);">auth-middleware</code> (v1.3)</span>
               </div>
               <span style="font-size: 10px; color: var(--muted);">12m ago</span>
             </div>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="color: var(--green);">●</span>
-                <span style="color: var(--white); font-size: 12px;"><strong>Alex Developer</strong> created snippet <code style="color: var(--purple-light);">redis-ratelimit</code></span>
+                <span style="color: var(--white); font-size: 12px;"><strong>Alex Developer</strong> created snippet
+                  <code style="color: var(--purple-light);">redis-ratelimit</code></span>
               </div>
               <span style="font-size: 10px; color: var(--muted);">2h ago</span>
             </div>
@@ -178,7 +204,8 @@
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <span style="color: var(--pink);">●</span>
-                <span style="color: var(--white); font-size: 12px;"><strong>Leo Chen</strong> copied <code style="color: var(--purple-light);">s3-presigned-upload</code> via CLI</span>
+                <span style="color: var(--white); font-size: 12px;"><strong>Leo Chen</strong> copied <code
+                    style="color: var(--purple-light);">s3-presigned-upload</code> via CLI</span>
               </div>
               <span style="font-size: 10px; color: var(--muted);">5h ago</span>
             </div>
@@ -189,24 +216,30 @@
         <div id="team-section-settings" style="display: none; flex-direction: column; gap: 20px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Team Policy &amp; Security Controls</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Configure workspace-wide security guardrails.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Configure workspace-wide security
+              guardrails.</p>
           </div>
 
-          <div class="pixel-border-box" style="padding: 20px; background: rgba(16,6,48,0.95); display: flex; flex-direction: column; gap: 16px;">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
+          <div class="pixel-border-box"
+            style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 16px;">
+            <label
+              style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
               <input type="checkbox" checked />
               <span>Strict Secret Gating: Block saving snippets with detected high/critical secrets</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
+            <label
+              style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
               <input type="checkbox" checked />
               <span>Only Team Admins can publish snippets to Public or Unlisted scope</span>
             </label>
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
+            <label
+              style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
               <input type="checkbox" checked />
               <span>Enable AI MCP Server Access for Team Collections</span>
             </label>
             <div style="margin-top: 10px;">
-              <button class="btn-solid-pixel" onclick="showToast('Team policies updated', 'success')">Save Policies</button>
+              <button class="btn-solid-pixel" onclick="showToast('Team policies updated', 'success')">Save
+                Policies</button>
             </div>
           </div>
         </div>
@@ -247,6 +280,8 @@
       }
     }
   </script>
+  <script src="magic-bento.js"></script>
+  <script src="border-glow.js"></script>
 </body>
 
 </html>

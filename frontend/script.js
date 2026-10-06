@@ -35,7 +35,7 @@
 
   function draw() {
     // Fade trail
-    ctx.fillStyle = 'rgba(14, 5, 40, 0.06)';
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.07)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.font = `${FONT_SIZE}px 'Space Mono', monospace`;
@@ -92,10 +92,10 @@
     fontSize: 15,
     fontFamily: "'Space Mono', 'SF Mono', monospace",
     fontWeight: 'bold',
-    textColor: '#A78BFA',
-    backgroundColor: '#1D0245',
+    textColor: '#4ade80',
+    backgroundColor: '#121212',
     emptySlotChar: '.',
-    emptySlotColor: '#3B1E6E',
+    emptySlotColor: '#242429',
     ejectedPieceColors: ['#EC4899', '#06B6D4', '#F59E0B', '#C084FC'],
     ejectionIntervalMs: 1200,
     ejectedPieceBaseSpeed: 2.2,
@@ -585,7 +585,7 @@
         // Keep inside right half of octopus
         if (s.x < 208) { s.x = 208; s.vx *= -1; }
         if (s.x > 320) { s.x = 320; s.vx *= -1; }
-        if (s.y < 50)  { s.y = 50;  s.vy *= -1; }
+        if (s.y < 50) { s.y = 50; s.vy *= -1; }
         if (s.y > 350) { s.y = 350; s.vy *= -1; }
 
         if (s.life > s.maxLife) {
@@ -615,13 +615,13 @@
 
   // Exact Jules 3x3 pattern matrices
   const ZE_PATTERNS = [
-    [[0,0,0],[0,1,0],[0,0,0]], // 0: single center dot
-    [[1,0,1],[0,0,0],[1,0,1]], // 1: 4 corner dots
-    [[0,1,0],[1,1,1],[0,1,0]], // 2: plus sign (+)
-    [[0,0,0],[1,1,1],[0,0,0]], // 3: horizontal line (-)
-    [[0,1,0],[0,1,0],[0,1,0]], // 4: vertical line (|)
-    [[0,0,0],[0,0,0],[0,0,0]], // 5: empty space
-    [[1,0,1],[0,1,0],[1,0,1]]  // 6: X shape
+    [[0, 0, 0], [0, 1, 0], [0, 0, 0]], // 0: single center dot
+    [[1, 0, 1], [0, 0, 0], [1, 0, 1]], // 1: 4 corner dots
+    [[0, 1, 0], [1, 1, 1], [0, 1, 0]], // 2: plus sign (+)
+    [[0, 0, 0], [1, 1, 1], [0, 0, 0]], // 3: horizontal line (-)
+    [[0, 1, 0], [0, 1, 0], [0, 1, 0]], // 4: vertical line (|)
+    [[0, 0, 0], [0, 0, 0], [0, 0, 0]], // 5: empty space
+    [[1, 0, 1], [0, 1, 0], [1, 0, 1]]  // 6: X shape
   ];
 
   // Exact Jules pixel fish shapes (4 columns x 3 rows)
@@ -716,7 +716,7 @@
     if (width <= 0) return waveBaseY;
     const normX = Math.max(0, Math.min(1, x / width));
     return waveBaseY - waveAmp * Math.cos(normX * 2 * Math.PI * 2 + phase)
-           + 10 * Math.sin(normX * 2 * Math.PI * 4 + phase * 1.3);
+      + 10 * Math.sin(normX * 2 * Math.PI * 4 + phase * 1.3);
   }
 
   let lastVariantTime = 0;
@@ -1110,9 +1110,9 @@ function toggleFullscreen() {
   const screen = document.getElementById('walkthrough-screen');
   if (!screen) return;
   if (!document.fullscreenElement) {
-    screen.requestFullscreen().catch(() => {});
+    screen.requestFullscreen().catch(() => { });
   } else {
-    document.exitFullscreen().catch(() => {});
+    document.exitFullscreen().catch(() => { });
   }
 }
 
@@ -1123,4 +1123,115 @@ setInterval(() => {
   if (next > 4) next = 1;
   selectChapter(next);
 }, 8000);
+
+/* ── 12. React Bits Dock Magnification Engine for Primary Buttons ── */
+(function initDockButtons() {
+  const buttons = document.querySelectorAll('.btn-solid-pixel, .btn-outline-pixel, .nav-ctas a');
+  if (!buttons.length) return;
+
+  const DISTANCE = 140;      // Proximity distance in px
+  const MAX_SCALE = 1.10;     // Max magnification
+  const STIFFNESS = 0.22;
+  const DAMPING = 0.72;
+
+  const buttonStates = Array.from(buttons).map(btn => ({
+    el: btn,
+    scale: 1,
+    targetScale: 1,
+    transX: 0,
+    targetTransX: 0,
+    transY: 0,
+    targetTransY: 0,
+    vx: 0,
+    vy: 0,
+    vs: 0,
+    isHovered: false
+  }));
+
+  let isTicking = false;
+  let mouse = { x: -9999, y: -9999 };
+
+  function update() {
+    let active = false;
+
+    buttonStates.forEach(b => {
+      if (b.isHovered) {
+        b.targetScale = MAX_SCALE;
+        b.targetTransX = 0;
+        b.targetTransY = -2;
+      } else {
+        const rect = b.el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = mouse.x - centerX;
+        const dy = mouse.y - centerY;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < DISTANCE) {
+          // Smooth cosine curve matching React Bits Dock
+          const norm = (1 + Math.cos((dist / DISTANCE) * Math.PI)) / 2;
+          b.targetScale = 1 + (MAX_SCALE - 1) * norm;
+          // Subtle magnetic pull toward cursor (max 4px)
+          b.targetTransX = (dx / DISTANCE) * 4 * norm;
+          b.targetTransY = (dy / DISTANCE) * 4 * norm;
+        } else {
+          b.targetScale = 1;
+          b.targetTransX = 0;
+          b.targetTransY = 0;
+        }
+      }
+
+      // Spring physics simulation
+      const forceS = (b.targetScale - b.scale) * STIFFNESS;
+      b.vs = (b.vs + forceS) * DAMPING;
+      b.scale += b.vs;
+
+      const forceX = (b.targetTransX - b.transX) * STIFFNESS;
+      b.vx = (b.vx + forceX) * DAMPING;
+      b.transX += b.vx;
+
+      const forceY = (b.targetTransY - b.transY) * STIFFNESS;
+      b.vy = (b.vy + forceY) * DAMPING;
+      b.transY += b.vy;
+
+      if (
+        Math.abs(b.scale - 1) > 0.002 ||
+        Math.abs(b.transX) > 0.05 ||
+        Math.abs(b.transY) > 0.05 ||
+        Math.abs(b.vs) > 0.001
+      ) {
+        b.el.style.transform = `scale(${b.scale.toFixed(3)}) translate(${b.transX.toFixed(1)}px, ${b.transY.toFixed(1)}px)`;
+        active = true;
+      } else {
+        b.el.style.transform = '';
+      }
+    });
+
+    if (active) {
+      requestAnimationFrame(update);
+    } else {
+      isTicking = false;
+    }
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    if (!isTicking) {
+      isTicking = true;
+      requestAnimationFrame(update);
+    }
+  }, { passive: true });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.x = -9999;
+    mouse.y = -9999;
+  });
+
+  buttonStates.forEach(b => {
+    b.el.addEventListener('mouseenter', () => { b.isHovered = true; });
+    b.el.addEventListener('mouseleave', () => { b.isHovered = false; });
+  });
+})();
+
 

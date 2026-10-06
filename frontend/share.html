@@ -13,13 +13,14 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="magic-bento.css" />
 </head>
 
 <body>
   <canvas id="matrix-canvas" aria-hidden="true"></canvas>
 
   <!-- Public Navbar -->
-  <nav class="navbar" style="position: sticky; top: 0; background: rgba(14,5,40,0.92); border-bottom: 1px solid var(--purple-dim);">
+  <nav class="navbar" style="position: sticky; top: 0; background: rgba(14, 14, 16, 0.94); border-bottom: 1px solid rgba(139, 92, 246, 0.25);">
     <a href="index.html" class="nav-logo" title="Pluck Home">
       <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="28" height="28" />
       <span class="logo-wordmark">Pluck</span>
@@ -71,7 +72,7 @@
       </div>
 
       <!-- Code Box -->
-      <div style="background: rgba(10,3,30,0.95); border: 2px solid var(--purple-dim); box-shadow: 4px 4px 0 0 rgba(0,0,0,0.8); padding: 24px;">
+      <div style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(124,58,237,0.15), 4px 4px 0 0 rgba(0,0,0,0.8); padding: 24px;">
         <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
 
 <span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = <span id="pub-var-display" style="color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 1px 4px;">300</span>): T {
@@ -124,6 +125,7 @@ export function useDebounce<T>(value: T, delay: number = ${delay}): T {
       }, 700);
     }
   </script>
+  <script src="magic-bento.js"></script>
 </body>
 
 </html>

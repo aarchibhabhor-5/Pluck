@@ -12,6 +12,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="magic-bento.css" />
+  <link rel="stylesheet" href="border-glow.css" />
 </head>
 
 <body>
@@ -28,12 +30,18 @@
           <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="26" height="26" />
           <span class="logo-wordmark" style="font-size: 13px;">Pluck</span>
         </a>
-        <a href="settings.html" title="Settings" style="color: var(--muted);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></a>
+        <a href="settings.html" title="Settings" style="color: var(--muted);"><svg width="16" height="16"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg></a>
       </div>
 
       <!-- Workspace Switcher with Interactive Dropdown -->
       <div style="padding: 12px 14px 4px; position: relative;">
-        <div class="ws-switcher pixel-border-box" id="ws-switcher-btn" onclick="toggleWorkspaceDropdown()" style="cursor: pointer;">
+        <div class="ws-switcher pixel-border-box" id="ws-switcher-btn" onclick="toggleWorkspaceDropdown()"
+          style="cursor: pointer;">
           <div class="ws-info">
             <div class="ws-icon" id="current-ws-icon">P</div>
             <div>
@@ -45,23 +53,30 @@
         </div>
 
         <!-- Dropdown Menu -->
-        <div id="ws-dropdown" class="pixel-border-box" style="display: none; position: absolute; top: calc(100% + 4px); left: 14px; right: 14px; background: #0e0528; z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.8); padding: 6px;">
-          <div style="padding: 6px 10px; font-size: 10px; color: var(--muted); text-transform: uppercase;">Switch Workspace</div>
-          <div onclick="selectWorkspace('personal')" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; background: rgba(124,58,237,0.2); margin-bottom: 4px;">
+        <div id="ws-dropdown" class="pixel-border-box"
+          style="display: none; position: absolute; top: calc(100% + 4px); left: 14px; right: 14px; background: #141416; border: 1px solid rgba(139, 92, 246, 0.3); z-index: 100; box-shadow: 0 8px 24px rgba(0,0,0,0.85); padding: 6px;">
+          <div style="padding: 6px 10px; font-size: 10px; color: var(--muted); text-transform: uppercase;">Switch
+            Workspace</div>
+          <div onclick="selectWorkspace('personal')"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; background: rgba(124,58,237,0.2); margin-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="width: 18px; height: 18px; background: var(--purple); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">P</span>
+              <span
+                style="width: 18px; height: 18px; background: var(--purple); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">P</span>
               <span style="font-size: 11px; font-weight: 700; color: #fff;">Personal Vault</span>
             </div>
             <span style="font-size: 10px; color: var(--green);">✓</span>
           </div>
-          <a href="team.html" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; text-decoration: none; color: #ddd6fe; margin-bottom: 4px;">
+          <a href="team.html"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; text-decoration: none; color: #ddd6fe; margin-bottom: 4px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">A</span>
+              <span
+                style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">A</span>
               <span style="font-size: 11px; font-weight: 700; color: #fff;">Acme Core Eng (Team)</span>
             </div>
             <span style="font-size: 10px; color: var(--purple-light);">→</span>
           </a>
-          <div onclick="window.location.href='team.html?action=new'" style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer;">
+          <div onclick="window.location.href='team.html?action=new'"
+            style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer;">
             + Create New Team
           </div>
         </div>
@@ -133,14 +148,16 @@
       <!-- User Profile Footer -->
       <div class="app-sidebar-footer">
         <div class="sidebar-user" style="cursor: pointer;" title="Account Profile">
-          <div style="display: flex; align-items: center; gap: 10px;" onclick="window.location.href='settings.html?tab=account'">
+          <div style="display: flex; align-items: center; gap: 10px;"
+            onclick="window.location.href='settings.html?tab=account'">
             <div class="user-avatar">A</div>
             <div class="user-meta">
               <span class="user-name">Alex Developer</span>
               <span class="user-email">alex@pluck.dev</span>
             </div>
           </div>
-          <a href="auth.html" title="Sign Out" onclick="return confirmSignOut(event)" style="color: var(--muted); font-size: 11px; text-decoration: none;">🚪</a>
+          <a href="auth.html" title="Sign Out" onclick="return confirmSignOut(event)"
+            style="color: var(--muted); font-size: 11px; text-decoration: none;">🚪</a>
         </div>
       </div>
     </aside>
@@ -152,7 +169,10 @@
       <header class="app-topbar">
         <button class="search-trigger-btn js-open-cmdk">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
             <span>Search snippets by intent...</span>
           </div>
           <span class="kbd-badge">⌘K</span>
@@ -160,7 +180,8 @@
 
         <div class="topbar-actions">
           <a href="team.html" class="btn-outline-pixel" style="font-size: 11px; padding: 7px 12px;">👥 Team</a>
-          <a href="settings.html" class="btn-outline-pixel" style="font-size: 11px; padding: 7px 12px;">⚙️ CLI &amp; MCP</a>
+          <a href="settings.html" class="btn-outline-pixel" style="font-size: 11px; padding: 7px 12px;">⚙️ CLI &amp;
+            MCP</a>
           <a href="studio.html" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">+ New Snippet</a>
         </div>
       </header>
@@ -191,7 +212,8 @@
         <div class="snippet-grid" id="snippet-grid">
 
           <!-- Card 1: useDebounce -->
-          <div class="snippet-card pixel-border-box" data-folder="hooks" data-lang="typescript" data-title="useDebounce Hook">
+          <div class="snippet-card pixel-border-box" data-folder="hooks" data-lang="typescript"
+            data-title="useDebounce Hook">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -202,7 +224,8 @@
               </div>
               <span title="Private" style="font-size: 12px;">🔒</span>
             </div>
-            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=use-debounce'" style="cursor: pointer;">
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=use-debounce'"
+              style="cursor: pointer;">
               <pre><code><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
 
 <span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = 300): T {
@@ -220,13 +243,15 @@
               </div>
               <div class="snippet-meta-right">
                 <span class="snippet-updated">2h ago</span>
-                <button class="btn-copy-card" onclick="copySnippetText('export function useDebounce...', 'Copied useDebounce with dependencies!')">Copy</button>
+                <button class="btn-copy-card"
+                  onclick="copySnippetText('export function useDebounce...', 'Copied useDebounce with dependencies!')">Copy</button>
               </div>
             </div>
           </div>
 
           <!-- Card 2: JWT Auth Middleware -->
-          <div class="snippet-card pixel-border-box" data-folder="auth" data-lang="typescript" data-title="JWT Sign & Verify">
+          <div class="snippet-card pixel-border-box" data-folder="auth" data-lang="typescript"
+            data-title="JWT Sign & Verify">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -237,7 +262,8 @@
               </div>
               <span title="Team shared" style="font-size: 12px;">👥</span>
             </div>
-            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=jwt-auth'" style="cursor: pointer;">
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=jwt-auth'"
+              style="cursor: pointer;">
               <pre><code><span style="color:#f472b6;">import</span> jwt <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'jsonwebtoken'</span>;
 <span style="color:#f472b6;">import</span> { z } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'zod'</span>;
 
@@ -252,13 +278,15 @@
               </div>
               <div class="snippet-meta-right">
                 <span class="snippet-updated">1d ago</span>
-                <button class="btn-copy-card" onclick="copySnippetText('export function verifyToken...', 'Copied JWT Auth!')">Copy</button>
+                <button class="btn-copy-card"
+                  onclick="copySnippetText('export function verifyToken...', 'Copied JWT Auth!')">Copy</button>
               </div>
             </div>
           </div>
 
           <!-- Card 3: S3 Presigned URL Uploader -->
-          <div class="snippet-card pixel-border-box" data-folder="aws-infra" data-lang="python" data-title="S3 Presigned Uploader">
+          <div class="snippet-card pixel-border-box" data-folder="aws-infra" data-lang="python"
+            data-title="S3 Presigned Uploader">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -269,7 +297,8 @@
               </div>
               <span title="Public" style="font-size: 12px;">🌐</span>
             </div>
-            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=s3-upload'" style="cursor: pointer;">
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=s3-upload'"
+              style="cursor: pointer;">
               <pre><code><span style="color:#f472b6;">import</span> boto3
 <span style="color:#f472b6;">from</span> botocore.config <span style="color:#f472b6;">import</span> Config
 
@@ -283,13 +312,15 @@
               </div>
               <div class="snippet-meta-right">
                 <span class="snippet-updated">3d ago</span>
-                <button class="btn-copy-card" onclick="copySnippetText('import boto3...', 'Copied S3 Uploader!')">Copy</button>
+                <button class="btn-copy-card"
+                  onclick="copySnippetText('import boto3...', 'Copied S3 Uploader!')">Copy</button>
               </div>
             </div>
           </div>
 
           <!-- Card 4: Redis Sliding Window Rate Limiter -->
-          <div class="snippet-card pixel-border-box" data-folder="hooks" data-lang="typescript" data-title="Sliding Window Limiter">
+          <div class="snippet-card pixel-border-box" data-folder="hooks" data-lang="typescript"
+            data-title="Sliding Window Limiter">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -300,7 +331,8 @@
               </div>
               <span title="Private" style="font-size: 12px;">🔒</span>
             </div>
-            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=redis-ratelimit'" style="cursor: pointer;">
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=redis-ratelimit'"
+              style="cursor: pointer;">
               <pre><code><span style="color:#f472b6;">import</span> Redis <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'ioredis'</span>;
 
 <span style="color:#f472b6;">export async function</span> <span style="color:#60a5fa;">checkRateLimit</span>(redis: Redis, key: string, limit: number, windowMs: number) {
@@ -320,13 +352,15 @@
               </div>
               <div class="snippet-meta-right">
                 <span class="snippet-updated">4d ago</span>
-                <button class="btn-copy-card" onclick="copySnippetText('export async function checkRateLimit...', 'Copied Rate Limiter!')">Copy</button>
+                <button class="btn-copy-card"
+                  onclick="copySnippetText('export async function checkRateLimit...', 'Copied Rate Limiter!')">Copy</button>
               </div>
             </div>
           </div>
 
           <!-- Card 5: Prisma Soft Delete Extension -->
-          <div class="snippet-card pixel-border-box" data-folder="database" data-lang="typescript" data-title="Prisma Soft Delete">
+          <div class="snippet-card pixel-border-box" data-folder="database" data-lang="typescript"
+            data-title="Prisma Soft Delete">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -337,7 +371,8 @@
               </div>
               <span title="Private" style="font-size: 12px;">🔒</span>
             </div>
-            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=prisma-soft-delete'" style="cursor: pointer;">
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=prisma-soft-delete'"
+              style="cursor: pointer;">
               <pre><code><span style="color:#f472b6;">import</span> { Prisma } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'@prisma/client'</span>;
 
 <span style="color:#f472b6;">export const</span> softDelete = Prisma.defineExtension({
@@ -357,13 +392,15 @@
               </div>
               <div class="snippet-meta-right">
                 <span class="snippet-updated">5d ago</span>
-                <button class="btn-copy-card" onclick="copySnippetText('export const softDelete...', 'Copied Prisma Extension!')">Copy</button>
+                <button class="btn-copy-card"
+                  onclick="copySnippetText('export const softDelete...', 'Copied Prisma Extension!')">Copy</button>
               </div>
             </div>
           </div>
 
           <!-- Card 6: FastAPI CORS -->
-          <div class="snippet-card pixel-border-box" data-folder="auth" data-lang="python" data-title="FastAPI Error Handler">
+          <div class="snippet-card pixel-border-box" data-folder="auth" data-lang="python"
+            data-title="FastAPI Error Handler">
             <div class="snippet-card-header">
               <div class="snippet-card-title-group">
                 <div class="snippet-title-row">
@@ -374,7 +411,8 @@
               </div>
               <span title="Public" style="font-size: 12px;">🌐</span>
             </div>
-            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=fastapi-cors'" style="cursor: pointer;">
+            <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=fastapi-cors'"
+              style="cursor: pointer;">
               <pre><code><span style="color:#f472b6;">from</span> fastapi <span style="color:#f472b6;">import</span> FastAPI, Request
 <span style="color:#f472b6;">from</span> fastapi.responses <span style="color:#f472b6;">import</span> JSONResponse
 
@@ -394,7 +432,8 @@ app = FastAPI()
               </div>
               <div class="snippet-meta-right">
                 <span class="snippet-updated">1w ago</span>
-                <button class="btn-copy-card" onclick="copySnippetText('from fastapi import FastAPI...', 'Copied FastAPI Handler!')">Copy</button>
+                <button class="btn-copy-card"
+                  onclick="copySnippetText('from fastapi import FastAPI...', 'Copied FastAPI Handler!')">Copy</button>
               </div>
             </div>
           </div>
@@ -408,8 +447,12 @@ app = FastAPI()
   <div class="cmdk-overlay" id="cmdk-modal">
     <div class="cmdk-dialog pixel-border-box">
       <div class="cmdk-input-row">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" id="cmdk-input" class="cmdk-input" placeholder="Describe what the code does or type / for filters..." autofocus />
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input type="text" id="cmdk-input" class="cmdk-input"
+          placeholder="Describe what the code does or type / for filters..." autofocus />
         <span class="kbd-badge">ESC</span>
       </div>
       <div class="cmdk-results" id="cmdk-results"></div>
@@ -510,6 +553,9 @@ app = FastAPI()
       return true;
     }
   </script>
+  <script src="app-script.js"></script>
+  <script src="magic-bento.js"></script>
+  <script src="border-glow.js"></script>
 </body>
 
 </html>

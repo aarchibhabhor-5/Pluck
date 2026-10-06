@@ -1,0 +1,156 @@
+/* =====================================================
+   PLUCK — Magic Bento Component CSS (React Bits)
+   Neutral Dark Slate & Electric Cyan Border Glow
+   ===================================================== */
+
+:root {
+  --cyan-primary: rgba(6, 182, 212, 1);
+  --cyan-glow: rgba(6, 182, 212, 0.25);
+  --cyan-border: rgba(6, 182, 212, 0.7);
+  --border-color: #334155;
+  --background-dark: #111827;
+}
+
+.card-grid {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1rem;
+  max-width: 1400px;
+  width: 100%;
+}
+
+.magic-bento-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  min-height: 220px;
+  width: 100%;
+  padding: 1.5rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--background-dark);
+  font-family: var(--mono, 'Space Mono', monospace);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+
+  --glow-x: 50%;
+  --glow-y: 50%;
+  --glow-intensity: 0;
+  --glow-radius: 260px;
+  --glow-color: 6, 182, 212;
+}
+
+.magic-bento-card:hover {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.15);
+}
+
+.magic-bento-card__header,
+.magic-bento-card__content {
+  display: flex;
+  position: relative;
+  color: #f1f5f9;
+  z-index: 2;
+}
+
+.magic-bento-card__header {
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.magic-bento-card__content {
+  flex-direction: column;
+}
+
+.magic-bento-card__label {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid var(--cyan-border);
+  color: #22d3ee;
+}
+
+.magic-bento-card__title {
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0 0 0.5rem;
+  color: #f8fafc;
+}
+
+.magic-bento-card__description {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+/* Border glow effect */
+.magic-bento-card--border-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: radial-gradient(
+    var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+    rgba(var(--glow-color, 6, 182, 212), calc(var(--glow-intensity) * 0.9)) 0%,
+    rgba(var(--glow-color, 6, 182, 212), calc(var(--glow-intensity) * 0.45)) 30%,
+    transparent 65%
+  );
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  z-index: 3;
+}
+
+.magic-bento-card--border-glow:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.particle-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.particle::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: rgba(var(--glow-color, 6, 182, 212), 0.25);
+  border-radius: 50%;
+  z-index: -1;
+}
+
+/* Global spotlight styles */
+.global-spotlight {
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  z-index: 200 !important;
+  pointer-events: none;
+}
+
+.bento-section {
+  position: relative;
+}

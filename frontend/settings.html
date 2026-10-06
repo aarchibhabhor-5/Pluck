@@ -12,6 +12,8 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="app-style.css" />
+  <link rel="stylesheet" href="magic-bento.css" />
+  <link rel="stylesheet" href="border-glow.css" />
 </head>
 
 <body>
@@ -34,10 +36,14 @@
         <div style="margin-top: 14px;">
           <div class="nav-section-title">Settings Navigation</div>
           <div class="folder-tree">
-            <a href="#" class="folder-item active" id="side-tab-tokens" onclick="switchSettingsTab('tokens', event)">🔑 Access Tokens (PAT)</a>
-            <a href="#" class="folder-item" id="side-tab-climcp" onclick="switchSettingsTab('climcp', event)">🤖 CLI &amp; MCP Config</a>
-            <a href="#" class="folder-item" id="side-tab-pref" onclick="switchSettingsTab('pref', event)">⚡ Preferences</a>
-            <a href="#" class="folder-item" id="side-tab-account" onclick="switchSettingsTab('account', event)">👤 Account Profile</a>
+            <a href="#" class="folder-item active" id="side-tab-tokens" onclick="switchSettingsTab('tokens', event)">🔑
+              Access Tokens (PAT)</a>
+            <a href="#" class="folder-item" id="side-tab-climcp" onclick="switchSettingsTab('climcp', event)">🤖 CLI
+              &amp; MCP Config</a>
+            <a href="#" class="folder-item" id="side-tab-pref" onclick="switchSettingsTab('pref', event)">⚡
+              Preferences</a>
+            <a href="#" class="folder-item" id="side-tab-account" onclick="switchSettingsTab('account', event)">👤
+              Account Profile</a>
           </div>
         </div>
       </div>
@@ -46,7 +52,8 @@
     <!-- Main View -->
     <main class="app-main">
       <header class="app-topbar">
-        <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Settings &amp; Developer Access</h2>
+        <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Settings &amp;
+          Developer Access</h2>
         <div class="topbar-actions">
           <a href="app.html" class="btn-outline-pixel" style="font-size: 11px;">Done</a>
         </div>
@@ -59,16 +66,21 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
               <h3 style="font-size: 18px; color: var(--white);">Personal Access Tokens (PAT)</h3>
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Tokens allow the <code style="color:var(--cyan);">pluck-cli</code> and AI Coding Assistants (Claude/Cursor MCP) to access your vault.</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Tokens allow the <code
+                  style="color:var(--cyan);">pluck-cli</code> and AI Coding Assistants (Claude/Cursor MCP) to access
+                your vault.</p>
             </div>
             <button class="btn-solid-pixel" onclick="openTokenModal()">+ Generate New Token</button>
           </div>
 
           <!-- Tokens Table -->
-          <div style="background: rgba(16,6,48,0.95); border: 1px solid var(--purple-dim); box-shadow: 4px 4px 0 0 rgba(0,0,0,0.6); overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
+          <div
+            style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7), 4px 4px 0 0 rgba(0,0,0,0.8); overflow-x: auto;">
+            <table
+              style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
               <thead>
-                <tr style="border-bottom: 1px solid var(--purple-dim); background: rgba(12,4,36,0.8); color: var(--muted); font-size: 10px;">
+                <tr
+                  style="border-bottom: 1px solid rgba(139, 92, 246, 0.2); background: rgba(18, 18, 20, 0.9); color: var(--muted); font-size: 10px;">
                   <th style="padding: 12px 16px;">NAME</th>
                   <th style="padding: 12px 16px;">PREFIX</th>
                   <th style="padding: 12px 16px;">SCOPES</th>
@@ -81,7 +93,8 @@
                 <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
                   <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">MacBook Cursor Agent</td>
                   <td style="padding: 14px 16px; color: var(--purple-light);">pluck_pat_8f19...</td>
-                  <td style="padding: 14px 16px;"><span class="dep-chip" style="font-size: 9px;">mcp</span> <span class="dep-chip" style="font-size: 9px;">snippets:read</span></td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip" style="font-size: 9px;">mcp</span> <span
+                      class="dep-chip" style="font-size: 9px;">snippets:read</span></td>
                   <td style="padding: 14px 16px; color: var(--muted);">12m ago</td>
                   <td style="padding: 14px 16px; color: #a7f3d0;">in 88 days</td>
                   <td style="padding: 14px 16px; text-align: right;">
@@ -107,25 +120,30 @@
         <div id="section-climcp" style="display: none; flex-direction: column; gap: 24px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">CLI &amp; AI MCP Configuration</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Integrate Pluck directly into Claude Desktop, Cursor, and your command line.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Integrate Pluck directly into Claude
+              Desktop, Cursor, and your command line.</p>
           </div>
 
           <!-- CLI Quickstart -->
-          <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95);">
+          <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
             <div class="nav-section-title">1. Pluck CLI Quickstart</div>
             <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Authenticate your terminal in one command:</p>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #070216; padding: 10px 14px; border: 1px solid var(--purple-dim); margin-top: 8px;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; background: #161618; padding: 10px 14px; border: 1px solid rgba(139, 92, 246, 0.25); margin-top: 8px;">
               <code style="color: var(--cyan);">npx pluck-cli login</code>
-              <button class="btn-copy-card" onclick="copySnippetText('npx pluck-cli login', 'Command copied!')">Copy</button>
+              <button class="btn-copy-card"
+                onclick="copySnippetText('npx pluck-cli login', 'Command copied!')">Copy</button>
             </div>
           </div>
 
           <!-- Stdio MCP Config -->
-          <div class="pixel-border-box" style="padding: 18px; background: rgba(16,6,48,0.95);">
+          <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
             <div class="nav-section-title">2. Claude Desktop &amp; Cursor (Stdio MCP)</div>
-            <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Add this block to your <code>claude_desktop_config.json</code>:</p>
+            <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Add this block to your
+              <code>claude_desktop_config.json</code>:</p>
             <div style="position: relative; margin-top: 8px;">
-              <pre style="background: #070216; padding: 14px; border: 1px solid var(--purple-dim); color: #a78bfa; font-size: 12px; margin: 0; overflow-x: auto;"><code>{
+              <pre
+                style="background: #141416; padding: 14px; border: 1px solid rgba(139, 92, 246, 0.25); color: #a78bfa; font-size: 12px; margin: 0; overflow-x: auto;"><code>{
   "mcpServers": {
     "pluck": {
       "command": "npx",
@@ -136,7 +154,9 @@
     }
   }
 }</code></pre>
-              <button class="btn-copy-card" style="position: absolute; top: 10px; right: 10px;" onclick="copySnippetText('{\n  &quot;mcpServers&quot;: {\n    &quot;pluck&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;pluck-cli&quot;, &quot;mcp&quot;],\n      &quot;env&quot;: {\n        &quot;PLUCK_TOKEN&quot;: &quot;pluck_pat_...&quot;\n      }\n    }\n  }\n}', 'MCP Config copied!')">Copy JSON</button>
+              <button class="btn-copy-card" style="position: absolute; top: 10px; right: 10px;"
+                onclick="copySnippetText('{\n  &quot;mcpServers&quot;: {\n    &quot;pluck&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;pluck-cli&quot;, &quot;mcp&quot;],\n      &quot;env&quot;: {\n        &quot;PLUCK_TOKEN&quot;: &quot;pluck_pat_...&quot;\n      }\n    }\n  }\n}', 'MCP Config copied!')">Copy
+                JSON</button>
             </div>
           </div>
         </div>
@@ -145,17 +165,22 @@
         <div id="section-pref" style="display: none; flex-direction: column; gap: 24px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Developer Preferences</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Custom defaults applied to all snippet install and copy actions.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Custom defaults applied to all snippet
+              install and copy actions.</p>
           </div>
 
-          <div class="pixel-border-box" style="padding: 20px; background: rgba(16,6,48,0.95); display: flex; flex-direction: column; gap: 18px;">
+          <div class="pixel-border-box"
+            style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 18px;">
             <div class="form-group">
               <label class="form-label">DEFAULT NODE PACKAGE MANAGER</label>
               <div style="display: flex; gap: 10px; margin-top: 6px;">
                 <button class="btn-solid-pixel" style="font-size: 11px;">npm</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('pnpm selected as default')">pnpm</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('yarn selected as default')">yarn</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('bun selected as default')">bun</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;"
+                  onclick="showToast('pnpm selected as default')">pnpm</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;"
+                  onclick="showToast('yarn selected as default')">yarn</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;"
+                  onclick="showToast('bun selected as default')">bun</button>
               </div>
             </div>
 
@@ -163,7 +188,8 @@
               <label class="form-label">PYTHON PACKAGE INSTALLER</label>
               <div style="display: flex; gap: 10px; margin-top: 6px;">
                 <button class="btn-solid-pixel" style="font-size: 11px;">pip</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('uv selected as default')">uv</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;"
+                  onclick="showToast('uv selected as default')">uv</button>
               </div>
             </div>
 
@@ -182,10 +208,12 @@
         <div id="section-account" style="display: none; flex-direction: column; gap: 24px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Account Profile</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity and OAuth provider links.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity and OAuth provider links.
+            </p>
           </div>
 
-          <div class="pixel-border-box" style="padding: 20px; background: rgba(16,6,48,0.95); display: flex; flex-direction: column; gap: 18px;">
+          <div class="pixel-border-box"
+            style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 18px;">
             <div class="form-group">
               <label class="form-label">FULL NAME</label>
               <input type="text" class="var-input" value="Alex Developer" style="max-width: 320px;" />
@@ -199,14 +227,17 @@
             <div class="form-group">
               <label class="form-label">LINKED AUTHENTICATION PROVIDERS</label>
               <div style="display: flex; gap: 12px; margin-top: 6px;">
-                <div style="padding: 6px 12px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #a7f3d0; font-size: 11px;">
+                <div
+                  style="padding: 6px 12px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #a7f3d0; font-size: 11px;">
                   ✓ GitHub Linked (@alexdev)
                 </div>
-                <button class="btn-outline-pixel" style="font-size: 11px;" onclick="showToast('Connecting Google account...')">Connect Google</button>
+                <button class="btn-outline-pixel" style="font-size: 11px;"
+                  onclick="showToast('Connecting Google account...')">Connect Google</button>
               </div>
             </div>
             <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--purple-dim);">
-              <a href="auth.html" class="btn-outline-danger" style="text-decoration: none; display: inline-block; padding: 8px 14px;">Sign Out of Pluck</a>
+              <a href="auth.html" class="btn-outline-danger"
+                style="text-decoration: none; display: inline-block; padding: 8px 14px;">Sign Out of Pluck</a>
             </div>
           </div>
         </div>
@@ -247,6 +278,8 @@
       }
     }
   </script>
+  <script src="magic-bento.js"></script>
+  <script src="border-glow.js"></script>
 </body>
 
 </html>

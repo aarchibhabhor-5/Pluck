@@ -22,7 +22,7 @@
   let drops = Array.from({ length: cols }, () => Math.floor(Math.random() * -50));
 
   function draw() {
-    ctx.fillStyle = 'rgba(14, 5, 40, 0.08)';
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.08)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.font = `${FONT_SIZE}px "Space Mono", monospace`;
@@ -149,9 +149,9 @@ function showToast(message, type = 'info') {
   if (input) {
     input.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const filtered = SAMPLE_ITEMS.filter(it => 
-        it.title.toLowerCase().includes(q) || 
-        it.lang.toLowerCase().includes(q) || 
+      const filtered = SAMPLE_ITEMS.filter(it =>
+        it.title.toLowerCase().includes(q) ||
+        it.lang.toLowerCase().includes(q) ||
         it.pkg.toLowerCase().includes(q)
       );
       renderResults(filtered);
@@ -172,3 +172,111 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
     showToast('Failed to copy', 'error');
   });
 }
+
+// ── 5. React Bits Dock Magnification Engine for Primary Buttons ──
+(function initDockButtons() {
+  const buttons = document.querySelectorAll('.btn-solid-pixel, .btn-outline-pixel, .topbar-actions a, .topbar-actions button');
+  if (!buttons.length) return;
+
+  const DISTANCE = 140;
+  const MAX_SCALE = 1.10;
+  const STIFFNESS = 0.22;
+  const DAMPING = 0.72;
+
+  const buttonStates = Array.from(buttons).map(btn => ({
+    el: btn,
+    scale: 1,
+    targetScale: 1,
+    transX: 0,
+    targetTransX: 0,
+    transY: 0,
+    targetTransY: 0,
+    vx: 0,
+    vy: 0,
+    vs: 0,
+    isHovered: false
+  }));
+
+  let isTicking = false;
+  let mouse = { x: -9999, y: -9999 };
+
+  function update() {
+    let active = false;
+
+    buttonStates.forEach(b => {
+      if (b.isHovered) {
+        b.targetScale = MAX_SCALE;
+        b.targetTransX = 0;
+        b.targetTransY = -2;
+      } else {
+        const rect = b.el.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = mouse.x - centerX;
+        const dy = mouse.y - centerY;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < DISTANCE) {
+          const norm = (1 + Math.cos((dist / DISTANCE) * Math.PI)) / 2;
+          b.targetScale = 1 + (MAX_SCALE - 1) * norm;
+          b.targetTransX = (dx / DISTANCE) * 4 * norm;
+          b.targetTransY = (dy / DISTANCE) * 4 * norm;
+        } else {
+          b.targetScale = 1;
+          b.targetTransX = 0;
+          b.targetTransY = 0;
+        }
+      }
+
+      const forceS = (b.targetScale - b.scale) * STIFFNESS;
+      b.vs = (b.vs + forceS) * DAMPING;
+      b.scale += b.vs;
+
+      const forceX = (b.targetTransX - b.transX) * STIFFNESS;
+      b.vx = (b.vx + forceX) * DAMPING;
+      b.transX += b.vx;
+
+      const forceY = (b.targetTransY - b.transY) * STIFFNESS;
+      b.vy = (b.vy + forceY) * DAMPING;
+      b.transY += b.vy;
+
+      if (
+        Math.abs(b.scale - 1) > 0.002 ||
+        Math.abs(b.transX) > 0.05 ||
+        Math.abs(b.transY) > 0.05 ||
+        Math.abs(b.vs) > 0.001
+      ) {
+        b.el.style.transform = `scale(${b.scale.toFixed(3)}) translate(${b.transX.toFixed(1)}px, ${b.transY.toFixed(1)}px)`;
+        active = true;
+      } else {
+        b.el.style.transform = '';
+      }
+    });
+
+    if (active) {
+      requestAnimationFrame(update);
+    } else {
+      isTicking = false;
+    }
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    if (!isTicking) {
+      isTicking = true;
+      requestAnimationFrame(update);
+    }
+  }, { passive: true });
+
+  window.addEventListener('mouseleave', () => {
+    mouse.x = -9999;
+    mouse.y = -9999;
+  });
+
+  buttonStates.forEach(b => {
+    b.el.addEventListener('mouseenter', () => { b.isHovered = true; });
+    b.el.addEventListener('mouseleave', () => { b.isHovered = false; });
+  });
+})();
+
