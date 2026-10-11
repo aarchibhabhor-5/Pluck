@@ -71,18 +71,33 @@ function showToast(message, type = 'info') {
   const input = document.getElementById('cmdk-input');
   const resultsContainer = document.getElementById('cmdk-results');
 
-  const SAMPLE_ITEMS = [
-    { title: 'useDebounce Hook', lang: 'TypeScript', pkg: 'react ^18', path: 'snippet.html?id=use-debounce' },
-    { title: 'JWT Sign & Verify Middleware', lang: 'TypeScript', pkg: 'jsonwebtoken', path: 'snippet.html?id=jwt-auth' },
-    { title: 'S3 Presigned URL Uploader', lang: 'Python', pkg: 'boto3', path: 'snippet.html?id=s3-upload' },
-    { title: 'Sliding Window Rate Limiter', lang: 'TypeScript', pkg: 'ioredis', path: 'snippet.html?id=redis-ratelimit' },
-    { title: 'Prisma Soft Delete Extension', lang: 'TypeScript', pkg: '@prisma/client', path: 'snippet.html?id=prisma-soft-delete' },
-    { title: 'FastAPI CORS & Error Handler', lang: 'Python', pkg: 'fastapi', path: 'snippet.html?id=fastapi-cors' },
-    { title: '+ Create New Snippet', lang: 'Action', pkg: 'Studio', path: 'studio.html' },
-    { title: 'Open Team Workspace (Acme Core Eng)', lang: 'Action', pkg: 'Teams', path: 'team.html' },
-    { title: 'API Access Tokens & MCP Config', lang: 'Action', pkg: 'Settings', path: 'settings.html' },
-    { title: 'Pluck Landing Page', lang: 'Action', pkg: 'Home', path: 'index.html' }
-  ];
+  function getCmdkItems() {
+    const actionItems = [
+      { title: '+ Create New Snippet', lang: 'Action', pkg: 'Studio', path: 'studio.html' },
+      { title: 'Open Team Workspace (Acme Core Eng)', lang: 'Action', pkg: 'Teams', path: 'team.html' },
+      { title: 'API Access Tokens & MCP Config', lang: 'Action', pkg: 'Settings', path: 'settings.html' },
+      { title: 'Pluck Landing Page', lang: 'Action', pkg: 'Home', path: 'index.html' }
+    ];
+
+    let userSnippets = [];
+    try {
+      userSnippets = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
+    } catch (e) {}
+
+    const snippetItems = userSnippets.map(s => {
+      const depName = (s.dependencies && s.dependencies.length > 0)
+        ? (s.dependencies[0].name || s.dependencies[0])
+        : (s.folderId || 'vault');
+      return {
+        title: s.title || 'Untitled Snippet',
+        lang: (s.language || 'Code').toUpperCase(),
+        pkg: depName,
+        path: `snippet.html?id=${encodeURIComponent(s.id)}`
+      };
+    });
+
+    return [...snippetItems, ...actionItems];
+  }
 
   function openPalette() {
     if (!overlay) return;
@@ -90,7 +105,7 @@ function showToast(message, type = 'info') {
     if (input) {
       input.value = '';
       input.focus();
-      renderResults(SAMPLE_ITEMS);
+      renderResults(getCmdkItems());
     }
   }
 
@@ -149,7 +164,8 @@ function showToast(message, type = 'info') {
   if (input) {
     input.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
-      const filtered = SAMPLE_ITEMS.filter(it =>
+      const allItems = getCmdkItems();
+      const filtered = allItems.filter(it =>
         it.title.toLowerCase().includes(q) ||
         it.lang.toLowerCase().includes(q) ||
         it.pkg.toLowerCase().includes(q)

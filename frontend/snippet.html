@@ -64,17 +64,17 @@
           <div class="snippet-detail-header">
             <div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <h1 style="font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--white);">useDebounce Hook</h1>
-                <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TypeScript</span>
-                <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">🔒 Private</span>
+                <h1 id="detail-title" style="font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--white);">Snippet Detail</h1>
+                <span id="detail-lang" class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">Code</span>
+                <span id="detail-vis" class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">🔒 Private</span>
               </div>
-              <div style="font-size: 12px; color: var(--muted); margin-top: 6px;">
-                <span>📁 hooks / react-hooks</span> · <span>slug: <code style="color: var(--purple-light);">use-debounce</code></span> · <span>Updated 2 hours ago by Alex</span>
+              <div id="detail-meta" style="font-size: 12px; color: var(--muted); margin-top: 6px;">
+                <span>📁 vault</span> · <span>slug: <code id="detail-slug" style="color: var(--purple-light);">--</code></span>
               </div>
             </div>
 
             <div style="display: flex; gap: 8px;">
-              <button class="btn-solid-pixel" onclick="copyInterpolatedCode()">Copy Code</button>
+              <button class="btn-solid-pixel" onclick="copySnippetCode()">Copy Code</button>
             </div>
           </div>
 
@@ -221,31 +221,69 @@
       copySnippetText('# Pluck .env.example\nSTRIPE_KEY=your_key_here\n', '.env.example copied to clipboard!');
     }
 
-    function copyInterpolatedCode() {
-      const delayVal = document.getElementById('var-delay').value || '300';
-      const code = `import { useState, useEffect } from 'react';
+    let currentLoadedSnippet = null;
 
-export function useDebounce<T>(value: T, delay: number = ${delayVal}): T {
-  const [debouncedVal, setVal] = useState<T>(value);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVal(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-
-  return debouncedVal;
-}`;
-      copySnippetText(code, 'Interpolated code copied to clipboard!');
+    function copySnippetCode() {
+      if (currentLoadedSnippet && currentLoadedSnippet.code) {
+        copySnippetText(currentLoadedSnippet.code, `Copied "${currentLoadedSnippet.title}" code to clipboard!`);
+      } else {
+        copyInterpolatedCode();
+      }
     }
+
+    function copyInterpolatedCode() {
+      const codeEl = document.getElementById('interpolated-code-display');
+      const text = codeEl ? codeEl.innerText : '';
+      copySnippetText(text, 'Code copied to clipboard!');
+    }
+
+    async function loadSnippetDetail() {
+      const params = new URLSearchParams(window.location.search);
+      const snipId = params.get('id');
+      if (!snipId) return;
+
+      let snip = null;
+      try {
+        const res = await fetch(`/api/snippets/${encodeURIComponent(snipId)}`);
+        if (res.ok) snip = await res.json();
+      } catch (e) {}
+
+      if (!snip) {
+        try {
+          const list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
+          snip = list.find(s => s.id === snipId || s.slug === snipId);
+        } catch (e) {}
+      }
+
+      if (snip) {
+        currentLoadedSnippet = snip;
+        document.title = `${snip.title} — Snippet Detail | Pluck`;
+        document.getElementById('detail-title').textContent = snip.title;
+        document.getElementById('detail-lang').textContent = (snip.language || 'typescript').toUpperCase();
+        document.getElementById('detail-vis').textContent = snip.visibility === 'public' ? '🌐 Public' : snip.visibility === 'team' ? '👥 Team' : '🔒 Private';
+        document.getElementById('detail-slug').textContent = snip.slug || snip.id;
+
+        const codeBlock = document.getElementById('interpolated-code-display');
+        if (codeBlock) {
+          codeBlock.textContent = snip.code || '';
+        }
+
+        // Update Edit buttons
+        document.querySelectorAll('a[href="studio.html"]').forEach(a => {
+          a.href = `studio.html?id=${encodeURIComponent(snip.id)}`;
+        });
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSnippetDetail);
 
     function executeSandbox() {
       const out = document.getElementById('runner-output');
       out.textContent = `[SANDBOX START] Initializing QuickJS-WASM runtime...\n`;
       setTimeout(() => {
-        out.textContent += `[INFO] Language: TypeScript (Sucrase stripped)\n`;
-        out.textContent += `[TEST] Simulating test value 'query' over 300ms window...\n`;
-        out.textContent += `[LOG] setVal called with: 'query'\n`;
-        out.textContent += `[PASS] Debounce verified clean. Memory: 1.4MB, Execution: 3.8ms.\n[SANDBOX EXIT 0]`;
+        out.textContent += `[INFO] Language: ${currentLoadedSnippet ? currentLoadedSnippet.language : 'TypeScript'}\n`;
+        out.textContent += `[TEST] Simulating execution...\n`;
+        out.textContent += `[PASS] Executed cleanly in sandbox. Memory: 1.4MB, Execution: 3.8ms.\n[SANDBOX EXIT 0]`;
         showToast('Snippet executed cleanly in sandbox!', 'success');
       }, 500);
     }

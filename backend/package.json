@@ -1,20 +1,11 @@
 {
   "name": "pluck-backend",
   "version": "1.0.0",
-  "description": "Backend API server, AST analysis, Secret Scanner, and Token management for Pluck",
-  "type": "module",
-  "main": "server.js",
+  "description": "Pluck Spring Boot + MongoDB Backend",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "keywords": [
-    "pluck",
-    "snippet-manager",
-    "secret-scanner",
-    "ast-analyzer",
-    "mcp"
-  ],
-  "author": "Pluck Labs",
-  "license": "MIT"
+    "dev": "mvnw.cmd spring-boot:run",
+    "start": "mvnw.cmd spring-boot:run",
+    "build": "mvnw.cmd clean package",
+    "compile": "mvnw.cmd compile"
+  }
 }

@@ -1,0 +1,10 @@
+{
+  "name": "pluck",
+  "version": "1.0.0",
+  "description": "Pluck developer code snippet vault",
+  "scripts": {
+    "dev": "npm --prefix backend run dev",
+    "start": "npm --prefix backend start",
+    "backend": "npm --prefix backend run dev"
+  }
+}
