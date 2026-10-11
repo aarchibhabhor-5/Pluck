@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="app-style.css" />
   <link rel="stylesheet" href="border-glow.css" />
   <link rel="stylesheet" href="animated-list.css" />
+  <link rel="stylesheet" href="dock.css" />
 
   <!-- Monaco Code Editor AMD Loader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
@@ -189,36 +190,72 @@
       background: linear-gradient(180deg, #131724 0%, #0c0f18 100%) !important;
       border-left: 1px solid rgba(139, 92, 246, 0.35) !important;
       box-shadow: -6px 0 25px rgba(0, 0, 0, 0.6) !important;
+      position: relative !important;
+      z-index: 50 !important;
+      overflow: visible !important;
     }
 
-    /* Elevated Inspector Tabs */
-    .inspector-tabs {
-      background: #090d16 !important;
+    /* React Bits Dock Inspector Tabs (Expanded across whole rectangle) */
+    .inspector-tabs-container {
+      background: linear-gradient(180deg, #111524 0%, #0b0e1a 100%) !important;
       border-bottom: 2px solid #1e2438 !important;
-      padding: 8px 10px 0 !important;
-      gap: 6px !important;
+      padding: 18px 0 6px !important;
+      height: 86px !important;
+      min-height: 86px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: stretch !important;
+      box-sizing: border-box !important;
+      position: relative !important;
+      z-index: 60 !important;
+      overflow: visible !important;
     }
-    .inspector-tab {
-      background: #141826 !important;
-      border: 1px solid #283046 !important;
-      border-bottom: none !important;
-      border-radius: 5px 5px 0 0 !important;
-      color: #94a3b8 !important;
+
+    #inspector-dock {
+      position: relative !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow: visible !important;
+    }
+
+    .inspector-tabs-container .dock {
+      position: relative !important;
+      left: auto !important;
+      bottom: auto !important;
+      top: auto !important;
+      transform: none !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+      display: flex !important;
+      justify-content: space-evenly !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+      padding: 4px 10px !important;
+      border-radius: 0 !important;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+      overflow: visible !important;
+    }
+
+    .inspector-tabs-container .dock .dock-item {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      overflow: visible !important;
+    }
+
+    .inspector-tabs-container .dock .dock-label {
+      z-index: 999999 !important;
       font-size: 11px !important;
-      font-weight: 600 !important;
-      padding: 8px 12px !important;
-      transition: all 0.15s ease !important;
-    }
-    .inspector-tab:hover {
-      color: #f1f5f9 !important;
-      background: #1c2236 !important;
-    }
-    .inspector-tab.active {
-      background: #1e2438 !important;
-      color: #38bdf8 !important;
-      border-color: #38bdf8 !important;
-      border-top: 2px solid #38bdf8 !important;
-      box-shadow: 0 -2px 12px rgba(56, 189, 248, 0.3) !important;
+      font-weight: 700 !important;
+      pointer-events: none !important;
     }
 
     /* Elevated Inspector Textboxes & Textareas */
@@ -534,12 +571,12 @@
       <!-- Right Inspector Panel -->
       <aside class="studio-inspector">
 
-        <!-- Inspector Tabs -->
-        <div class="inspector-tabs">
-          <button class="inspector-tab active" id="tab-btn-pkgs" onclick="switchInspectorTab('pkgs')">Packages (<span id="pkg-count">0</span>)</button>
-          <button class="inspector-tab" id="tab-btn-vars" onclick="switchInspectorTab('vars')">Variables (<span id="var-count">0</span>)</button>
-          <button class="inspector-tab" id="tab-btn-env" onclick="switchInspectorTab('env')">Env Keys (<span id="env-count">0</span>)</button>
-          <button class="inspector-tab" id="tab-btn-details" onclick="switchInspectorTab('details')">Details</button>
+        <!-- Inspector Tabs (React Bits Dock Component) -->
+        <div class="inspector-tabs-container">
+          <div id="inspector-dock"></div>
+          <span id="pkg-count" style="display: none;">0</span>
+          <span id="var-count" style="display: none;">0</span>
+          <span id="env-count" style="display: none;">0</span>
         </div>
 
         <!-- Inspector Content: Packages Tab -->
@@ -595,12 +632,14 @@
 
   <script src="app-script.js"></script>
   <script src="animated-list.js"></script>
+  <script src="dock.js"></script>
   <script>
     let editorInstance = null;
     let detectedPkgs = new Set();
     let detectedVars = [];
     let detectedEnvKeys = new Set();
     let activeSecretMatch = null;
+    let inspectorDock = null;
 
     const initialTemplate = `import React, { useState, useEffect } from 'react';
 
@@ -681,6 +720,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
 
       // Run initial analysis
       handleCodeAnalysis(initialTemplate);
+      initInspectorDock();
 
       // Check if editing existing snippet (?id=...)
       checkEditMode();
@@ -760,9 +800,98 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       return descriptions[key] || 'Environment secret variable';
     }
 
+    function initInspectorDock() {
+      const items = [
+        {
+          id: 'pkgs',
+          label: `Packages (${detectedPkgs.size})`,
+          badge: detectedPkgs.size,
+          active: true,
+          icon: `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
+            <span style="font-size: 9.5px; font-weight: 700; font-family: var(--mono); color: #cbd5e1; letter-spacing: 0.4px;">PKGS</span>
+          </div>`,
+          onClick: () => switchInspectorTab('pkgs'),
+          menu: [
+            { label: 'View Dependencies', onClick: () => switchInspectorTab('pkgs') },
+            { separator: true },
+            { label: 'Add Dependency...', onClick: () => { switchInspectorTab('pkgs'); document.getElementById('add-pkg-input')?.focus(); } }
+          ]
+        },
+        {
+          id: 'vars',
+          label: `Variables (${detectedVars.length})`,
+          badge: detectedVars.length,
+          active: false,
+          icon: `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+            <span style="font-size: 9.5px; font-weight: 700; font-family: var(--mono); color: #cbd5e1; letter-spacing: 0.4px;">VARS</span>
+          </div>`,
+          onClick: () => switchInspectorTab('vars'),
+          menu: [
+            { label: 'View Dynamic Variables', onClick: () => switchInspectorTab('vars') },
+            { separator: true },
+            { label: 'Copy Syntax {{name|def}}', onClick: () => { navigator.clipboard?.writeText('{{varName|default}}'); showToast('Copied syntax placeholder', 'info'); } }
+          ]
+        },
+        {
+          id: 'env',
+          label: `Env Keys (${detectedEnvKeys.size})`,
+          badge: detectedEnvKeys.size,
+          active: false,
+          icon: `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m21 3-9.5 9.5M15.5 7.5l3 3M18.5 4.5l2 2"/></svg>
+            <span style="font-size: 9.5px; font-weight: 700; font-family: var(--mono); color: #cbd5e1; letter-spacing: 0.4px;">ENV</span>
+          </div>`,
+          onClick: () => switchInspectorTab('env'),
+          menu: [
+            { label: 'View Environment Secrets', onClick: () => switchInspectorTab('env') },
+            { separator: true },
+            { label: 'Scan Secrets in Code', onClick: () => { if (editorInstance) handleCodeAnalysis(editorInstance.getValue()); showToast('AST secret analysis ran', 'info'); } }
+          ]
+        },
+        {
+          id: 'details',
+          label: 'Details',
+          active: false,
+          icon: `<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; line-height: 1;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span style="font-size: 9.5px; font-weight: 700; font-family: var(--mono); color: #cbd5e1; letter-spacing: 0.4px;">INFO</span>
+          </div>`,
+          onClick: () => switchInspectorTab('details'),
+          menu: [
+            { label: 'Edit Description & Tags', onClick: () => switchInspectorTab('details') }
+          ]
+        }
+      ];
+
+      inspectorDock = new Dock('#inspector-dock', {
+        items,
+        position: 'bottom',
+        theme: 'dark',
+        baseItemSize: 58,
+        magnification: 74,
+        distance: 140,
+        panelHeight: 68,
+        gap: 12,
+        roundness: 0.45,
+        spring: { mass: 0.1, stiffness: 180, damping: 13 },
+        bounce: false,
+        showLabels: true,
+        showIndicators: true,
+        showBadges: true,
+        badgeColor: '#ec4899',
+        accentColor: '#38bdf8'
+      });
+    }
+
     function renderDetectedPkgs() {
       const countEl = document.getElementById('pkg-count');
       if (countEl) countEl.textContent = detectedPkgs.size;
+      if (inspectorDock) {
+        inspectorDock.setBadge(0, detectedPkgs.size);
+        inspectorDock.setLabel(0, `Packages (${detectedPkgs.size})`);
+      }
 
       const container = document.getElementById('detected-packages-list');
       if (!container) return;
@@ -799,6 +928,10 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
     function renderDetectedEnvs() {
       const countEl = document.getElementById('env-count');
       if (countEl) countEl.textContent = detectedEnvKeys.size;
+      if (inspectorDock) {
+        inspectorDock.setBadge(2, detectedEnvKeys.size);
+        inspectorDock.setLabel(2, `Env Keys (${detectedEnvKeys.size})`);
+      }
 
       const container = document.getElementById('detected-env-list');
       if (!container) return;
@@ -826,6 +959,10 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
     function renderDetectedVars() {
       const countEl = document.getElementById('var-count');
       if (countEl) countEl.textContent = detectedVars.length;
+      if (inspectorDock) {
+        inspectorDock.setBadge(1, detectedVars.length);
+        inspectorDock.setLabel(1, `Variables (${detectedVars.length})`);
+      }
 
       const container = document.getElementById('detected-vars-list');
       if (!container) return;
@@ -881,10 +1018,17 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
     }
 
     function switchInspectorTab(tab) {
+      const tabIndices = { pkgs: 0, vars: 1, env: 2, details: 3 };
       ['pkgs', 'vars', 'env', 'details'].forEach(t => {
-        document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
-        document.getElementById(`panel-${t}`).style.display = t === tab ? 'flex' : 'none';
+        const btn = document.getElementById(`tab-btn-${t}`);
+        if (btn) btn.classList.toggle('active', t === tab);
+        const panel = document.getElementById(`panel-${t}`);
+        if (panel) panel.style.display = t === tab ? 'block' : 'none';
       });
+
+      if (inspectorDock && tabIndices[tab] !== undefined) {
+        inspectorDock.setActive(tabIndices[tab]);
+      }
     }
 
     function changeLanguage(lang) {
