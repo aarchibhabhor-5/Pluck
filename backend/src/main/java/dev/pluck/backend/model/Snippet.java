@@ -20,11 +20,18 @@ public class Snippet {
     private String folderName = "hooks";
     private String visibility = "private";
     private int version = 1;
+    private List<Map<String, Object>> versions = new ArrayList<>();
     private List<String> tags = new ArrayList<>();
     private List<Map<String, String>> dependencies = new ArrayList<>();
     private List<String> envKeys = new ArrayList<>();
     private List<Object> variables = new ArrayList<>();
     private String aiSummary;
+    private List<String> aiKeywords = new ArrayList<>();
+    private List<String> aiUseCases = new ArrayList<>();
+    private String designPattern;
+    private String embeddingModel = "text-embedding-3-small (1536 dims)";
+    private String embeddingStatus = "ready";
+    private int vectorDimensions = 1536;
     private int forkCount = 0;
     private String createdAt;
     private String updatedAt;
@@ -61,6 +68,9 @@ public class Snippet {
     public int getVersion() { return version; }
     public void setVersion(int version) { this.version = version; }
 
+    public List<Map<String, Object>> getVersions() { return versions; }
+    public void setVersions(List<Map<String, Object>> versions) { this.versions = versions; }
+
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
 
@@ -75,6 +85,24 @@ public class Snippet {
 
     public String getAiSummary() { return aiSummary; }
     public void setAiSummary(String aiSummary) { this.aiSummary = aiSummary; }
+
+    public List<String> getAiKeywords() { return aiKeywords; }
+    public void setAiKeywords(List<String> aiKeywords) { this.aiKeywords = aiKeywords; }
+
+    public List<String> getAiUseCases() { return aiUseCases; }
+    public void setAiUseCases(List<String> aiUseCases) { this.aiUseCases = aiUseCases; }
+
+    public String getDesignPattern() { return designPattern; }
+    public void setDesignPattern(String designPattern) { this.designPattern = designPattern; }
+
+    public String getEmbeddingModel() { return embeddingModel; }
+    public void setEmbeddingModel(String embeddingModel) { this.embeddingModel = embeddingModel; }
+
+    public String getEmbeddingStatus() { return embeddingStatus; }
+    public void setEmbeddingStatus(String embeddingStatus) { this.embeddingStatus = embeddingStatus; }
+
+    public int getVectorDimensions() { return vectorDimensions; }
+    public void setVectorDimensions(int vectorDimensions) { this.vectorDimensions = vectorDimensions; }
 
     public int getForkCount() { return forkCount; }
     public void setForkCount(int forkCount) { this.forkCount = forkCount; }

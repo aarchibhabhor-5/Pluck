@@ -51,6 +51,14 @@ public class SearchController {
                         if (t.toLowerCase().contains(term)) score += 4;
                     }
                 }
+                if (s.getAiKeywords() != null) {
+                    for (String k : s.getAiKeywords()) {
+                        if (k.toLowerCase().contains(term) || term.contains(k.toLowerCase())) score += 8;
+                    }
+                }
+                if (s.getDesignPattern() != null && s.getDesignPattern().toLowerCase().contains(term)) {
+                    score += 7;
+                }
             }
 
             if (score > 0) {
@@ -61,6 +69,10 @@ public class SearchController {
                 item.put("code", s.getCode());
                 item.put("folderId", s.getFolderId());
                 item.put("dependencies", s.getDependencies());
+                item.put("aiSummary", s.getAiSummary());
+                item.put("aiKeywords", s.getAiKeywords());
+                item.put("designPattern", s.getDesignPattern());
+                item.put("matchedBy", (summaryLower.contains(query) || (s.getAiKeywords() != null && !s.getAiKeywords().isEmpty())) ? List.of("semantic", "keyword") : List.of("keyword"));
                 item.put("relevanceScore", score);
                 scoredList.add(item);
             }

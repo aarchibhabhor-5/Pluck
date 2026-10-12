@@ -204,6 +204,64 @@ public class SnippetController {
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
+    @GetMapping("/{id}/versions")
+    public ResponseEntity<?> getSnippetVersions(@PathVariable String id) {
+        Optional<Snippet> opt = snippetRepository.findById(id);
+        if (opt.isEmpty()) opt = snippetRepository.findBySlug(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "SNIPPET_NOT_FOUND"));
+        }
+        Snippet s = opt.get();
+        List<Map<String, Object>> list = new ArrayList<>(s.getVersions());
+
+        // Include current version
+        Map<String, Object> current = new HashMap<>();
+        current.put("version", "v1." + s.getVersion() + " (Current)");
+        current.put("code", s.getCode());
+        current.put("title", s.getTitle());
+        current.put("updatedAt", s.getUpdatedAt());
+        current.put("isCurrent", true);
+        list.add(current);
+
+        return ResponseEntity.ok(Map.of("snippetId", id, "versions", list, "currentVersion", "v1." + s.getVersion()));
+    }
+
+    @PostMapping("/{id}/restore/{version}")
+    public ResponseEntity<?> restoreSnippetVersion(@PathVariable String id, @PathVariable String version) {
+        Optional<Snippet> opt = snippetRepository.findById(id);
+        if (opt.isEmpty()) opt = snippetRepository.findBySlug(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "SNIPPET_NOT_FOUND"));
+        }
+        Snippet s = opt.get();
+        String targetVer = version.replace("v", "").replace(" (Current)", "").trim();
+
+        Optional<Map<String, Object>> target = s.getVersions().stream()
+                .filter(v -> v.get("version") != null && v.get("version").toString().contains(targetVer))
+                .findFirst();
+
+        if (target.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "VERSION_NOT_FOUND", "message", "Version " + version + " not found."));
+        }
+
+        // Snapshot current code before restoring
+        Map<String, Object> currentSnapshot = new HashMap<>();
+        currentSnapshot.put("version", "v1." + s.getVersion());
+        currentSnapshot.put("code", s.getCode());
+        currentSnapshot.put("title", s.getTitle());
+        currentSnapshot.put("updatedAt", Instant.now().toString());
+        s.getVersions().add(currentSnapshot);
+
+        // Restore target code
+        String restoredCode = (String) target.get().get("code");
+        s.setCode(restoredCode);
+        s.setVersion(s.getVersion() + 1);
+        s.setUpdatedAt(Instant.now().toString());
+
+        Snippet updated = snippetRepository.save(s);
+        return ResponseEntity.ok(Map.of("success", true, "restoredVersion", version, "snippet", updated));
+    }
+
     private List<Map<String, String>> extractDependencies(String code) {
         List<Map<String, String>> deps = new ArrayList<>();
         if (code == null) return deps;

@@ -38,13 +38,13 @@
       <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--purple-dim); padding-bottom: 20px;">
         <div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <h1 style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--white);">useDebounce Hook</h1>
-            <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TypeScript</span>
+            <h1 id="pub-title" style="font-family: var(--mono); font-size: 24px; font-weight: 700; color: var(--white);">useDebounce Hook</h1>
+            <span id="pub-lang" class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">TypeScript</span>
           </div>
-          <p style="font-size: 12px; color: var(--muted); margin-top: 8px;">
+          <p id="pub-meta" style="font-size: 12px; color: var(--muted); margin-top: 8px;">
             Published by <strong>@alex_dev</strong> · 14 forks · Verified AST dependencies
           </p>
-          <p style="font-size: 13px; color: #ddd6fe; margin-top: 10px; line-height: 1.6;">
+          <p id="pub-desc" style="font-size: 13px; color: #ddd6fe; margin-top: 10px; line-height: 1.6;">
             Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup.
           </p>
         </div>
@@ -66,14 +66,14 @@
       <div class="dependency-bar pixel-border-box">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 11px; color: var(--muted);">Install dependencies:</span>
-          <code class="dep-cmd">npm i react@^18.3.1</code>
+          <code class="dep-cmd" id="pub-dep-cmd">npm i react@^18.3.1</code>
         </div>
-        <button class="btn-outline-pixel" style="font-size: 10px;" onclick="copySnippetText('npm i react@^18.3.1', 'Install command copied!')">Copy Command</button>
+        <button class="btn-outline-pixel" style="font-size: 10px;" onclick="copyInstallCmd()">Copy Command</button>
       </div>
 
       <!-- Code Box -->
       <div style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(124,58,237,0.15), 4px 4px 0 0 rgba(0,0,0,0.8); padding: 24px;">
-        <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
+        <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code id="pub-code-display"><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
 
 <span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = <span id="pub-var-display" style="color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 1px 4px;">300</span>): T {
   <span style="color:#f472b6;">const</span> [debouncedVal, setVal] = useState&lt;T&gt;(value);
@@ -97,32 +97,77 @@
 
   <script src="app-script.js"></script>
   <script>
+    let activePublicSnippet = null;
+
+    async function loadPublicSnippet() {
+      const params = new URLSearchParams(window.location.search);
+      const snipId = params.get('id') || 'use-debounce';
+
+      let snip = null;
+      try {
+        const apiBase = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '4000')) ? 'http://localhost:4000/api' : '/api';
+        const res = await fetch(`${apiBase}/snippets/${encodeURIComponent(snipId)}`);
+        if (res.ok) snip = await res.json();
+      } catch (e) {}
+
+      if (!snip) {
+        try {
+          const active = JSON.parse(sessionStorage.getItem('pluck_active_snippet') || 'null');
+          if (active && (active.id === snipId || active.slug === snipId)) snip = active;
+        } catch (e) {}
+      }
+
+      if (!snip) {
+        try {
+          const list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
+          snip = list.find(s => s.id === snipId || s.slug === snipId);
+        } catch (e) {}
+      }
+
+      if (snip) {
+        activePublicSnippet = snip;
+        document.title = `${snip.title} — Public Snippet · Pluck`;
+        document.getElementById('pub-title').textContent = snip.title;
+        document.getElementById('pub-lang').textContent = (snip.language || 'typescript').toUpperCase();
+        document.getElementById('pub-desc').textContent = snip.description || snip.aiSummary || 'Battle-tested snippet on Pluck.';
+        document.getElementById('pub-meta').innerHTML = `Published by <strong>@pluck_dev</strong> · ${snip.forkCount || 0} forks · Verified AST dependencies`;
+        
+        const codeDisplay = document.getElementById('pub-code-display');
+        if (codeDisplay) {
+          codeDisplay.textContent = snip.code || '';
+        }
+
+        if (snip.dependencies && snip.dependencies.length > 0) {
+          const depNames = snip.dependencies.map(d => d.name + (d.versionHint ? '@' + d.versionHint : '')).join(' ');
+          document.getElementById('pub-dep-cmd').textContent = `npm i ${depNames}`;
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPublicSnippet);
+
     function updatePublicInterpolation(val) {
-      document.getElementById('pub-var-display').textContent = val || '300';
+      const display = document.getElementById('pub-var-display');
+      if (display) display.textContent = val || '300';
+    }
+
+    function copyInstallCmd() {
+      const cmd = document.getElementById('pub-dep-cmd')?.textContent || 'npm i';
+      copySnippetText(cmd, 'Install command copied!');
     }
 
     function copyPublicSnippet() {
-      const delay = document.getElementById('pub-delay').value || '300';
-      const code = `import { useState, useEffect } from 'react';
-
-export function useDebounce<T>(value: T, delay: number = ${delay}): T {
-  const [debouncedVal, setVal] = useState<T>(value);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVal(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-
-  return debouncedVal;
-}`;
-      copySnippetText(code, 'Code copied with your customized delay!');
+      const codeDisplay = document.getElementById('pub-code-display');
+      const text = (activePublicSnippet && activePublicSnippet.code) ? activePublicSnippet.code : (codeDisplay ? codeDisplay.innerText : '');
+      copySnippetText(text, 'Code copied to clipboard!');
     }
 
     function forkPublicSnippet() {
-      showToast('Redirecting to auth to fork snippet...', 'info');
+      const snipId = activePublicSnippet?.id || activePublicSnippet?.slug || 'use-debounce';
+      showToast('Redirecting to studio to fork snippet...', 'info');
       setTimeout(() => {
-        window.location.href = 'auth.html?next=studio.html?fork=use-debounce';
-      }, 700);
+        window.location.href = `studio.html?id=${encodeURIComponent(snipId)}`;
+      }, 600);
     }
   </script>
   <script src="magic-bento.js"></script>

@@ -1103,7 +1103,7 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 16px;">⚠️</span>
             <div>
-              <strong>Language Mismatch:</strong> Cannot detect dependencies as this code is not for <span id="mismatch-selected-lang" class="dep-chip" style="font-size: 10px; color: #f59e0b; border-color: #f59e0b;">HTML</span> (detected <span id="mismatch-detected-lang" class="dep-chip" style="font-size: 10px; color: #38bdf8; border-color: #38bdf8;">TypeScript</span>).
+              <strong>Language Mismatch:</strong> Cannot detect dependencies as the code is not in <span id="mismatch-selected-lang" class="dep-chip" style="font-size: 10px; color: #f59e0b; border-color: #f59e0b;">--</span><span id="mismatch-detected-wrapper" style="display: none;"> (detected <span id="mismatch-detected-lang" class="dep-chip" style="font-size: 10px; color: #38bdf8; border-color: #38bdf8;">--</span>)</span>.
             </div>
           </div>
           <div class="lang-mismatch-actions">
@@ -1265,6 +1265,7 @@
     let detectedEnvKeys = new Set();
     let activeSecretMatch = null;
     let inspectorDock = null;
+    let isLoadingSnippet = false;
 
     const initialTemplate = '';
 
@@ -1504,7 +1505,7 @@
       }
 
       // 7. Java check
-      if (/(?:^|[\r\n])\s*(?:public\s+class\s+\w+|class\s+\w+\s*\{|public\s+static\s+void\s+main|System\.out\.println|package\s+[a-z0-9_.]+\s*;|import\s+(?:java|javax|org|com)\.[a-z0-9_.]+\s*;|@Override|@SpringBootApplication)/m.test(trimmed)) {
+      if (/(?:^|[\r\n])\s*(?:public\s+class\s+\w+|class\s+\w+\s*\{|public\s+static\s+void\s+main|System\.out\.(?:println|print|printf)|package\s+[a-z0-9_.]+\s*;|import\s+(?:java|javax|org|com|net|io)\.[a-z0-9_.]+\s*;|@Override|@SpringBootApplication|(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(?:void|int|long|double|float|boolean|char|String)\s+\w+\s*\(|(?:public|private|protected)\s+[A-Z]\w*\s*\([^)]*\)\s*\{)/m.test(trimmed)) {
         return 'java';
       }
 
@@ -1514,7 +1515,7 @@
       }
 
       // 9. Python check
-      if (/(?:^|[\r\n])\s*(?:def\s+\w+\s*\([^)]*\)\s*:|class\s+\w+.*:|from\s+[\w.]+\s+import|import\s+[\w.]+|if\s+__name__\s*==\s*['"]__main__['"]:|print\s*\([^)]*\)\s*$|elif\s+.*:|except\s+.*:)/m.test(trimmed) &&
+      if (/(?:^|[\r\n])\s*(?:def\s+\w+\s*\([^)]*\)\s*:|class\s+\w+.*:|from\s+[\w.]+\s+import|import\s+[\w.]+|if\s+__name__\s*==\s*['"]__main__['"]:|print\s*\([^)]*\)|elif\s+.*:|except(?:\s+.*)?:)/m.test(trimmed) &&
           !/;\s*$/m.test(trimmed) && !/export\s+function/m.test(trimmed) && !/function\s+\w+\s*\(/m.test(trimmed) && !/const\s+\w+\s*=/m.test(trimmed)) {
         return 'python';
       }
@@ -1598,6 +1599,7 @@
     }
 
     function checkLanguageMismatch(code, forceLang, userInitiated = false) {
+      if (isLoadingSnippet) return; // Suppress false alarms during snippet loading
       if (languageMismatchIgnored && !userInitiated) return;
       const currentSelectedLang = forceLang || document.getElementById('select-lang')?.value || 'typescript';
       const mismatch = evaluateLanguageMismatch(code, currentSelectedLang);
@@ -1616,8 +1618,10 @@
         if (banner) {
           const selBadge = document.getElementById('mismatch-selected-lang');
           const detBadge = document.getElementById('mismatch-detected-lang');
+          const detWrapper = document.getElementById('mismatch-detected-wrapper');
           if (selBadge) selBadge.textContent = mismatch.selectedDisplayName;
           if (detBadge) detBadge.textContent = mismatch.detectedName;
+          if (detWrapper) detWrapper.style.display = mismatch.detectedName ? 'inline' : 'none';
 
           const switchBtn = document.getElementById('btn-switch-mismatch-lang');
           if (switchBtn) {
@@ -1637,7 +1641,7 @@
         const mismatchKey = `${currentSelectedLang}:${mismatch.detected || 'unknown'}`;
         if (userInitiated || mismatchKey !== lastAlertedMismatchKey) {
           lastAlertedMismatchKey = mismatchKey;
-          showToast(`Cannot detect dependencies as this code is not for ${mismatch.selectedDisplayName}`, 'error');
+          showToast(`Cannot detect dependencies as the code is not in ${mismatch.selectedDisplayName}`, 'error');
         }
       } else {
         currentMismatchState = null;
@@ -1660,7 +1664,9 @@
         selectLanguage(detectedLanguageId);
         const banner = document.getElementById('lang-mismatch-banner');
         if (banner) banner.style.display = 'none';
-        showToast(`Switched snippet language to ${detectedLanguageId}`, 'success');
+        const detObj = LANGUAGE_LIST.find(l => l.id === detectedLanguageId);
+        const detName = detObj ? detObj.name : detectedLanguageId;
+        showToast(`Switched snippet language to ${detName}`, 'success');
       }
     }
 
@@ -1903,7 +1909,7 @@
               <span>Cannot Detect Dependencies</span>
             </div>
             <p style="margin: 8px 0 0 0; font-size: 11px; color: #fecaca; line-height: 1.5; font-family: var(--mono);">
-              Cannot detect dependencies as this code is not for <strong>${currentMismatchState?.selectedDisplayName || selectedDisplayName}</strong>${detName ? ` (detected <strong>${detName}</strong>)` : ''}.
+              Cannot detect dependencies as the code is not in <strong>${currentMismatchState?.selectedDisplayName || selectedDisplayName}</strong>${detName ? ` (detected <strong>${detName}</strong>)` : ''}.
             </p>
             ${currentMismatchState?.detectedLang ? `
             <button onclick="applyDetectedLanguage()" class="btn-solid-pixel" style="margin-top: 12px; width: 100%; font-size: 11px; padding: 7px 12px; background: #ef4444; border-color: #f87171; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -2625,12 +2631,11 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 
       // 5. Populate Studio with snippet data
       if (s) {
+        isLoadingSnippet = true;
         const titleEl = document.getElementById('snippet-title');
         if (titleEl) titleEl.value = s.title || '';
 
-        if (s.code && editorInstance) {
-          editorInstance.setValue(s.code);
-        }
+        // 1. Sync language dropdown, Monaco model, presets, and stdlib FIRST
         if (s.language) {
           selectLanguage(s.language, true);
         }
@@ -2648,6 +2653,15 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
         if (descEl && s.description) {
           descEl.value = s.description;
         }
+
+        // 2. Set code AFTER language is synced
+        if (s.code && editorInstance) {
+          editorInstance.setValue(s.code);
+        }
+
+        isLoadingSnippet = false;
+
+        // 3. Run live AST analysis with matching language
         if (s.code) {
           handleCodeAnalysis(s.code);
         }
