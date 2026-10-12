@@ -35,7 +35,7 @@
       background: linear-gradient(180deg, #181d2c 0%, #0f131f 100%) !important;
       border-bottom: 1px solid rgba(139, 92, 246, 0.4) !important;
       box-shadow: 0 6px 24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-      z-index: 20;
+      z-index: 1000 !important;
       position: relative;
     }
 
@@ -144,11 +144,11 @@
       padding: 10px 14px !important;
     }
 
-    /* Elevated 3D Save CTA Button */
+    /* Elevated 3D Save CTA Button - Solid Color (No Gradient) */
     #btn-save {
-      background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%) !important;
-      border: 1px solid #67e8f9 !important;
-      border-bottom: 3px solid #1e3a8a !important;
+      background: #0ea5e9 !important;
+      border: 1px solid #38bdf8 !important;
+      border-bottom: 3px solid #0369a1 !important;
       border-radius: 5px !important;
       color: #ffffff !important;
       font-family: var(--mono) !important;
@@ -156,19 +156,24 @@
       font-weight: 700 !important;
       padding: 9px 20px !important;
       letter-spacing: 0.5px !important;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
-      box-shadow: 0 4px 16px rgba(6, 182, 212, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+      box-shadow: 0 3px 0 0 #075985, 0 6px 16px rgba(0, 0, 0, 0.6), 0 0 16px rgba(14, 165, 233, 0.35) !important;
       cursor: pointer !important;
       transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     }
     #btn-save:hover {
+      background: #38bdf8 !important;
+      color: #03131c !important;
+      text-shadow: none !important;
       transform: translateY(-2px) !important;
-      box-shadow: 0 6px 22px rgba(6, 182, 212, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+      border-bottom: 3px solid #0284c7 !important;
+      box-shadow: 0 5px 0 0 #0369a1, 0 10px 22px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.5) !important;
     }
     #btn-save:active {
-      transform: translateY(1px) !important;
-      border-bottom-width: 1px !important;
-      box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3) !important;
+      background: #0284c7 !important;
+      transform: translateY(2px) !important;
+      border-bottom: 1px solid #0369a1 !important;
+      box-shadow: 0 1px 0 0 #0369a1, 0 2px 6px rgba(0, 0, 0, 0.5) !important;
     }
 
     /* Monaco Editor Frame */
@@ -251,16 +256,54 @@
       overflow: visible !important;
     }
 
+    /* Elevated Inspector Tabs Tooltip (Positioned BELOW icons to prevent clipping behind top bar) */
     .inspector-tabs-container .dock .dock-label {
+      bottom: auto !important;
+      top: calc(100% + 14px) !important;
+      left: 50% !important;
+      right: auto !important;
+      transform: translate(-50%, -4px) !important;
       z-index: 999999 !important;
       font-size: 11px !important;
       font-weight: 700 !important;
       pointer-events: none !important;
     }
 
+    .inspector-tabs-container .dock .dock-item:hover .dock-label,
+    .inspector-tabs-container .dock .dock-item[data-hover] .dock-label,
+    .inspector-tabs-container .dock .dock-item:focus-visible .dock-label {
+      transform: translate(-50%, 0) !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    /* Edge alignment for first and last dock tabs */
+    .inspector-tabs-container .dock .dock-item:first-child .dock-label {
+      left: 0 !important;
+      right: auto !important;
+      transform: translate(0, -4px) !important;
+    }
+
+    .inspector-tabs-container .dock .dock-item:first-child:hover .dock-label,
+    .inspector-tabs-container .dock .dock-item:first-child[data-hover] .dock-label,
+    .inspector-tabs-container .dock .dock-item:first-child:focus-visible .dock-label {
+      transform: translate(0, 0) !important;
+    }
+
+    .inspector-tabs-container .dock .dock-item:last-child .dock-label {
+      left: auto !important;
+      right: 0 !important;
+      transform: translate(0, -4px) !important;
+    }
+
+    .inspector-tabs-container .dock .dock-item:last-child:hover .dock-label,
+    .inspector-tabs-container .dock .dock-item:last-child[data-hover] .dock-label,
+    .inspector-tabs-container .dock .dock-item:last-child:focus-visible .dock-label {
+      transform: translate(0, 0) !important;
+    }
+
     /* Elevated Inspector Textboxes & Textareas */
     .var-input,
-    #add-pkg-input,
     #snippet-desc,
     #snippet-tags {
       background: #080b12 !important;
@@ -278,13 +321,11 @@
       box-sizing: border-box !important;
     }
     .var-input:hover,
-    #add-pkg-input:hover,
     #snippet-desc:hover,
     #snippet-tags:hover {
       border-color: #475569 !important;
     }
     .var-input:focus,
-    #add-pkg-input:focus,
     #snippet-desc:focus,
     #snippet-tags:focus {
       border-color: #38bdf8 !important;
@@ -292,74 +333,500 @@
       box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25), inset 0 2px 5px rgba(0, 0, 0, 0.75) !important;
     }
 
-    /* Elevated Add Dependency Button */
-    .btn-outline-pixel {
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
-      border: 1px solid #475569 !important;
-      border-bottom: 2px solid #020617 !important;
-      border-radius: 5px !important;
-      color: #38bdf8 !important;
-      font-family: var(--mono) !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      padding: 9px 16px !important;
-      cursor: pointer !important;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1) !important;
-      transition: all 0.15s ease !important;
+    .inspector-content {
+      overflow-y: auto !important;
+      max-height: calc(100vh - 150px) !important;
+      scrollbar-width: thin;
+      scrollbar-color: #334155 transparent;
+      padding-bottom: 30px !important;
     }
-    .btn-outline-pixel:hover {
-      border-color: #38bdf8 !important;
-      color: #fff !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35) !important;
+    .inspector-content::-webkit-scrollbar {
+      width: 5px;
     }
-    .btn-outline-pixel:active {
-      transform: translateY(1px) !important;
+    .inspector-content::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .inspector-content::-webkit-scrollbar-thumb:hover {
+      background: #818cf8;
     }
 
-    /* Normal Elevated Inspector Cards */
+    /* ═══════════════════════════════════════════════════════════
+       ELEVATED CYBER-PIXEL INSPECTOR SYSTEM (DEPENDENCIES & TOOLS)
+       ═══════════════════════════════════════════════════════════ */
+
+    /* Section Title Bar & Quick Tools */
+    .section-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+    .live-pulse-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ec4899;
+      box-shadow: 0 0 8px #ec4899, 0 0 14px rgba(236, 72, 153, 0.6);
+      margin-right: 6px;
+      animation: pulseNeon 2s infinite ease-in-out;
+    }
+    @keyframes pulseNeon {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.6; }
+    }
+    .ast-tag {
+      background: rgba(236, 72, 153, 0.15);
+      border: 1px solid rgba(236, 72, 153, 0.45);
+      color: #f472b6;
+      font-size: 8.5px;
+      font-family: var(--mono);
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+      margin-left: 6px;
+    }
+    .section-quick-tools {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-tool-pixel {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid #334155;
+      border-radius: 4px;
+      color: #94a3b8;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-tool-pixel:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);
+    }
+    .btn-tool-danger:hover {
+      background: rgba(239, 68, 68, 0.15) !important;
+      border-color: #ef4444 !important;
+      color: #f87171 !important;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25) !important;
+    }
+
+    /* Container Spacing for Inspector Lists */
     #detected-packages-list,
     #detected-env-list,
     #detected-vars-list {
-      margin-top: 8px;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    #detected-packages-list > div,
-    #detected-env-list > div,
-    #detected-vars-list > div {
-      background: linear-gradient(180deg, #181d2c 0%, #101420 100%) !important;
+    /* Elevated Dependency Item Card - Black & Grey Theme */
+    .pkg-item-card {
+      background: linear-gradient(135deg, #11141c 0%, #080a0f 100%) !important;
       border: 1px solid #334155 !important;
-      border-left: 3px solid #8b5cf6 !important;
-      border-radius: 5px !important;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-      padding: 10px 14px;
+      border-left: 3px solid #64748b !important;
+      border-radius: 6px !important;
+      padding: 10px 12px !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 2px 0 10px rgba(100, 116, 139, 0.1) !important;
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pkg-item-card:hover {
+      border-color: #475569 !important;
+      border-left-color: #94a3b8 !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(148, 163, 184, 0.2) !important;
+    }
+    .pkg-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .pkg-card-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .pkg-badge-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #cbd5e1;
+      flex-shrink: 0;
+    }
+    .pkg-title {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 13px;
+      color: #f1f5f9;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pkg-card-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Ecosystem Badges / Chips */
+    .eco-pill {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+    .eco-npm {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+    }
+    .eco-pip {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+    }
+    .eco-go {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+    }
+    .eco-cargo {
+      background: rgba(249, 115, 22, 0.12);
+      border: 1px solid rgba(249, 115, 22, 0.5);
+      color: #fb923c;
+      box-shadow: 0 0 8px rgba(249, 115, 22, 0.25);
+    }
+    .eco-mvn {
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      color: #c084fc;
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.25);
+    }
+
+    /* Micro Delete Button */
+    .btn-micro-delete {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 4px;
+      color: #f87171;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
       transition: all 0.15s ease;
     }
+    .btn-micro-delete:hover {
+      background: #ef4444 !important;
+      border-color: #f87171 !important;
+      color: #ffffff !important;
+      transform: scale(1.12);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+    }
+    .btn-micro-delete:active {
+      transform: scale(0.95);
+    }
 
-    #detected-packages-list > div:hover,
-    #detected-env-list > div:hover,
-    #detected-vars-list > div:hover {
-      border-color: #475569 !important;
-      border-left-color: #a78bfa !important;
+    .pkg-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: #94a3b8;
+      padding-left: 30px;
+    }
+    .meta-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #475569;
+      flex-shrink: 0;
+    }
+    .meta-desc {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Manual Dependency Form Section */
+    .add-dep-section {
+      margin-top: 18px;
+      background: linear-gradient(180deg, rgba(20, 25, 38, 0.5) 0%, rgba(13, 17, 28, 0.75) 100%);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 6px;
+      padding: 12px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+    }
+    .manual-dep-form-box {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .input-with-addons {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: #080b12;
+      border: 1px solid #334155;
+      border-radius: 5px;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+      overflow: hidden;
+    }
+    .input-with-addons:focus-within {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25), inset 0 2px 5px rgba(0, 0, 0, 0.75), 0 0 14px rgba(56, 189, 248, 0.35);
+    }
+    .input-pkg-glyph {
+      font-size: 12px;
+      padding-left: 10px;
+      color: #64748b;
+      user-select: none;
+    }
+    .cyber-dep-input {
+      flex: 1;
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      color: #f8fafc !important;
+      font-family: var(--mono) !important;
+      font-size: 11.5px !important;
+      padding: 8px 10px !important;
+      box-shadow: none !important;
+    }
+    .cyber-dep-input::placeholder {
+      color: #475569;
+      font-style: italic;
+    }
+    .cyber-eco-dropdown {
+      background: #111726;
+      border: none;
+      border-left: 1px solid #334155;
+      color: #38bdf8;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 8px 8px;
+      outline: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: background 0.15s ease;
+    }
+    .cyber-eco-dropdown:hover {
+      background: #1e293b;
+    }
+
+    /* 3D Tactile Add Button Matching Save (⌘S) */
+    .btn-add-dep {
+      background: linear-gradient(180deg, #38e8f8 0%, #06b6d4 100%) !important;
+      color: #03131c !important;
+      border: 1px solid #67e8f9 !important;
+      border-bottom: 3px solid #0891b2 !important;
+      border-radius: 4px !important;
+      box-shadow: 0 3px 0 0 #0e7490, 0 6px 16px rgba(0, 0, 0, 0.7), 0 0 16px rgba(6, 182, 212, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+      font-family: var(--mono) !important;
+      font-weight: 700 !important;
+      font-size: 11px !important;
+      letter-spacing: 0.04em !important;
+      padding: 8px 16px !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      white-space: nowrap !important;
+      transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease !important;
+    }
+    .btn-add-dep:hover {
+      background: linear-gradient(180deg, #67e8f9 0%, #22d3ee 100%) !important;
+      color: #010a10 !important;
+      transform: translateY(-2px) !important;
+      border-bottom: 3px solid #0891b2 !important;
+      box-shadow: 0 5px 0 0 #0e7490, 0 10px 22px rgba(0, 0, 0, 0.8), 0 0 24px rgba(6, 182, 212, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.65) !important;
+    }
+    .btn-add-dep:active {
+      transform: translateY(2px) !important;
+      border-bottom: 1px solid #0891b2 !important;
+      box-shadow: 0 1px 0 0 #0e7490, 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    /* Quick Presets Options */
+    .quick-presets-box {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(51, 65, 85, 0.6);
+    }
+    .quick-presets-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-family: var(--pixel);
+      font-size: 8px;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+    }
+    .quick-lang-pill {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: #a78bfa;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+    .quick-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .btn-preset-chip {
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-bottom: 2px solid rgba(88, 28, 135, 0.8);
+      color: #c084fc;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .btn-preset-chip:hover {
+      background: rgba(139, 92, 246, 0.25);
+      border-color: #a855f7;
+      color: #ffffff;
       transform: translateY(-1px);
-      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.6) !important;
+      box-shadow: 0 4px 10px rgba(168, 85, 247, 0.35);
+    }
+    .btn-preset-chip:active {
+      transform: translateY(1px);
+      box-shadow: none;
     }
 
-    #detected-env-list > div {
+    /* Auto-Excluded Standard Library Card */
+    .stdlib-box {
+      margin-top: 16px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.6) 0%, rgba(10, 15, 26, 0.85) 100%);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+      border-radius: 6px;
+      padding: 11px 13px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .stdlib-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .stdlib-title {
+      font-family: var(--pixel);
+      font-size: 8.5px;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+    }
+    .stdlib-status-tag {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 3px;
+      padding: 1px 5px;
+      letter-spacing: 0.4px;
+    }
+    .stdlib-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    .stdlib-badge {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      border-radius: 3px;
+      color: #cbd5e1;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      padding: 2px 6px;
+      transition: all 0.15s ease;
+    }
+    .stdlib-badge:hover {
+      border-color: #38bdf8;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .stdlib-footnote {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: #64748b;
+      line-height: 1.4;
+      font-style: italic;
+    }
+
+    /* Elevated Env & Var Items */
+    .env-item-card {
+      background: linear-gradient(135deg, rgba(20, 26, 40, 0.95) 0%, rgba(12, 17, 28, 0.98) 100%) !important;
+      border: 1px solid rgba(56, 189, 248, 0.25) !important;
       border-left: 3px solid #38bdf8 !important;
+      border-radius: 6px !important;
+      padding: 10px 14px !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 2px 0 10px rgba(56, 189, 248, 0.15) !important;
+      transition: all 0.18s ease !important;
     }
-    #detected-env-list > div:hover {
+    .env-item-card:hover {
+      border-color: rgba(56, 189, 248, 0.6) !important;
       border-left-color: #7dd3fc !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(56, 189, 248, 0.3) !important;
     }
 
-    #detected-vars-list > div {
+    .var-item-card {
+      background: linear-gradient(135deg, rgba(26, 24, 20, 0.95) 0%, rgba(17, 15, 12, 0.98) 100%) !important;
+      border: 1px solid rgba(251, 191, 36, 0.25) !important;
       border-left: 3px solid #fbbf24 !important;
+      border-radius: 6px !important;
+      padding: 10px 14px !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 2px 0 10px rgba(251, 191, 36, 0.15) !important;
+      transition: all 0.18s ease !important;
     }
-    #detected-vars-list > div:hover {
+    .var-item-card:hover {
+      border-color: rgba(251, 191, 36, 0.6) !important;
       border-left-color: #fde047 !important;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), 0 0 18px rgba(251, 191, 36, 0.3) !important;
     }
 
     /* Secret Detection Banner Elevation */
@@ -393,6 +860,67 @@
     }
     .btn-outline-danger:hover {
       background: rgba(239, 68, 68, 0.2) !important;
+    }
+
+    /* Language Mismatch Alert Banner */
+    .lang-mismatch-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(180, 83, 9, 0.32) 100%) !important;
+      border: 1px solid rgba(245, 158, 11, 0.75) !important;
+      border-radius: 6px !important;
+      color: #fef3c7 !important;
+      font-size: 12px !important;
+      font-family: var(--mono) !important;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+      animation: bannerSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .lang-mismatch-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-mismatch-pixel {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%) !important;
+      border: 1px solid #fbbf24 !important;
+      border-bottom: 2px solid #92400e !important;
+      border-radius: 5px !important;
+      color: #0f172a !important;
+      font-family: var(--mono) !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      padding: 6px 14px !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
+      transition: all 0.15s ease !important;
+    }
+    .btn-mismatch-pixel:hover {
+      background: #fbbf24 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.6) !important;
+    }
+
+    .btn-outline-mismatch {
+      background: rgba(15, 23, 42, 0.6) !important;
+      border: 1px solid #f59e0b !important;
+      border-radius: 5px !important;
+      color: #fde68a !important;
+      font-family: var(--mono) !important;
+      font-size: 11px !important;
+      padding: 6px 12px !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+    .btn-outline-mismatch:hover {
+      background: rgba(245, 158, 11, 0.2) !important;
+      color: #fff !important;
     }
 
     /* ══════════════════════════════════════════════════════
@@ -445,9 +973,29 @@
     }
 
     .custom-dropdown-popover {
-      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 1px rgba(139, 92, 246, 0.5)) !important;
+      z-index: 1000 !important;
+      filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.95)) !important;
       animation: dropdownPopFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
       transform-origin: top left !important;
+    }
+
+    /* Remove outer glow and translucent purple halo from dropdown list */
+    .custom-dropdown-popover .animated-list {
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    .custom-dropdown-popover .animated-list--framed {
+      background: #0c0f17 !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    .custom-dropdown-popover .animated-list__frame-rim {
+      display: none !important;
+    }
+    .custom-dropdown-popover .animated-list:has(> .animated-list__viewport:focus-visible) {
+      outline: none !important;
     }
 
     @keyframes dropdownPopFade {
@@ -491,7 +1039,8 @@
         </select>
 
         <select class="select-pixel" id="select-folder" style="display: none;">
-          <option value="hooks" selected>Folder: hooks</option>
+          <option value="general" selected>Folder: general</option>
+          <option value="hooks">Folder: hooks</option>
           <option value="auth">Folder: auth</option>
           <option value="aws-infra">Folder: aws-infra</option>
           <option value="database">Folder: database</option>
@@ -510,7 +1059,7 @@
             <span id="lang-dropdown-text">TypeScript (.ts)</span>
             <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div id="lang-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; z-index: 100; min-width: 300px;">
+          <div id="lang-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; z-index: 1000; min-width: 300px;">
             <div id="lang-animated-list"></div>
           </div>
         </div>
@@ -518,10 +1067,10 @@
         <!-- 2. Folder Dropdown (React Bits AnimatedList) -->
         <div class="custom-dropdown-container" id="folder-dropdown-container">
           <button type="button" class="custom-dropdown-trigger" id="folder-dropdown-trigger" onclick="toggleFolderDropdown(event)">
-            <span id="folder-dropdown-text">📁 Folder: hooks</span>
+            <span id="folder-dropdown-text">📁 Folder: general</span>
             <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div id="folder-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; z-index: 100; min-width: 290px;">
+          <div id="folder-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); left: 0; z-index: 1000; min-width: 290px;">
             <div id="folder-animated-list"></div>
           </div>
         </div>
@@ -532,7 +1081,7 @@
             <span id="visibility-dropdown-text">🔒 Private</span>
             <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
-          <div id="visibility-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 100; min-width: 310px;">
+          <div id="visibility-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 1000; min-width: 310px;">
             <div id="visibility-animated-list"></div>
           </div>
         </div>
@@ -548,6 +1097,20 @@
 
       <!-- Center Code Editor Pane -->
       <div class="studio-editor-pane">
+
+        <!-- Live Language Mismatch Alert Banner -->
+        <div class="lang-mismatch-banner" id="lang-mismatch-banner" style="display: none;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 16px;">⚠️</span>
+            <div>
+              <strong>Language Mismatch:</strong> Cannot detect dependencies as this code is not for <span id="mismatch-selected-lang" class="dep-chip" style="font-size: 10px; color: #f59e0b; border-color: #f59e0b;">HTML</span> (detected <span id="mismatch-detected-lang" class="dep-chip" style="font-size: 10px; color: #38bdf8; border-color: #38bdf8;">TypeScript</span>).
+            </div>
+          </div>
+          <div class="lang-mismatch-actions">
+            <button class="btn-outline-mismatch" onclick="ignoreLanguageMismatch()">Ignore</button>
+            <button class="btn-mismatch-pixel" id="btn-switch-mismatch-lang" onclick="applyDetectedLanguage()">⚡ Switch Language</button>
+          </div>
+        </div>
 
         <!-- Live Secret Detection Banner (Gating Alert) -->
         <div class="secret-banner" id="secret-banner" style="display: none;">
@@ -581,35 +1144,97 @@
 
         <!-- Inspector Content: Packages Tab -->
         <div class="inspector-content" id="panel-pkgs">
-          <div>
-            <div class="nav-section-title">Detected Dependencies (AST)</div>
-            <div id="detected-packages-list"></div>
-          </div>
-
-          <div style="margin-top: 14px;">
-            <div class="nav-section-title">+ Add Manual Dependency</div>
-            <div style="display: flex; gap: 6px; margin-top: 6px;">
-              <input type="text" id="add-pkg-input" class="var-input" placeholder="e.g. lodash-es" style="flex: 1;" />
-              <button class="btn-outline-pixel" onclick="addManualPkg()" style="font-size: 11px;">Add</button>
+          <div class="section-title-bar">
+            <div class="nav-section-title" style="margin: 0; padding: 0;">
+              <span class="live-pulse-dot"></span>
+              DETECTED DEPENDENCIES <span class="ast-tag">AST</span>
+            </div>
+            <div class="section-quick-tools">
+              <button class="btn-tool-pixel btn-tool-danger" onclick="clearAllPkgs()" title="Clear All Dependencies">✕ Clear</button>
             </div>
           </div>
 
-          <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--purple-dim); font-size: 11px; color: var(--muted);">
-            <div><strong>Ignored stdlib:</strong> <code>node:path</code>, <code>node:fs</code>, <code>os</code></div>
+          <div id="detected-packages-list"></div>
+
+          <!-- Elevated Add Manual Dependency Form & Options -->
+          <div class="add-dep-section">
+            <div class="nav-section-title" style="margin-bottom: 8px; padding-left: 0;">
+              + ADD MANUAL DEPENDENCY
+            </div>
+            <div class="manual-dep-form-box">
+              <div class="input-with-addons">
+                <span class="input-pkg-glyph">📦</span>
+                <input type="text" id="add-pkg-input" class="cyber-dep-input" placeholder="e.g. lodash-es, axios, requests" onkeydown="if(event.key==='Enter') addManualPkg()" />
+                <select id="add-pkg-eco" class="cyber-eco-dropdown" title="Select Package Ecosystem">
+                  <option value="npm">npm</option>
+                  <option value="pip">pip</option>
+                  <option value="go">go</option>
+                  <option value="cargo">cargo</option>
+                  <option value="mvn">mvn</option>
+                </select>
+              </div>
+              <button class="btn-add-dep" onclick="addManualPkg()" title="Add manual dependency">
+                + Add
+              </button>
+            </div>
+
+            <!-- Quick Presets / Options Row -->
+            <div class="quick-presets-box">
+              <div class="quick-presets-header">
+                <span>⚡ POPULAR PRESETS:</span>
+                <span id="quick-preset-lang-label" class="quick-lang-pill">TypeScript</span>
+              </div>
+              <div id="quick-presets-list" class="quick-chips-row">
+                <!-- Dynamic preset buttons -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Auto-Excluded Standard Library Card -->
+          <div class="stdlib-box">
+            <div class="stdlib-header">
+              <div style="display: flex; align-items: center; gap: 7px;">
+                <span style="font-size: 13px;">🛡️</span>
+                <span class="stdlib-title">IGNORED STANDARD LIBS</span>
+              </div>
+              <span class="stdlib-status-tag">AUTO-FILTERED</span>
+            </div>
+            <div class="stdlib-chips-row" id="stdlib-chips-list">
+              <!-- Dynamic stdlib badges -->
+            </div>
+            <div class="stdlib-footnote">
+              Built-in standard library packages are automatically excluded from external locks.
+            </div>
           </div>
         </div>
 
         <!-- Inspector Content: Variables Tab -->
         <div class="inspector-content" id="panel-vars" style="display: none;">
-          <div class="nav-section-title">Dynamic Interpolated Variables</div>
-          <p style="font-size: 11px; color: var(--muted); line-height: 1.5;">Syntax: <code>{{name|default}}</code>. Values can be filled before copying.</p>
+          <div class="section-title-bar">
+            <div class="nav-section-title" style="margin: 0; padding: 0;">
+              <span class="live-pulse-dot" style="background: #fbbf24; box-shadow: 0 0 8px #fbbf24;"></span>
+              DYNAMIC VARIABLES <span class="ast-tag" style="background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.4); color: #fbbf24;">LIVE</span>
+            </div>
+            <div class="section-quick-tools">
+              <button class="btn-tool-pixel" onclick="copyVarSyntaxTemplate()" title="Copy syntax placeholder template">📋 Syntax</button>
+            </div>
+          </div>
+          <p style="font-size: 11px; color: var(--muted); line-height: 1.5; font-family: var(--mono); margin-bottom: 10px;">Syntax: <code>{{name|default}}</code>. Values can be filled before copying.</p>
 
           <div id="detected-vars-list"></div>
         </div>
 
         <!-- Inspector Content: Env Tab -->
         <div class="inspector-content" id="panel-env" style="display: none;">
-          <div class="nav-section-title">Environment Variables</div>
+          <div class="section-title-bar">
+            <div class="nav-section-title" style="margin: 0; padding: 0;">
+              <span class="live-pulse-dot" style="background: #38bdf8; box-shadow: 0 0 8px #38bdf8;"></span>
+              ENVIRONMENT SECRETS <span class="ast-tag" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">ENV</span>
+            </div>
+            <div class="section-quick-tools">
+              <button class="btn-tool-pixel" onclick="rescanAST()" title="Scan secrets in snippet code">⚡ Scan</button>
+            </div>
+          </div>
           <div id="detected-env-list"></div>
         </div>
 
@@ -621,7 +1246,7 @@
           </div>
           <div class="form-group" style="margin-top: 14px;">
             <label class="form-label">TAGS (COMMA SEPARATED)</label>
-            <input type="text" id="snippet-tags" class="var-input" value="react, hook, performance" placeholder="e.g. react, hooks, api" />
+            <input type="text" id="snippet-tags" class="var-input" value="" placeholder="e.g. react, hooks, api" />
           </div>
         </div>
 
@@ -641,29 +1266,7 @@
     let activeSecretMatch = null;
     let inspectorDock = null;
 
-    const initialTemplate = `import React, { useState, useEffect } from 'react';
-
-/**
- * useDebounce Hook
- * Debounces rapidly updating values by delay milliseconds.
- */
-export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
-  const [debouncedVal, setDebouncedVal] = useState<T>(value);
-
-  // Secret token simulation (will trigger secret scanner)
-  const apiKey = "sk_live_948a8f1023ba192e44";
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedVal(value);
-    }, delay);
-
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedVal;
-}
-`;
+    const initialTemplate = '';
 
     // ── 1. Monaco Editor Initialization ─────────────────────
     require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
@@ -726,23 +1329,96 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       checkEditMode();
     });
 
-    // ── 2. Live AST & Secret Analysis ───────────────────────
-    function handleCodeAnalysis(code) {
-      document.getElementById('save-status-pill').textContent = '● Editing';
-      document.getElementById('save-status-pill').style.color = 'var(--yellow)';
-      document.getElementById('save-status-pill').style.borderColor = 'var(--yellow)';
+    let currentMismatchState = null;
+    let lastAlertedMismatchKey = null;
 
-      // 1. Detect Package Imports (AST approximation)
-      const importMatches = code.matchAll(/(?:import\s+(?:[\w*\s{},]+)\s+from\s+['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\))/g);
-      const newPkgs = new Set();
-      for (const m of importMatches) {
-        const pkg = m[1] || m[2];
-        if (pkg && !pkg.startsWith('.') && !pkg.startsWith('node:')) {
-          newPkgs.add(pkg.split('/')[0]);
+    function extractLanguageDependencies(code, lang) {
+      const pkgs = new Map();
+      if (!code || !code.trim()) return pkgs;
+
+      if (lang === 'typescript' || lang === 'javascript') {
+        const importMatches = code.matchAll(/(?:import\s+(?:[\w*\s{},]+)\s+from\s+['"]([^'"]+)['"]|require\(\s*['"]([^'"]+)['"]\s*\))/g);
+        for (const m of importMatches) {
+          const pkg = m[1] || m[2];
+          if (pkg && !pkg.startsWith('.') && !pkg.startsWith('node:')) {
+            pkgs.set(pkg.split('/')[0], 'npm');
+          }
+        }
+      } else if (lang === 'python') {
+        const pyMatches = code.matchAll(/(?:from\s+([a-zA-Z0-9_-]+)(?:\.[a-zA-Z0-9_-]+)*\s+import|import\s+([a-zA-Z0-9_-]+))/g);
+        const pyStdLib = new Set(['os', 'sys', 'time', 're', 'json', 'math', 'typing', 'datetime', 'random', 'collections', 'itertools', 'functools', 'pathlib', 'subprocess', 'threading', 'multiprocessing', 'urllib', 'http', 'logging', 'unittest', 'hashlib', 'base64', 'io', 'shutil', 'glob']);
+        for (const m of pyMatches) {
+          const p = m[1] || m[2];
+          if (p && !pyStdLib.has(p)) {
+            pkgs.set(p, 'pip');
+          }
+        }
+      } else if (lang === 'go') {
+        const goSingle = code.matchAll(/import\s+["']([^"']+)["']/g);
+        for (const m of goSingle) {
+          if (m[1] && m[1].includes('.')) pkgs.set(m[1], 'go');
+        }
+        const goBlock = code.match(/import\s*\(([\s\S]*?)\)/);
+        if (goBlock) {
+          const lines = goBlock[1].matchAll(/["']([^"']+)["']/g);
+          for (const m of lines) {
+            if (m[1] && m[1].includes('.')) pkgs.set(m[1], 'go');
+          }
+        }
+      } else if (lang === 'rust') {
+        const rustMatches = code.matchAll(/use\s+([a-zA-Z0-9_]+)::/g);
+        const rustStd = new Set(['std', 'core', 'alloc']);
+        for (const m of rustMatches) {
+          if (m[1] && !rustStd.has(m[1])) pkgs.set(m[1], 'cargo');
+        }
+      } else if (lang === 'java') {
+        const javaMatches = code.matchAll(/import\s+(?:static\s+)?([a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)*);/g);
+        for (const m of javaMatches) {
+          const fq = m[1];
+          if (fq && !fq.startsWith('java.') && !fq.startsWith('javax.')) {
+            const parts = fq.split('.');
+            const pkgName = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : parts[0];
+            pkgs.set(pkgName, 'mvn');
+          }
         }
       }
-      detectedPkgs = newPkgs;
-      renderDetectedPkgs();
+      return pkgs;
+    }
+
+    // ── 2. Live AST & Secret Analysis ───────────────────────
+    function handleCodeAnalysis(code) {
+      const statusPill = document.getElementById('save-status-pill');
+      if (statusPill) {
+        if (!code || !code.trim()) {
+          statusPill.textContent = '● Ready';
+          statusPill.style.color = '#38bdf8';
+          statusPill.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        } else {
+          statusPill.textContent = '● Editing';
+          statusPill.style.color = 'var(--yellow)';
+          statusPill.style.borderColor = 'var(--yellow)';
+        }
+      }
+
+      const currentLang = document.getElementById('select-lang')?.value || 'typescript';
+      const mismatch = evaluateLanguageMismatch(code, currentLang);
+      detectedLanguageId = mismatch.detected;
+
+      currentMismatchState = mismatch.hasMismatch ? {
+        selectedLang: currentLang,
+        selectedDisplayName: mismatch.selectedDisplayName,
+        detectedLang: mismatch.detected,
+        detectedName: mismatch.detectedName
+      } : null;
+
+      // 1. Detect Package Imports (Only for matching language)
+      if (mismatch.hasMismatch) {
+        detectedPkgs = new Map();
+        renderDetectedPkgs(true);
+      } else {
+        detectedPkgs = extractLanguageDependencies(code, currentLang);
+        renderDetectedPkgs(false);
+      }
 
       // 2. Secret Scan (Credential / Token patterns)
       const secretRegex = /(sk_live_[a-zA-Z0-9]{16,}|ghp_[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|bearer\s+[a-zA-Z0-9_\-\.]{25,})/i;
@@ -772,9 +1448,223 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
         detectedVars.push({ name: m[1], defaultVal: m[2] || '' });
       }
       renderDetectedVars();
+
+      // 5. Language Detection & Mismatch Check
+      checkLanguageMismatch(code, currentLang, false);
     }
 
-    function getPackageDescription(pkg) {
+    // ── 2b. Language Detection & Mismatch Alerts ────────────
+    let detectedLanguageId = null;
+    let languageMismatchIgnored = false;
+
+    function detectCodeLanguage(code) {
+      if (!code || !code.trim()) return null;
+      const trimmed = code.trim();
+
+      // 1. JSON check: must start with { or [ and parse cleanly
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          const sanitized = trimmed.replace(/\{\{[^}]+\}\}/g, '"__placeholder__"');
+          JSON.parse(sanitized);
+          return 'json';
+        } catch (e) {
+          // not valid json, fall through
+        }
+      }
+
+      // 2. HTML check: DOCTYPE, <html>, or markup tags
+      const hasHtmlMarkup = /<!DOCTYPE\s+html/i.test(trimmed) ||
+        /<html[\s>]/i.test(trimmed) ||
+        /<\/?(div|span|button|input|head|body|p|a|section|h[1-6]|ul|ol|li|form|table|tr|td|th|nav|header|footer|main|article|aside|script|style|svg|img|canvas)[\s>\/]/i.test(trimmed) ||
+        (trimmed.includes('</') && /<\/?[a-z][a-z0-9-]*(\s+[^>]*)?>/i.test(trimmed));
+      if (hasHtmlMarkup && !trimmed.startsWith('import ') && !trimmed.startsWith('export ') && !trimmed.startsWith('package ') && !trimmed.startsWith('public class ')) {
+        return 'html';
+      }
+
+      // 3. CSS check
+      if (/(?:@import\s+url|@media|@keyframes|body\s*\{|(?:\.[\w-]+\s*\{)|(?:#[\w-]+\s*\{)|(?:\*|\w+)\s*\{\s*[\w-]+\s*:)\s*[a-zA-Z-]+:/i.test(trimmed) ||
+          (/(?:margin|padding|background|color|display|font-size|border-radius)\s*:\s*[^;]+;/i.test(trimmed) && trimmed.includes('{'))) {
+        return 'css';
+      }
+
+      // 4. Shell / Bash check
+      if (/^#!\/(?:usr\/)?bin\/(?:bash|sh|zsh)/m.test(trimmed) ||
+          /(?:^|[\r\n])\s*(?:npm\s+(?:run|install|i|test|start)|npx\s+\w+|yarn\s+\w+|pnpm\s+\w+|pip\s+install|cargo\s+(?:run|build)|go\s+(?:run|build)|docker\s+(?:run|build|compose)|git\s+(?:commit|push|pull|clone|checkout)|sudo\s+\w+|chmod\s+[+\w]+|curl\s+-[a-zA-Z]|echo\s+['"])/m.test(trimmed)) {
+        return 'shell';
+      }
+
+      // 5. Go check
+      if (/(?:^|[\r\n])\s*(?:package\s+\w+|func\s+(?:\([^)]+\)\s+)?\w+\s*\(|import\s*\([\s\S]*?\)|import\s+"[\w.\/-]+")/m.test(trimmed)) {
+        return 'go';
+      }
+
+      // 6. Rust check
+      if (/(?:^|[\r\n])\s*(?:fn\s+\w+\s*\(|pub\s+fn\s+\w+\s*\(|use\s+(?:std|crate)::|let\s+mut\s+\w+|impl\s+\w+|#\[derive\(|println!\s*\()/m.test(trimmed)) {
+        return 'rust';
+      }
+
+      // 7. Java check
+      if (/(?:^|[\r\n])\s*(?:public\s+class\s+\w+|class\s+\w+\s*\{|public\s+static\s+void\s+main|System\.out\.println|package\s+[a-z0-9_.]+\s*;|import\s+(?:java|javax|org|com)\.[a-z0-9_.]+\s*;|@Override|@SpringBootApplication)/m.test(trimmed)) {
+        return 'java';
+      }
+
+      // 8. SQL check
+      if (/\b(?:SELECT\s+[\s\S]+?\s+FROM|INSERT\s+INTO\s+\w+|UPDATE\s+\w+\s+SET|DELETE\s+FROM\s+\w+|CREATE\s+TABLE\s+\w+|ALTER\s+TABLE\s+\w+|DROP\s+TABLE\s+\w+|CREATE\s+DATABASE\s+\w+)\b/i.test(trimmed)) {
+        return 'sql';
+      }
+
+      // 9. Python check
+      if (/(?:^|[\r\n])\s*(?:def\s+\w+\s*\([^)]*\)\s*:|class\s+\w+.*:|from\s+[\w.]+\s+import|import\s+[\w.]+|if\s+__name__\s*==\s*['"]__main__['"]:|print\s*\([^)]*\)\s*$|elif\s+.*:|except\s+.*:)/m.test(trimmed) &&
+          !/;\s*$/m.test(trimmed) && !/export\s+function/m.test(trimmed) && !/function\s+\w+\s*\(/m.test(trimmed) && !/const\s+\w+\s*=/m.test(trimmed)) {
+        return 'python';
+      }
+
+      // 10. TypeScript / TSX check
+      if (/(?:^|[\r\n])\s*(?:interface\s+\w+\s*(?:<[^>]+>)?\s*\{|type\s+\w+\s*(?:<[^>]+>)?\s*=|enum\s+\w+\s*\{|export\s+(?:interface|type)|:\s*(?:string|number|boolean|any|void|unknown|never|Record<|Array<)\b|<[A-Z]\w*>\s*\(|as\s+const\b)/m.test(trimmed) ||
+          /(?:import\s+(?:React|{[\s\w,]+})\s+from\s+['"][^'"]+['"]|export\s+(?:default\s+)?function|const\s+\[\w+,\s*set\w+\]|useEffect\s*\()/m.test(trimmed)) {
+        return 'typescript';
+      }
+
+      // 11. JavaScript check
+      if (/(?:^|[\r\n])\s*(?:const\s+\w+\s*=|let\s+\w+\s*=|var\s+\w+\s*=|function\s+\w+\s*\(|console\.log\s*\(|module\.exports\s*=|require\s*\(['"][^'"]+['"]\)|export\s+default\s+)/m.test(trimmed)) {
+        return 'javascript';
+      }
+
+      return null;
+    }
+
+    function evaluateLanguageMismatch(code, currentSelectedLang) {
+      const selectedObj = LANGUAGE_LIST.find(l => l.id === currentSelectedLang);
+      const selectedDisplayName = selectedObj ? selectedObj.name : currentSelectedLang.toUpperCase();
+      if (!code || !code.trim()) {
+        return { hasMismatch: false, selectedDisplayName, detected: null, detectedName: '' };
+      }
+
+      const detected = detectCodeLanguage(code);
+      const detectedObj = LANGUAGE_LIST.find(l => l.id === detected);
+      const detectedName = detectedObj ? detectedObj.name : (detected || '');
+
+      let hasMismatch = false;
+
+      if (currentSelectedLang === 'json') {
+        let jsonValid = false;
+        try {
+          const sanitized = code.trim().replace(/\{\{[^}]+\}\}/g, '"__placeholder__"');
+          JSON.parse(sanitized);
+          jsonValid = true;
+        } catch (e) {
+          jsonValid = false;
+        }
+        if (!jsonValid || (detected && detected !== 'json')) {
+          hasMismatch = true;
+        }
+      } else if (currentSelectedLang === 'html') {
+        const hasHtmlMarkup = /<!DOCTYPE\s+html/i.test(code) || 
+          /<html[\s>]/i.test(code) || 
+          /<\/?(div|span|button|input|head|body|p|a|section|h[1-6]|ul|ol|li|form|table|tr|td|th|nav|header|footer|main|article|aside|script|style|svg|img|canvas)[\s>\/]/i.test(code) ||
+          (code.includes('</') && /<\/?[a-z][a-z0-9-]*(\s+[^>]*)?>/i.test(code));
+        if ((detected && detected !== 'html') || (!hasHtmlMarkup && !code.trim().startsWith('<'))) {
+          hasMismatch = true;
+        }
+      } else if (currentSelectedLang === 'css') {
+        if (detected && detected !== 'css') {
+          hasMismatch = true;
+        }
+      } else if (currentSelectedLang === 'sql') {
+        if (detected && detected !== 'sql') {
+          hasMismatch = true;
+        }
+      } else if (currentSelectedLang === 'typescript') {
+        if (detected && !['typescript', 'javascript'].includes(detected)) {
+          hasMismatch = true;
+        }
+      } else if (currentSelectedLang === 'javascript') {
+        if (detected && detected !== 'javascript') {
+          hasMismatch = true;
+        }
+      } else {
+        // python, go, rust, java, shell
+        if (detected && detected !== currentSelectedLang) {
+          hasMismatch = true;
+        }
+      }
+
+      return {
+        hasMismatch,
+        selectedDisplayName,
+        detected,
+        detectedName: detectedName || (hasMismatch ? (detected || 'another language') : '')
+      };
+    }
+
+    function checkLanguageMismatch(code, forceLang, userInitiated = false) {
+      if (languageMismatchIgnored && !userInitiated) return;
+      const currentSelectedLang = forceLang || document.getElementById('select-lang')?.value || 'typescript';
+      const mismatch = evaluateLanguageMismatch(code, currentSelectedLang);
+      detectedLanguageId = mismatch.detected;
+
+      const banner = document.getElementById('lang-mismatch-banner');
+
+      if (mismatch.hasMismatch) {
+        currentMismatchState = {
+          selectedLang: currentSelectedLang,
+          selectedDisplayName: mismatch.selectedDisplayName,
+          detectedLang: mismatch.detected,
+          detectedName: mismatch.detectedName
+        };
+
+        if (banner) {
+          const selBadge = document.getElementById('mismatch-selected-lang');
+          const detBadge = document.getElementById('mismatch-detected-lang');
+          if (selBadge) selBadge.textContent = mismatch.selectedDisplayName;
+          if (detBadge) detBadge.textContent = mismatch.detectedName;
+
+          const switchBtn = document.getElementById('btn-switch-mismatch-lang');
+          if (switchBtn) {
+            if (mismatch.detected) {
+              const detObj = LANGUAGE_LIST.find(l => l.id === mismatch.detected);
+              const detExt = detObj ? detObj.ext : '';
+              switchBtn.textContent = `⚡ Switch to ${mismatch.detectedName} (${detExt})`;
+              switchBtn.style.display = 'inline-flex';
+            } else {
+              switchBtn.style.display = 'none';
+            }
+          }
+          banner.style.display = 'flex';
+        }
+
+        // Popup Toast trigger
+        const mismatchKey = `${currentSelectedLang}:${mismatch.detected || 'unknown'}`;
+        if (userInitiated || mismatchKey !== lastAlertedMismatchKey) {
+          lastAlertedMismatchKey = mismatchKey;
+          showToast(`Cannot detect dependencies as this code is not for ${mismatch.selectedDisplayName}`, 'error');
+        }
+      } else {
+        currentMismatchState = null;
+        lastAlertedMismatchKey = null;
+        if (banner) banner.style.display = 'none';
+      }
+    }
+
+    function ignoreLanguageMismatch() {
+      languageMismatchIgnored = true;
+      const banner = document.getElementById('lang-mismatch-banner');
+      if (banner) banner.style.display = 'none';
+      showToast('Language mismatch alert ignored', 'info');
+    }
+
+    function applyDetectedLanguage() {
+      if (detectedLanguageId) {
+        languageMismatchIgnored = false;
+        lastAlertedMismatchKey = null;
+        selectLanguage(detectedLanguageId);
+        const banner = document.getElementById('lang-mismatch-banner');
+        if (banner) banner.style.display = 'none';
+        showToast(`Switched snippet language to ${detectedLanguageId}`, 'success');
+      }
+    }
+
+    function getPackageDescription(pkg, eco = 'npm') {
       const descriptions = {
         'react': 'v18.2.0 • Core UI Library',
         'framer-motion': 'v11.0.8 • Spring Physics Engine',
@@ -783,9 +1673,16 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
         '@supabase/supabase-js': 'v2.39.0 • Cloud Database Client',
         'canvas-confetti': 'v1.9.2 • High-Perf Canvas FX',
         'clsx': 'v2.1.0 • Classnames Utility',
-        'tailwind-merge': 'v2.2.1 • CSS Class Conflict Resolver'
+        'tailwind-merge': 'v2.2.1 • CSS Class Conflict Resolver',
+        'requests': 'HTTP library for Python',
+        'numpy': 'Scientific computing package',
+        'pandas': 'Data analysis toolkit',
+        'flask': 'Lightweight WSGI web app framework',
+        'fastapi': 'High performance web API framework',
+        'django': 'High-level Python web framework',
+        'torch': 'PyTorch tensor & deep learning'
       };
-      return descriptions[pkg] || 'npm package dependency';
+      return descriptions[pkg] || `${eco} package dependency`;
     }
 
     function getEnvDescription(key) {
@@ -885,44 +1782,259 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       });
     }
 
-    function renderDetectedPkgs() {
+    // ── Predefined Presets & Standard Libraries by Language ──
+    const PRESETS_BY_LANG = {
+      typescript: [
+        { name: 'lodash-es', eco: 'npm' },
+        { name: 'axios', eco: 'npm' },
+        { name: 'zustand', eco: 'npm' },
+        { name: 'zod', eco: 'npm' },
+        { name: 'framer-motion', eco: 'npm' }
+      ],
+      javascript: [
+        { name: 'lodash', eco: 'npm' },
+        { name: 'axios', eco: 'npm' },
+        { name: 'express', eco: 'npm' },
+        { name: 'dayjs', eco: 'npm' },
+        { name: 'dotenv', eco: 'npm' }
+      ],
+      python: [
+        { name: 'requests', eco: 'pip' },
+        { name: 'pydantic', eco: 'pip' },
+        { name: 'fastapi', eco: 'pip' },
+        { name: 'numpy', eco: 'pip' },
+        { name: 'pandas', eco: 'pip' }
+      ],
+      go: [
+        { name: 'github.com/gin-gonic/gin', eco: 'go' },
+        { name: 'github.com/stretchr/testify', eco: 'go' },
+        { name: 'go.uber.org/zap', eco: 'go' }
+      ],
+      rust: [
+        { name: 'serde', eco: 'cargo' },
+        { name: 'tokio', eco: 'cargo' },
+        { name: 'anyhow', eco: 'cargo' },
+        { name: 'tracing', eco: 'cargo' }
+      ],
+      java: [
+        { name: 'org.springframework.boot', eco: 'mvn' },
+        { name: 'com.google.guava', eco: 'mvn' },
+        { name: 'org.projectlombok.lombok', eco: 'mvn' }
+      ]
+    };
+
+    const STDLIB_BY_LANG = {
+      typescript: ['node:path', 'node:fs', 'node:os', 'node:crypto', 'node:http'],
+      javascript: ['node:path', 'node:fs', 'node:os', 'node:crypto', 'node:http'],
+      python: ['sys', 'os', 'pathlib', 'typing', 'json', 'math', 'datetime'],
+      go: ['fmt', 'net/http', 'os', 'io', 'strings', 'time', 'sync'],
+      rust: ['std::fs', 'std::io', 'std::path', 'std::collections'],
+      java: ['java.util.*', 'java.io.*', 'java.lang.*', 'java.net.*']
+    };
+
+    function updateQuickPresetsAndStdlib(currentLang) {
+      const langLabel = document.getElementById('quick-preset-lang-label');
+      const presetsContainer = document.getElementById('quick-presets-list');
+      const stdlibContainer = document.getElementById('stdlib-chips-list');
+      const ecoSelect = document.getElementById('add-pkg-eco');
+
+      const selectedObj = LANGUAGE_LIST.find(l => l.id === currentLang);
+      const displayName = selectedObj ? selectedObj.name : currentLang.toUpperCase();
+      if (langLabel) langLabel.textContent = displayName;
+
+      // Auto-set the ecosystem dropdown default
+      if (ecoSelect) {
+        if (currentLang === 'python') ecoSelect.value = 'pip';
+        else if (currentLang === 'go') ecoSelect.value = 'go';
+        else if (currentLang === 'rust') ecoSelect.value = 'cargo';
+        else if (currentLang === 'java') ecoSelect.value = 'mvn';
+        else ecoSelect.value = 'npm';
+      }
+
+      // Render Presets
+      if (presetsContainer) {
+        const presets = PRESETS_BY_LANG[currentLang] || [];
+        if (presets.length > 0) {
+          presetsContainer.innerHTML = presets.map(p => `
+            <button type="button" class="btn-preset-chip" onclick="addManualPkgNamed('${escapeHtml(p.name)}', '${p.eco}')" title="Quickly add ${escapeHtml(p.name)} [${p.eco}]">
+              + ${escapeHtml(p.name)}
+            </button>
+          `).join('');
+        } else {
+          presetsContainer.innerHTML = `<span style="font-size: 10px; color: #64748b; font-style: italic; font-family: var(--mono);">No presets available for ${escapeHtml(displayName)}</span>`;
+        }
+      }
+
+      // Render Stdlib badges
+      if (stdlibContainer) {
+        const stdlibs = STDLIB_BY_LANG[currentLang] || [];
+        if (stdlibs.length > 0) {
+          stdlibContainer.innerHTML = stdlibs.map(lib => `
+            <span class="stdlib-badge" title="Built-in Standard Library">${escapeHtml(lib)}</span>
+          `).join('');
+        } else {
+          stdlibContainer.innerHTML = `<span style="font-size: 10px; color: #64748b; font-style: italic; font-family: var(--mono);">None excluded</span>`;
+        }
+      }
+    }
+
+    function renderDetectedPkgs(isMismatch = false) {
+      const container = document.getElementById('detected-packages-list');
       const countEl = document.getElementById('pkg-count');
+      const currentLang = document.getElementById('select-lang')?.value || 'typescript';
+      const selectedObj = LANGUAGE_LIST.find(l => l.id === currentLang);
+      const selectedDisplayName = selectedObj ? selectedObj.name : currentLang.toUpperCase();
+
+      updateQuickPresetsAndStdlib(currentLang);
+
+      if (isMismatch || currentMismatchState) {
+        if (countEl) countEl.textContent = '!';
+        if (inspectorDock) {
+          inspectorDock.setBadge(0, '!');
+          inspectorDock.setLabel(0, 'Mismatch (!)');
+        }
+        if (!container) return;
+
+        const detName = currentMismatchState?.detectedName;
+        container.innerHTML = `
+          <div style="background: rgba(239, 68, 68, 0.12) !important; border: 1px solid #ef4444 !important; border-left: 3px solid #ef4444 !important; padding: 14px; border-radius: 6px; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);">
+            <div style="display: flex; align-items: center; gap: 8px; color: #fca5a5; font-weight: 700; font-size: 12px; font-family: var(--mono);">
+              <span style="font-size: 15px;">⚠️</span>
+              <span>Cannot Detect Dependencies</span>
+            </div>
+            <p style="margin: 8px 0 0 0; font-size: 11px; color: #fecaca; line-height: 1.5; font-family: var(--mono);">
+              Cannot detect dependencies as this code is not for <strong>${currentMismatchState?.selectedDisplayName || selectedDisplayName}</strong>${detName ? ` (detected <strong>${detName}</strong>)` : ''}.
+            </p>
+            ${currentMismatchState?.detectedLang ? `
+            <button onclick="applyDetectedLanguage()" class="btn-solid-pixel" style="margin-top: 12px; width: 100%; font-size: 11px; padding: 7px 12px; background: #ef4444; border-color: #f87171; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+              ⚡ Switch Language to ${detName}
+            </button>` : ''}
+          </div>
+        `;
+        return;
+      }
+
+      // Normal state (No mismatch)
       if (countEl) countEl.textContent = detectedPkgs.size;
       if (inspectorDock) {
         inspectorDock.setBadge(0, detectedPkgs.size);
         inspectorDock.setLabel(0, `Packages (${detectedPkgs.size})`);
       }
 
-      const container = document.getElementById('detected-packages-list');
       if (!container) return;
 
       if (detectedPkgs.size === 0) {
-        container.innerHTML = `
-          <div style="font-size: 11px; color: #64748b; font-style: italic; padding: 12px; text-align: center; border: 1px dashed #334155; border-radius: 5px;">
-            No imports detected. Add "import ... from 'package'" in code.
-          </div>
-        `;
+        if (['html', 'css', 'sql', 'json'].includes(currentLang)) {
+          container.innerHTML = `
+            <div style="font-size: 11px; color: #94a3b8; font-style: italic; padding: 14px; text-align: center; border: 1px dashed rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.04); border-radius: 6px; line-height: 1.5; font-family: var(--mono);">
+              ✨ No package dependencies required for ${selectedDisplayName} snippets.
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div style="font-size: 11px; color: #64748b; font-style: italic; padding: 14px; text-align: center; border: 1px dashed #334155; background: rgba(15, 23, 42, 0.4); border-radius: 6px; font-family: var(--mono);">
+              ⚡ No imports detected in AST. Add imports in code or click presets below.
+            </div>
+          `;
+        }
         return;
       }
 
-      container.innerHTML = Array.from(detectedPkgs).map(pkg => `
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-            <span style="font-weight: 700; color: #f472b6; font-family: var(--mono); font-size: 13px;">${escapeHtml(pkg)}</span>
-            <span style="font-size: 10px; color: #94a3b8; font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(getPackageDescription(pkg))}</span>
+      const entries = (detectedPkgs instanceof Map) ? Array.from(detectedPkgs.entries()) : Array.from(detectedPkgs).map(p => [p, 'npm']);
+
+      container.innerHTML = entries.map(([pkg, eco]) => `
+        <div class="pkg-item-card">
+          <div class="pkg-card-top">
+            <div class="pkg-card-left">
+              <div class="pkg-badge-icon">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              </div>
+              <span class="pkg-title" title="${escapeHtml(pkg)}">${escapeHtml(pkg)}</span>
+            </div>
+            <div class="pkg-card-right">
+              <span class="eco-pill eco-${eco || 'npm'}">${escapeHtml(eco || 'npm')}</span>
+              <button class="btn-micro-delete" onclick="removePkg('${escapeHtml(pkg)}')" title="Remove dependency">✕</button>
+            </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-            <span class="dep-chip" style="font-size: 10px; padding: 2px 7px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1);">npm</span>
-            <button onclick="removePkg('${escapeHtml(pkg)}')" title="Remove dependency" style="background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 3px; line-height: 1;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#64748b'">✕</button>
+          <div class="pkg-card-meta">
+            <span class="meta-dot"></span>
+            <span class="meta-desc">${escapeHtml(getPackageDescription(pkg, eco))}</span>
           </div>
         </div>
       `).join('');
     }
 
     function removePkg(pkg) {
-      detectedPkgs.delete(pkg);
-      renderDetectedPkgs();
+      if (detectedPkgs instanceof Map) {
+        detectedPkgs.delete(pkg);
+      } else if (detectedPkgs instanceof Set) {
+        detectedPkgs.delete(pkg);
+      }
+      renderDetectedPkgs(false);
       showToast(`Removed dependency: ${pkg}`, 'info');
+    }
+
+    function addManualPkgNamed(name, eco) {
+      if (!name || !name.trim()) return;
+      const cleanName = name.trim();
+      const cleanEco = eco || document.getElementById('add-pkg-eco')?.value || 'npm';
+      if (detectedPkgs instanceof Map) {
+        detectedPkgs.set(cleanName, cleanEco);
+      } else if (detectedPkgs instanceof Set) {
+        detectedPkgs.add(cleanName);
+      }
+      renderDetectedPkgs(false);
+      showToast(`Added dependency: ${cleanName} [${cleanEco}]`, 'success');
+    }
+
+    function addManualPkg() {
+      const input = document.getElementById('add-pkg-input');
+      const ecoSelect = document.getElementById('add-pkg-eco');
+      if (!input) return;
+      const raw = input.value.trim();
+      if (!raw) {
+        showToast('Please enter a package name', 'error');
+        input.focus();
+        return;
+      }
+      const eco = ecoSelect ? ecoSelect.value : 'npm';
+      const items = raw.split(/[\s,]+/).filter(Boolean);
+      items.forEach(pkg => {
+        if (detectedPkgs instanceof Map) {
+          detectedPkgs.set(pkg, eco);
+        } else if (detectedPkgs instanceof Set) {
+          detectedPkgs.add(pkg);
+        }
+      });
+      input.value = '';
+      renderDetectedPkgs(false);
+      showToast(`Added ${items.length} package(s) [${eco}]`, 'success');
+    }
+
+    function rescanAST() {
+      if (editorInstance) {
+        handleCodeAnalysis(editorInstance.getValue());
+        showToast('Live AST scan updated', 'success');
+      }
+    }
+
+    function clearAllPkgs() {
+      if (!detectedPkgs || detectedPkgs.size === 0) {
+        showToast('No dependencies to clear', 'info');
+        return;
+      }
+      if (detectedPkgs instanceof Map) {
+        detectedPkgs.clear();
+      } else if (detectedPkgs instanceof Set) {
+        detectedPkgs.clear();
+      }
+      renderDetectedPkgs(false);
+      showToast('All dependencies cleared', 'info');
+    }
+
+    function copyVarSyntaxTemplate() {
+      navigator.clipboard?.writeText('{{varName|default}}');
+      showToast('Copied syntax {{varName|default}}', 'info');
     }
 
     function renderDetectedEnvs() {
@@ -938,7 +2050,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
 
       if (detectedEnvKeys.size === 0) {
         container.innerHTML = `
-          <div style="font-size: 11px; color: #64748b; font-style: italic; padding: 12px; text-align: center; border: 1px dashed #334155; border-radius: 5px;">
+          <div style="font-size: 11px; color: #64748b; font-style: italic; padding: 12px; text-align: center; border: 1px dashed #334155; border-radius: 5px; font-family: var(--mono);">
             No environment keys detected. Use process.env.KEY in snippet code.
           </div>
         `;
@@ -946,12 +2058,12 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
 
       container.innerHTML = Array.from(detectedEnvKeys).map(key => `
-        <div>
+        <div class="env-item-card">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: #38bdf8; font-weight: 700; font-family: var(--mono); font-size: 12px;">process.env.${escapeHtml(key)}</span>
-            <span class="dep-chip" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1); font-size: 9px;">Secret</span>
+            <span style="color: #38bdf8; font-weight: 700; font-family: var(--mono); font-size: 12px; letter-spacing: 0.3px;">process.env.${escapeHtml(key)}</span>
+            <span class="dep-chip" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.12); font-size: 9px; font-weight: 700; font-family: var(--mono);">SECRET</span>
           </div>
-          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">${escapeHtml(getEnvDescription(key))}</div>
+          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 6px; font-family: var(--mono);">${escapeHtml(getEnvDescription(key))}</div>
         </div>
       `).join('');
     }
@@ -969,7 +2081,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
 
       if (detectedVars.length === 0) {
         container.innerHTML = `
-          <div style="font-size: 11px; color: #64748b; font-style: italic; padding: 12px; text-align: center; border: 1px dashed #334155; border-radius: 5px;">
+          <div style="font-size: 11px; color: #64748b; font-style: italic; padding: 12px; text-align: center; border: 1px dashed #334155; border-radius: 5px; font-family: var(--mono);">
             No variables detected. Syntax: {{name|default}}
           </div>
         `;
@@ -977,14 +2089,14 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
 
       container.innerHTML = detectedVars.map(v => `
-        <div>
+        <div class="var-item-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="color: #fbbf24; font-weight: 700; font-family: var(--mono); font-size: 12px;">{{${escapeHtml(v.name)}}}</span>
-            <span class="dep-chip" style="font-size: 9px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">${v.defaultVal ? (isNaN(v.defaultVal) ? 'string' : 'number') : 'var'}</span>
+            <span style="color: #fbbf24; font-weight: 700; font-family: var(--mono); font-size: 12px; letter-spacing: 0.3px;">{{${escapeHtml(v.name)}}}</span>
+            <span class="dep-chip" style="font-size: 9px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-family: var(--mono);">${v.defaultVal ? (isNaN(v.defaultVal) ? 'STRING' : 'NUMBER') : 'VAR'}</span>
           </div>
           <div class="form-group" style="margin-top: 8px;">
-            <label class="form-label" style="font-size: 10px;">DEFAULT VALUE</label>
-            <input type="text" class="var-input" value="${escapeHtml(v.defaultVal)}" style="font-size: 11px; padding: 6px 10px;" />
+            <label class="form-label" style="font-size: 9px; font-family: var(--pixel); letter-spacing: 0.05em; color: #94a3b8;">DEFAULT VALUE</label>
+            <input type="text" class="var-input" value="${escapeHtml(v.defaultVal)}" style="font-size: 11px; padding: 6px 10px; font-family: var(--mono); border-color: #334155; background: #080b12;" />
           </div>
         </div>
       `).join('');
@@ -1031,7 +2143,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
     }
 
-    function changeLanguage(lang) {
+    function changeLanguage(lang, showGenericToast = true) {
       if (editorInstance && window.monaco) {
         const monacoLangMap = {
           typescript: 'typescript',
@@ -1049,7 +2161,12 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
         const target = monacoLangMap[lang] || 'plaintext';
         monaco.editor.setModelLanguage(editorInstance.getModel(), target);
       }
-      showToast(`Monaco language changed to ${lang}`, 'info');
+      if (showGenericToast) {
+        showToast(`Monaco language changed to ${lang}`, 'info');
+      }
+      if (editorInstance) {
+        checkLanguageMismatch(editorInstance.getValue(), lang, false);
+      }
     }
 
     // ── 3b. Custom Animated Dropdown Handlers (React Bits AnimatedList) ──
@@ -1068,6 +2185,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
     ];
 
     const FOLDER_LIST = [
+      { id: 'general', name: 'general', desc: 'General & Uncategorized Snippets', icon: AnimatedList.GLYPHS.folder, meta: 'Folder' },
       { id: 'hooks', name: 'hooks', desc: 'Custom React & DOM Hooks', icon: AnimatedList.GLYPHS.folder, meta: 'Folder' },
       { id: 'auth', name: 'auth', desc: 'OAuth & Session Guards', icon: AnimatedList.GLYPHS.key, meta: 'Folder' },
       { id: 'aws-infra', name: 'aws-infra', desc: 'Terraform & Lambda Specs', icon: AnimatedList.GLYPHS.database, meta: 'Folder' },
@@ -1135,7 +2253,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
     }
 
-    function selectLanguage(langId) {
+    function selectLanguage(langId, silent = false) {
       const selectEl = document.getElementById('select-lang');
       if (selectEl) selectEl.value = langId;
 
@@ -1145,8 +2263,18 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
         labelEl.textContent = `${found.name} (${found.ext})`;
       }
 
-      changeLanguage(langId);
+      languageMismatchIgnored = false;
+      lastAlertedMismatchKey = null; // Always reset so selecting immediately fires alert if mismatch
+      changeLanguage(langId, false); // Suppress generic toast
       closeLangDropdown();
+
+      if (editorInstance) {
+        const code = editorInstance.getValue();
+        handleCodeAnalysis(code);
+        if (!silent) {
+          checkLanguageMismatch(code, langId, true); // userInitiated = true
+        }
+      }
     }
 
     function closeLangDropdown() {
@@ -1206,16 +2334,18 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
     }
 
-    function selectFolder(folderId) {
+    function selectFolder(folderId, silent = false) {
       const selectEl = document.getElementById('select-folder');
       if (selectEl) selectEl.value = folderId;
 
-      const found = FOLDER_LIST.find(f => f.id === folderId);
+      const found = FOLDER_LIST.find(f => f.id === folderId || f.name === folderId);
       const labelEl = document.getElementById('folder-dropdown-text');
-      if (labelEl && found) {
-        labelEl.textContent = `📁 Folder: ${found.name}`;
+      if (labelEl) {
+        labelEl.textContent = found ? `📁 Folder: ${found.name}` : `📁 Folder: ${folderId}`;
       }
-      showToast(`Selected folder: ${folderId}`, 'info');
+      if (!silent) {
+        showToast(`Selected folder: ${folderId}`, 'info');
+      }
       closeFolderDropdown();
     }
 
@@ -1276,17 +2406,19 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       }
     }
 
-    function selectVisibility(visId) {
+    function selectVisibility(visId, silent = false) {
       checkVisibilityGating(visId);
       const selectEl = document.getElementById('select-visibility');
       if (selectEl) selectEl.value = visId;
 
       const found = VISIBILITY_LIST.find(v => v.id === visId);
       const labelEl = document.getElementById('visibility-dropdown-text');
-      if (labelEl && found) {
-        labelEl.textContent = `${found.meta} ${found.name}`;
+      if (labelEl) {
+        labelEl.textContent = found ? `${found.meta} ${found.name}` : `🔒 ${visId}`;
       }
-      showToast(`Snippet visibility: ${visId}`, 'info');
+      if (!silent) {
+        showToast(`Snippet visibility: ${visId}`, 'info');
+      }
       closeVisibilityDropdown();
     }
 
@@ -1313,8 +2445,14 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       const input = document.getElementById('add-pkg-input');
       const val = input.value.trim();
       if (val) {
-        detectedPkgs.add(val);
-        renderDetectedPkgs();
+        const currentLang = document.getElementById('select-lang')?.value || 'typescript';
+        const ecoMap = { typescript: 'npm', javascript: 'npm', python: 'pip', go: 'go', rust: 'cargo', java: 'mvn' };
+        if (detectedPkgs instanceof Map) {
+          detectedPkgs.set(val, ecoMap[currentLang] || 'pkg');
+        } else if (detectedPkgs instanceof Set) {
+          detectedPkgs.add(val);
+        }
+        renderDetectedPkgs(false);
         showToast(`Added dependency: ${val}`, 'success');
         input.value = '';
       }
@@ -1328,6 +2466,8 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
     }
 
     // ── 4. Save to MongoDB & Local Storage ───────────────────
+    const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '4000')) ? 'http://localhost:4000/api' : '/api';
+
     async function saveSnippet() {
       if (!editorInstance) return;
 
@@ -1344,9 +2484,13 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       btn.textContent = 'Saving to MongoDB...';
       btn.disabled = true;
 
+      const depList = (detectedPkgs instanceof Map)
+        ? Array.from(detectedPkgs.entries()).map(([name, eco]) => ({ name, version: 'latest', ecosystem: eco }))
+        : Array.from(detectedPkgs).map(p => ({ name: typeof p === 'string' ? p : p.name, version: 'latest' }));
+
       let savedSnippet = null;
       try {
-        const res = await fetch('/api/snippets', {
+        const res = await fetch(`${API_BASE}/snippets`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1358,7 +2502,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
             visibility,
             tags,
             description: desc,
-            dependencies: Array.from(detectedPkgs).map(p => ({ name: p, version: 'latest' })),
+            dependencies: depList,
             envKeys: Array.from(detectedEnvKeys),
             acknowledgeSecrets: true
           })
@@ -1384,7 +2528,7 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
           folderName: folderId,
           visibility,
           tags,
-          dependencies: Array.from(detectedPkgs).map(p => ({ name: p, version: 'latest' })),
+          dependencies: depList,
           description: desc,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -1419,35 +2563,102 @@ export function useDebounce<T>(value: T, delay: number = {{delay|300}}): T {
       const editId = urlParams.get('id');
       if (!editId) return;
 
+      let s = null;
+
+      // 1. Check sessionStorage (active snippet from snippet.html or app.html)
       try {
-        const res = await fetch(`/api/snippets/${encodeURIComponent(editId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          const s = data.snippet;
-          if (s) {
-            document.getElementById('snippet-title').value = s.title || '';
-            if (s.language) {
-              document.getElementById('select-lang').value = s.language;
-              changeLanguage(s.language);
-            }
-            if (s.folderId) document.getElementById('select-folder').value = s.folderId;
-            if (s.visibility) document.getElementById('select-visibility').value = s.visibility;
-            if (s.tags && s.tags.length) document.getElementById('snippet-tags').value = s.tags.join(', ');
-            if (s.code && editorInstance) {
-              editorInstance.setValue(s.code);
-            }
-            showToast(`Loaded snippet "${s.title}" for editing`, 'info');
+        const stored = sessionStorage.getItem('pluck_active_snippet');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.id === editId || parsed.slug === editId || editId === 'active' || editId === 'use-debounce')) {
+            s = parsed;
           }
         }
-      } catch (err) {
-        console.warn('Failed to fetch snippet for editing:', err);
+      } catch (e) {}
+
+      // 2. Check localStorage (saved user snippets)
+      if (!s) {
+        try {
+          const list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
+          s = list.find(item => item.id === editId || item.slug === editId);
+        } catch (e) {}
+      }
+
+      // 3. Check backend API
+      if (!s) {
+        try {
+          const res = await fetch(`${API_BASE}/snippets/${encodeURIComponent(editId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            s = data.snippet || data;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch snippet for editing:', err);
+        }
+      }
+
+      // 4. Built-in use-debounce fallback
+      if (!s && (editId === 'use-debounce' || editId === 'useDebounce')) {
+        s = {
+          id: 'use-debounce',
+          slug: 'use-debounce',
+          title: 'useDebounce Hook',
+          language: 'typescript',
+          folderId: 'hooks',
+          visibility: 'private',
+          tags: ['react', 'hook', 'performance'],
+          description: 'Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup to eliminate race conditions and redundant network requests.',
+          code: `import { useState, useEffect } from 'react';
+
+export function useDebounce<T>(value: T, delay: number = 300): T {
+  const [debouncedVal, setVal] = useState<T>(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVal(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debouncedVal;
+}`
+        };
+      }
+
+      // 5. Populate Studio with snippet data
+      if (s) {
+        const titleEl = document.getElementById('snippet-title');
+        if (titleEl) titleEl.value = s.title || '';
+
+        if (s.code && editorInstance) {
+          editorInstance.setValue(s.code);
+        }
+        if (s.language) {
+          selectLanguage(s.language, true);
+        }
+        if (s.folderId || s.folderName) {
+          selectFolder(s.folderId || s.folderName, true);
+        }
+        if (s.visibility) {
+          selectVisibility(s.visibility, true);
+        }
+        const tagsEl = document.getElementById('snippet-tags');
+        if (tagsEl && s.tags) {
+          tagsEl.value = Array.isArray(s.tags) ? s.tags.join(', ') : s.tags;
+        }
+        const descEl = document.getElementById('snippet-desc');
+        if (descEl && s.description) {
+          descEl.value = s.description;
+        }
+        if (s.code) {
+          handleCodeAnalysis(s.code);
+        }
+        showToast(`Loaded snippet "${s.title}" for editing`, 'info');
       }
     }
 
     // ── 6. Populate Folders from MongoDB ─────────────────────
     async function loadFoldersDropdown() {
       try {
-        const res = await fetch('/api/folders');
+        const res = await fetch(`${API_BASE}/folders`);
         if (res.ok) {
           const data = await res.json();
           const folders = data.folders || [];

@@ -36,7 +36,7 @@
         <div style="margin-top: 14px;">
           <div class="nav-section-title">Actions</div>
           <div style="display: flex; flex-direction: column; gap: 6px;">
-            <a href="studio.html" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">✎ Edit Snippet</a>
+            <a href="studio.html" onclick="openInStudio(event)" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">✎ Edit Snippet</a>
             <a href="share.html?id=use-debounce" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">🌐 Share Link</a>
             <button class="btn-solid-pixel" onclick="forkSnippet()" style="font-size: 11px; padding: 7px;">⑂ Fork Snippet</button>
           </div>
@@ -53,7 +53,7 @@
         </button>
         <div class="topbar-actions">
           <button class="btn-icon-pixel" title="Copy CLI slug" onclick="copySnippetText('pluck get use-debounce', 'CLI Command Copied!')">CLI</button>
-          <a href="studio.html" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">✎ Edit</a>
+          <a href="studio.html" onclick="openInStudio(event)" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">✎ Edit</a>
         </div>
       </header>
 
@@ -221,7 +221,61 @@
       copySnippetText('# Pluck .env.example\nSTRIPE_KEY=your_key_here\n', '.env.example copied to clipboard!');
     }
 
-    let currentLoadedSnippet = null;
+    const DEFAULT_SNIPPET = {
+      id: 'use-debounce',
+      slug: 'use-debounce',
+      title: 'useDebounce Hook',
+      language: 'typescript',
+      folderId: 'hooks',
+      visibility: 'private',
+      tags: ['react', 'hook', 'performance'],
+      description: 'Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup to eliminate race conditions and redundant network requests.',
+      code: `import { useState, useEffect } from 'react';
+
+export function useDebounce<T>(value: T, delay: number = 300): T {
+  const [debouncedVal, setVal] = useState<T>(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVal(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debouncedVal;
+}`
+    };
+
+    let currentLoadedSnippet = { ...DEFAULT_SNIPPET };
+
+    function openInStudio(event) {
+      if (event) event.preventDefault();
+
+      const title = document.getElementById('detail-title')?.textContent?.trim() || currentLoadedSnippet.title;
+      const lang = (document.getElementById('detail-lang')?.textContent?.trim() || currentLoadedSnippet.language).toLowerCase();
+      const visText = document.getElementById('detail-vis')?.textContent?.trim() || currentLoadedSnippet.visibility;
+      const visibility = visText.includes('Public') ? 'public' : visText.includes('Team') ? 'team' : 'private';
+      const slug = document.getElementById('detail-slug')?.textContent?.trim() || currentLoadedSnippet.slug;
+      const codeBlock = document.getElementById('interpolated-code-display');
+      const code = currentLoadedSnippet.code || (codeBlock ? codeBlock.innerText : '');
+
+      const snippetToExport = {
+        id: currentLoadedSnippet.id || slug || 'use-debounce',
+        slug: slug !== '--' ? slug : (currentLoadedSnippet.slug || 'use-debounce'),
+        title: title !== 'Snippet Detail' ? title : currentLoadedSnippet.title,
+        language: lang !== 'code' ? lang : currentLoadedSnippet.language,
+        folderId: currentLoadedSnippet.folderId || 'hooks',
+        visibility,
+        tags: currentLoadedSnippet.tags || ['react', 'hook', 'performance'],
+        description: currentLoadedSnippet.description || '',
+        code: code || currentLoadedSnippet.code
+      };
+
+      try {
+        sessionStorage.setItem('pluck_active_snippet', JSON.stringify(snippetToExport));
+      } catch (e) {}
+
+      const targetId = snippetToExport.id || snippetToExport.slug || 'use-debounce';
+      window.location.href = `studio.html?id=${encodeURIComponent(targetId)}`;
+    }
 
     function copySnippetCode() {
       if (currentLoadedSnippet && currentLoadedSnippet.code) {
@@ -240,7 +294,13 @@
     async function loadSnippetDetail() {
       const params = new URLSearchParams(window.location.search);
       const snipId = params.get('id');
-      if (!snipId) return;
+      if (!snipId) {
+        // When viewing without id, default snippet is active
+        document.querySelectorAll('a[href^="studio.html"]').forEach(a => {
+          a.href = `studio.html?id=${encodeURIComponent(DEFAULT_SNIPPET.id)}`;
+        });
+        return;
+      }
 
       let snip = null;
       try {
@@ -269,8 +329,8 @@
         }
 
         // Update Edit buttons
-        document.querySelectorAll('a[href="studio.html"]').forEach(a => {
-          a.href = `studio.html?id=${encodeURIComponent(snip.id)}`;
+        document.querySelectorAll('a[href^="studio.html"]').forEach(a => {
+          a.href = `studio.html?id=${encodeURIComponent(snip.id || snip.slug)}`;
         });
       }
     }
@@ -291,7 +351,7 @@
     function forkSnippet() {
       showToast('Snippet forked to your personal collection!', 'success');
       setTimeout(() => {
-        window.location.href = 'studio.html';
+        openInStudio();
       }, 700);
     }
   </script>

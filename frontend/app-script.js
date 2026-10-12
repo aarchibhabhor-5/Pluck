@@ -51,18 +51,30 @@ function showToast(message, type = 'info') {
     document.body.appendChild(container);
   }
 
+  // De-duplicate identical toasts already displaying
+  const existingToasts = Array.from(container.children);
+  const alreadyShowing = existingToasts.some(t => t.textContent && t.textContent.includes(message));
+  if (alreadyShowing) return;
+
   const toast = document.createElement('div');
-  toast.className = 'pluck-toast';
+  toast.className = `pluck-toast toast-${type}`;
   const icon = type === 'success' ? '⚡' : type === 'error' ? '⚠️' : '✨';
-  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+  toast.innerHTML = `
+    <span>${icon}</span>
+    <span style="flex: 1;">${message}</span>
+    <button onclick="this.parentElement.remove()" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 13px; padding: 0 0 0 6px; line-height: 1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">✕</button>
+  `;
   container.appendChild(toast);
 
+  const duration = type === 'error' ? 6500 : 2500;
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    toast.style.transition = 'all 0.25s ease';
-    setTimeout(() => toast.remove(), 250);
-  }, 2500);
+    if (toast.parentElement) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.25s ease';
+      setTimeout(() => toast.remove(), 250);
+    }
+  }, duration);
 }
 
 // ── 3. Global Cmd+K Command Palette ────────────────────
