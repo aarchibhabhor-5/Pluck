@@ -1,0 +1,14 @@
+# Environment files
+.env
+*.env
+.env.local
+.env.*.local
+
+# Dependencies & Build artifacts
+node_modules/
+target/
+build/
+dist/
+.idea/
+.vscode/
+*.log

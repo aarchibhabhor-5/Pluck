@@ -36,9 +36,12 @@
         <div style="margin-top: 14px;">
           <div class="nav-section-title">Actions</div>
           <div style="display: flex; flex-direction: column; gap: 6px;">
-            <a href="studio.html" onclick="openInStudio(event)" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">✎ Edit Snippet</a>
-            <a href="share.html?id=use-debounce" class="btn-outline-pixel" style="text-align: center; font-size: 11px; padding: 7px;">🌐 Share Link</a>
-            <button class="btn-solid-pixel" onclick="forkSnippet()" style="font-size: 11px; padding: 7px;">⑂ Fork Snippet</button>
+            <a href="studio.html" onclick="openInStudio(event)" class="btn-outline-pixel"
+              style="text-align: center; font-size: 11px; padding: 7px;">✎ Edit Snippet</a>
+            <a href="share.html?id=use-debounce" class="btn-outline-pixel"
+              style="text-align: center; font-size: 11px; padding: 7px;">🌐 Share Link</a>
+            <button class="btn-solid-pixel" onclick="forkSnippet()" style="font-size: 11px; padding: 7px;">⑂ Fork
+              Snippet</button>
           </div>
         </div>
       </div>
@@ -48,12 +51,16 @@
     <main class="app-main">
       <header class="app-topbar">
         <button class="search-trigger-btn js-open-cmdk" style="min-width: 260px;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
           <span>Search (⌘K)...</span>
         </button>
         <div class="topbar-actions">
           <button class="btn-icon-pixel" title="Copy CLI slug" onclick="copyCliCommand()">CLI</button>
-          <a href="studio.html" onclick="openInStudio(event)" class="btn-solid-pixel" style="font-size: 11px; padding: 8px 16px;">✎ Edit</a>
+          <a href="studio.html" onclick="openInStudio(event)" class="btn-solid-pixel"
+            style="font-size: 11px; padding: 8px 16px;">✎ Edit</a>
         </div>
       </header>
 
@@ -64,12 +71,17 @@
           <div class="snippet-detail-header">
             <div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <h1 id="detail-title" style="font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--white);">Snippet Detail</h1>
-                <span id="detail-lang" class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">Code</span>
-                <span id="detail-vis" class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">🔒 Private</span>
+                <h1 id="detail-title"
+                  style="font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--white);">Snippet
+                  Detail</h1>
+                <span id="detail-lang" class="dep-chip"
+                  style="color: var(--cyan); border-color: var(--cyan);">Code</span>
+                <span id="detail-vis" class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">🔒
+                  Private</span>
               </div>
               <div id="detail-meta" style="font-size: 12px; color: var(--muted); margin-top: 6px;">
-                <span>📁 vault</span> · <span>slug: <code id="detail-slug" style="color: var(--purple-light);">--</code></span>
+                <span>📁 vault</span> · <span>slug: <code id="detail-slug"
+                    style="color: var(--purple-light);">--</code></span>
               </div>
             </div>
 
@@ -83,10 +95,12 @@
             <span style="font-family: var(--pixel); font-size: 9px; color: var(--yellow);">{{VARIABLES}}</span>
             <div class="var-input-group">
               <label class="var-label" for="var-delay">delay:</label>
-              <input type="number" id="var-delay" class="var-input" value="300" style="width: 80px;" oninput="updateLiveInterpolation()" />
+              <input type="number" id="var-delay" class="var-input" value="300" style="width: 80px;"
+                oninput="updateLiveInterpolation()" />
               <span style="font-size: 11px; color: var(--muted);">ms</span>
             </div>
-            <button class="btn-outline-pixel" style="font-size: 10px; padding: 3px 8px; margin-left: auto;" onclick="resetDefaults()">Reset Defaults</button>
+            <button class="btn-outline-pixel" style="font-size: 10px; padding: 3px 8px; margin-left: auto;"
+              onclick="resetDefaults()">Reset Defaults</button>
           </div>
 
           <!-- Dependency Bar (PRD §2.3.6) -->
@@ -101,21 +115,27 @@
               <code class="dep-cmd" id="dep-install-cmd">npm i react@^18.3.1</code>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 10px;" onclick="copyEnvExample()">.env keys (1)</button>
-              <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 10px;" onclick="copyInstallCmd()">Copy Install</button>
+              <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 10px;"
+                onclick="copyEnvExample()">.env keys (1)</button>
+              <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 10px;"
+                onclick="copyInstallCmd()">Copy Install</button>
             </div>
           </div>
 
           <!-- Tab Navigation (Code, Sandbox Runner, History, Details) -->
           <div class="inspector-tabs" style="border-bottom: 2px solid var(--purple-dim);">
             <button class="inspector-tab active" id="tab-nav-code" onclick="switchSnippetTab('code')">Code View</button>
-            <button class="inspector-tab" id="tab-nav-run" onclick="switchSnippetTab('run')">▶ In-Browser Runner</button>
-            <button class="inspector-tab" id="tab-nav-history" onclick="switchSnippetTab('history')">History / Diffs (3)</button>
-            <button class="inspector-tab" id="tab-nav-details" onclick="switchSnippetTab('details')">AI Summary &amp; Details</button>
+            <button class="inspector-tab" id="tab-nav-run" onclick="switchSnippetTab('run')">▶ In-Browser
+              Runner</button>
+            <button class="inspector-tab" id="tab-nav-history" onclick="switchSnippetTab('history')">History / Diffs
+              (3)</button>
+            <button class="inspector-tab" id="tab-nav-details" onclick="switchSnippetTab('details')">AI Summary &amp;
+              Details</button>
           </div>
 
           <!-- Tab 1: Code View -->
-          <div id="view-code" style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 20px;">
+          <div id="view-code"
+            style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 20px;">
             <pre style="margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #ddd6fe;"><code id="interpolated-code-display"><span style="color:#f472b6;">import</span> { useState, useEffect } <span style="color:#f472b6;">from</span> <span style="color:#a7f3d0;">'react'</span>;
 
 <span style="color:#f472b6;">export function</span> <span style="color:#60a5fa;">useDebounce</span>&lt;T&gt;(value: T, delay: number = <span id="code-var-delay" style="background: rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 1px 4px; border: 1px dashed #f59e0b;">300</span>): T {
@@ -134,43 +154,59 @@
           <div id="view-run" style="display: none; flex-direction: column; gap: 14px;">
 
             <!-- Header Controls Bar -->
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 16px; background: rgba(22, 22, 26, 0.7); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 6px;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 16px; background: rgba(22, 22, 26, 0.7); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 6px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="runner-status-pill" class="dep-chip" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-size: 11px; padding: 3px 8px;">● Sandbox Ready</span>
+                <span id="runner-status-pill" class="dep-chip"
+                  style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-size: 11px; padding: 3px 8px;">●
+                  Sandbox Ready</span>
                 <span style="font-size: 11px; color: var(--muted);">QuickJS / Isolated VM · Max 64MB · 5s timeout</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <select id="runner-engine-select" class="select-pixel" style="font-size: 11px; padding: 5px 8px; background: #121218; color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">
+                <select id="runner-engine-select" class="select-pixel"
+                  style="font-size: 11px; padding: 5px 8px; background: #121218; color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">
                   <option value="backend">⚡ Backend Sandbox (Port 4000)</option>
                   <option value="worker">🌐 In-Browser Web Worker</option>
                 </select>
-                <button id="btn-run-sandbox" class="btn-solid-pixel" onclick="executeSandbox()" style="font-size: 11px; padding: 7px 16px;">▶ Execute In Sandbox</button>
+                <button id="btn-run-sandbox" class="btn-solid-pixel" onclick="executeSandbox()"
+                  style="font-size: 11px; padding: 7px 16px;">▶ Execute In Sandbox</button>
               </div>
             </div>
 
             <!-- Parameters & Entry Point Configuration -->
-            <div class="pixel-border-box" style="padding: 12px 16px; background: #101014; border: 1px solid rgba(139, 92, 246, 0.2); display: flex; flex-direction: column; gap: 10px;">
+            <div class="pixel-border-box"
+              style="padding: 12px 16px; background: #101014; border: 1px solid rgba(139, 92, 246, 0.2); display: flex; flex-direction: column; gap: 10px;">
               <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-family: var(--pixel); font-size: 9px; color: var(--yellow);">{{EXECUTION_PARAMETERS}}</span>
+                <span
+                  style="font-family: var(--pixel); font-size: 9px; color: var(--yellow);">{{EXECUTION_PARAMETERS}}</span>
                 <div style="display: flex; gap: 6px;">
-                  <button class="btn-outline-pixel" style="font-size: 9px; padding: 2px 6px;" onclick="loadSampleArgs()">Sample Args</button>
-                  <button class="btn-outline-pixel" style="font-size: 9px; padding: 2px 6px;" onclick="clearConsoleOutput()">Clear Console</button>
+                  <button class="btn-outline-pixel" style="font-size: 9px; padding: 2px 6px;"
+                    onclick="loadSampleArgs()">Sample Args</button>
+                  <button class="btn-outline-pixel" style="font-size: 9px; padding: 2px 6px;"
+                    onclick="clearConsoleOutput()">Clear Console</button>
                 </div>
               </div>
               <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
                 <div>
-                  <label style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">ENTRY FUNCTION (OPTIONAL):</label>
-                  <input type="text" id="runner-entry-point" class="var-input" placeholder="e.g. useDebounce or main" style="width: 100%; font-size: 12px; padding: 6px 10px;" />
+                  <label
+                    style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">ENTRY
+                    FUNCTION (OPTIONAL):</label>
+                  <input type="text" id="runner-entry-point" class="var-input" placeholder="e.g. useDebounce or main"
+                    style="width: 100%; font-size: 12px; padding: 6px 10px;" />
                 </div>
                 <div>
-                  <label style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">ARGS (JSON ARRAY):</label>
-                  <input type="text" id="runner-args-input" class="var-input" placeholder='e.g. ["search-term", 300]' style="width: 100%; font-size: 12px; padding: 6px 10px;" />
+                  <label
+                    style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 4px; font-family: var(--mono);">ARGS
+                    (JSON ARRAY):</label>
+                  <input type="text" id="runner-args-input" class="var-input" placeholder='e.g. ["search-term", 300]'
+                    style="width: 100%; font-size: 12px; padding: 6px 10px;" />
                 </div>
               </div>
             </div>
 
             <!-- Live Performance Metrics Telemetry Bar -->
-            <div id="runner-metrics-bar" style="display: none; align-items: center; gap: 16px; padding: 8px 14px; background: rgba(16, 24, 39, 0.6); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; font-family: var(--mono); font-size: 11px;">
+            <div id="runner-metrics-bar"
+              style="display: none; align-items: center; gap: 16px; padding: 8px 14px; background: rgba(16, 24, 39, 0.6); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; font-family: var(--mono); font-size: 11px;">
               <span style="color: #38bdf8;">⏱️ Duration: <strong id="metric-duration">--</strong></span>
               <span style="color: #c084fc;">💾 Memory: <strong id="metric-memory">--</strong></span>
               <span style="color: #4ade80;">⚙️ Exit: <strong id="metric-exit">--</strong></span>
@@ -178,89 +214,124 @@
             </div>
 
             <!-- Terminal Console Shell -->
-            <div class="runner-console" id="runner-output" style="min-height: 200px; max-height: 360px; line-height: 1.6; font-size: 12.5px; background: #07090e; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: inset 0 2px 10px rgba(0,0,0,0.8); border-radius: 6px;">// QuickJS-WASM &amp; Backend Isolated Sandbox Ready.
-// Select options or provide arguments, then click &quot;▶ Execute In Sandbox&quot; to run.</div>
+            <div class="runner-console" id="runner-output"
+              style="min-height: 200px; max-height: 360px; line-height: 1.6; font-size: 12.5px; background: #07090e; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: inset 0 2px 10px rgba(0,0,0,0.8); border-radius: 6px;">
+              // QuickJS-WASM &amp; Backend Isolated Sandbox Ready.
+              // Select options or provide arguments, then click &quot;▶ Execute In Sandbox&quot; to run.</div>
 
           </div>
 
           <!-- Tab 3: History & Diffs (PRD §2.3.6) -->
           <div id="view-history" style="display: none; flex-direction: column; gap: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 14px; font-weight: 700; color: var(--white); font-family: var(--mono);">Version History</span>
-                <span id="history-rev-count" class="dep-chip" style="color: var(--cyan); border-color: var(--cyan); font-size: 10px;">3 Revisions</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--white); font-family: var(--mono);">Version
+                  History</span>
+                <span id="history-rev-count" class="dep-chip"
+                  style="color: var(--cyan); border-color: var(--cyan); font-size: 10px;">3 Revisions</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="dep-chip" style="color: var(--yellow); border-color: rgba(245, 158, 11, 0.4); font-size: 10px;">Optimistic Concurrency (OCC)</span>
+                <span class="dep-chip"
+                  style="color: var(--yellow); border-color: rgba(245, 158, 11, 0.4); font-size: 10px;">Optimistic
+                  Concurrency (OCC)</span>
               </div>
             </div>
 
             <!-- Version Timeline Cards -->
-            <div id="version-timeline-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;">
+            <div id="version-timeline-cards"
+              style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;">
               <!-- Dynamically populated version cards -->
             </div>
 
             <!-- Diff Inspector Box -->
-            <div class="pixel-border-box mockup-diff" style="background: #090a0f; border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 6px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 16px; background: rgba(18, 18, 24, 0.9); border-bottom: 1px solid rgba(139, 92, 246, 0.25);">
+            <div class="pixel-border-box mockup-diff"
+              style="background: #090a0f; border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 6px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 12px 16px; background: rgba(18, 18, 24, 0.9); border-bottom: 1px solid rgba(139, 92, 246, 0.25);">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 12px; font-family: var(--mono); color: var(--white); font-weight: 700;" id="diff-header-title">Diff: v1.1 → v1.2 (Current)</span>
+                  <span style="font-size: 12px; font-family: var(--mono); color: var(--white); font-weight: 700;"
+                    id="diff-header-title">Diff: v1.1 → v1.2 (Current)</span>
                   <span id="diff-stats-badge" style="font-size: 11px; font-family: var(--mono);">
                     <span style="color: #4ade80;">+2</span> <span style="color: #f87171;">-1</span>
                   </span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono); color: var(--muted);">
+                  <div
+                    style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono); color: var(--muted);">
                     <span>Compare:</span>
-                    <select id="diff-base-select" class="select-pixel" style="font-size: 11px; padding: 4px 8px;" onchange="handleDiffComparisonChange()"></select>
+                    <select id="diff-base-select" class="select-pixel" style="font-size: 11px; padding: 4px 8px;"
+                      onchange="handleDiffComparisonChange()"></select>
                     <span>→</span>
-                    <select id="diff-target-select" class="select-pixel" style="font-size: 11px; padding: 4px 8px;" onchange="handleDiffComparisonChange()"></select>
+                    <select id="diff-target-select" class="select-pixel" style="font-size: 11px; padding: 4px 8px;"
+                      onchange="handleDiffComparisonChange()"></select>
                   </div>
-                  <button id="btn-restore-active-diff" class="btn-solid-pixel" style="font-size: 10px; padding: 6px 12px;" onclick="restoreCurrentComparedVersion()">Restore v1.1</button>
+                  <button id="btn-restore-active-diff" class="btn-solid-pixel"
+                    style="font-size: 10px; padding: 6px 12px;" onclick="restoreCurrentComparedVersion()">Restore
+                    v1.1</button>
                 </div>
               </div>
 
               <!-- Computed Diff Lines -->
-              <div id="diff-lines-container" style="padding: 8px 0; max-height: 420px; overflow-y: auto; background: #07080c; font-family: var(--mono);">
+              <div id="diff-lines-container"
+                style="padding: 8px 0; max-height: 420px; overflow-y: auto; background: #07080c; font-family: var(--mono);">
                 <!-- Dynamic diff lines -->
               </div>
             </div>
           </div>
 
           <!-- Tab 4: Details Tab (AI Summary & Semantic Discovery - PRD §2.4.3) -->
-          <div id="view-details" style="display: none; flex-direction: column; gap: 18px; background: #0c0d12; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 28px rgba(0,0,0,0.7); padding: 22px; border-radius: 6px;">
+          <div id="view-details"
+            style="display: none; flex-direction: column; gap: 18px; background: #0c0d12; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 28px rgba(0,0,0,0.7); padding: 22px; border-radius: 6px;">
             <!-- Header bar with telemetry & status badges -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid rgba(139, 92, 246, 0.2);">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid rgba(139, 92, 246, 0.2);">
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 14px; font-weight: 700; color: var(--white); font-family: var(--mono);">AI Semantic Engine</span>
-                <span class="dep-chip" id="ai-model-badge" style="color: var(--cyan); border-color: var(--cyan); font-size: 10px;">text-embedding-3-small (1536 dims)</span>
-                <span class="dep-chip" id="ai-status-badge" style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-size: 10px;">● Vector Embedding Ready</span>
+                <span style="font-size: 14px; font-weight: 700; color: var(--white); font-family: var(--mono);">AI
+                  Semantic Engine</span>
+                <span class="dep-chip" id="ai-model-badge"
+                  style="color: var(--cyan); border-color: var(--cyan); font-size: 10px;">text-embedding-3-small (1536
+                  dims)</span>
+                <span class="dep-chip" id="ai-status-badge"
+                  style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-size: 10px;">● Vector Embedding
+                  Ready</span>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="dep-chip" id="ai-confidence-badge" style="color: var(--yellow); border-color: rgba(245, 158, 11, 0.4); font-size: 10px;">98.5% Intent Alignment</span>
-                <button id="btn-regenerate-ai" class="btn-outline-pixel" style="font-size: 10px; padding: 5px 12px;" onclick="regenerateAIMetadata()">✨ Re-Analyze AI Metadata</button>
+                <span class="dep-chip" id="ai-confidence-badge"
+                  style="color: var(--yellow); border-color: rgba(245, 158, 11, 0.4); font-size: 10px;">98.5% Intent
+                  Alignment</span>
+                <button id="btn-regenerate-ai" class="btn-outline-pixel" style="font-size: 10px; padding: 5px 12px;"
+                  onclick="regenerateAIMetadata()">✨ Re-Analyze AI Metadata</button>
               </div>
             </div>
 
             <!-- Plain-English AI Intent Summary -->
-            <div class="pixel-border-box" style="padding: 16px; background: rgba(18, 18, 26, 0.85); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 6px;">
+            <div class="pixel-border-box"
+              style="padding: 16px; background: rgba(18, 18, 26, 0.85); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 6px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div class="nav-section-title" style="color: #c4b5fd; font-size: 11px; letter-spacing: 0.05em;">AI INTENT SUMMARY</div>
+                <div class="nav-section-title" style="color: #c4b5fd; font-size: 11px; letter-spacing: 0.05em;">AI
+                  INTENT SUMMARY</div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 10px; color: var(--muted); font-family: var(--mono);">Design Pattern:</span>
-                  <span id="ai-design-pattern-badge" class="dep-chip" style="color: #a78bfa; border-color: #8b5cf6; font-weight: 700; font-size: 10px; padding: 2px 8px;">
+                  <span id="ai-design-pattern-badge" class="dep-chip"
+                    style="color: #a78bfa; border-color: #8b5cf6; font-weight: 700; font-size: 10px; padding: 2px 8px;">
                     Debounce Decorator / Rate-Limiting Hook
                   </span>
                 </div>
               </div>
-              <p id="ai-summary-text" style="font-size: 13px; color: #f1f5f9; line-height: 1.7; margin: 0; font-weight: 400;">
-                Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup to eliminate race conditions and redundant network requests.
+              <p id="ai-summary-text"
+                style="font-size: 13px; color: #f1f5f9; line-height: 1.7; margin: 0; font-weight: 400;">
+                Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup
+                to eliminate race conditions and redundant network requests.
               </p>
 
               <!-- Primary Practical Use Cases -->
               <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
-                <div style="font-size: 10.5px; font-family: var(--mono); color: var(--yellow); font-weight: 700; margin-bottom: 6px;">PRIMARY PRACTICAL USE CASES:</div>
-                <ul id="ai-use-cases-list" style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 12px; line-height: 1.7;">
+                <div
+                  style="font-size: 10.5px; font-family: var(--mono); color: var(--yellow); font-weight: 700; margin-bottom: 6px;">
+                  PRIMARY PRACTICAL USE CASES:</div>
+                <ul id="ai-use-cases-list"
+                  style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 12px; line-height: 1.7;">
                   <li>Search bar typeahead query dispatch to avoid flooding backend APIs with every keystroke.</li>
                   <li>Window resize or document scroll event throttling to prevent jank and frame drops.</li>
                   <li>Auto-saving draft inputs automatically after a brief pause in user typing.</li>
@@ -269,49 +340,72 @@
             </div>
 
             <!-- Keywords & Vector Tokens -->
-            <div class="pixel-border-box" style="padding: 16px; background: rgba(18, 18, 26, 0.85); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 6px;">
+            <div class="pixel-border-box"
+              style="padding: 16px; background: rgba(18, 18, 26, 0.85); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: 6px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div class="nav-section-title" style="color: #38bdf8; font-size: 11px; letter-spacing: 0.05em;">KEYWORDS &amp; VECTOR TOKENS (SEMANTIC ⌘K SEARCH INDEX)</div>
-                <span style="font-size: 10px; color: var(--muted); font-family: var(--mono);">Indexed in HNSW Vector Store</span>
+                <div class="nav-section-title" style="color: #38bdf8; font-size: 11px; letter-spacing: 0.05em;">KEYWORDS
+                  &amp; VECTOR TOKENS (SEMANTIC ⌘K SEARCH INDEX)</div>
+                <span style="font-size: 10px; color: var(--muted); font-family: var(--mono);">Indexed in HNSW Vector
+                  Store</span>
               </div>
               <p style="font-size: 11px; color: var(--muted); margin: 0 0 10px 0; line-height: 1.5;">
-                Pluck indexes these high-dimensional embedding tokens so developers can find this snippet by typing natural language intentions (e.g. <em>"delay input keystroke"</em>) even without remembering the function name.
+                Pluck indexes these high-dimensional embedding tokens so developers can find this snippet by typing
+                natural language intentions (e.g. <em>"delay input keystroke"</em>) even without remembering the
+                function name.
               </p>
-              <div id="ai-vector-tokens-container" class="filter-group" style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <div id="ai-vector-tokens-container" class="filter-group"
+                style="display: flex; flex-wrap: wrap; gap: 8px;">
                 <!-- Populated dynamically with glowing chips -->
               </div>
             </div>
 
             <!-- Interactive Semantic ⌘K Search Discovery Simulator -->
-            <div class="pixel-border-box" style="padding: 16px; background: #08090e; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">
+            <div class="pixel-border-box"
+              style="padding: 16px; background: #08090e; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; color: #38bdf8;">⚡ SEMANTIC ⌘K SEARCH SIMULATION</div>
-                <span class="dep-chip" style="font-size: 9px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Vector Cosine Scoring</span>
+                <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; color: #38bdf8;">⚡ SEMANTIC ⌘K
+                  SEARCH SIMULATION</div>
+                <span class="dep-chip"
+                  style="font-size: 9px; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Vector Cosine
+                  Scoring</span>
               </div>
               <p style="font-size: 11px; color: #94a3b8; margin: 0 0 10px 0;">
-                Type how a developer might search in ⌘K, or click an example below to test how Pluck's backend vector search matches this snippet:
+                Type how a developer might search in ⌘K, or click an example below to test how Pluck's backend vector
+                search matches this snippet:
               </p>
               <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <input type="text" id="ai-sim-query-input" class="var-input" placeholder="e.g. delay typing before calling search api" value="stop repeated api calls on input" style="flex: 1; font-size: 12px; padding: 7px 12px; background: #11131a; border: 1px solid rgba(139, 92, 246, 0.3); color: #fff;" />
-                <button class="btn-solid-pixel" onclick="testSemanticSearchQuery()" style="font-size: 11px; padding: 7px 16px;">Test ⌘K Match</button>
+                <input type="text" id="ai-sim-query-input" class="var-input"
+                  placeholder="e.g. delay typing before calling search api" value="stop repeated api calls on input"
+                  style="flex: 1; font-size: 12px; padding: 7px 12px; background: #11131a; border: 1px solid rgba(139, 92, 246, 0.3); color: #fff;" />
+                <button class="btn-solid-pixel" onclick="testSemanticSearchQuery()"
+                  style="font-size: 11px; padding: 7px 16px;">Test ⌘K Match</button>
               </div>
 
               <!-- Suggested Queries Pills -->
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
                 <span style="font-size: 10px; color: var(--muted); font-family: var(--mono);">Try queries:</span>
-                <span class="filter-chip" style="cursor: pointer; font-size: 10px; padding: 2px 8px;" onclick="runQueryPill('stop repeated api calls on input')">&quot;stop repeated api calls on input&quot;</span>
-                <span class="filter-chip" style="cursor: pointer; font-size: 10px; padding: 2px 8px;" onclick="runQueryPill('delay typing before calling search api')">&quot;delay typing before search api&quot;</span>
-                <span class="filter-chip" style="cursor: pointer; font-size: 10px; padding: 2px 8px;" onclick="runQueryPill('react debounce hook with cleanup')">&quot;react debounce hook with cleanup&quot;</span>
+                <span class="filter-chip" style="cursor: pointer; font-size: 10px; padding: 2px 8px;"
+                  onclick="runQueryPill('stop repeated api calls on input')">&quot;stop repeated api calls on
+                  input&quot;</span>
+                <span class="filter-chip" style="cursor: pointer; font-size: 10px; padding: 2px 8px;"
+                  onclick="runQueryPill('delay typing before calling search api')">&quot;delay typing before search
+                  api&quot;</span>
+                <span class="filter-chip" style="cursor: pointer; font-size: 10px; padding: 2px 8px;"
+                  onclick="runQueryPill('react debounce hook with cleanup')">&quot;react debounce hook with
+                  cleanup&quot;</span>
               </div>
 
               <!-- Simulation Match Result Banner -->
-              <div id="ai-sim-result-box" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px; font-family: var(--mono); font-size: 11px;">
+              <div id="ai-sim-result-box"
+                style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 4px; font-family: var(--mono); font-size: 11px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="color: #34d399; font-weight: 700;" id="ai-sim-score-badge">✓ 94% Semantic Match</span>
                   <span style="color: var(--muted);">|</span>
                   <span style="color: #94a3b8;" id="ai-sim-matched-tokens">Matched: [api, input, debounce, hook]</span>
                 </div>
-                <span class="dep-chip" style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-size: 10px;">matchedBy: [semantic, vector]</span>
+                <span class="dep-chip"
+                  style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-size: 10px;">matchedBy: [semantic,
+                  vector]</span>
               </div>
             </div>
           </div>
@@ -420,7 +514,7 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 
       try {
         sessionStorage.setItem('pluck_active_snippet', JSON.stringify(snippetToExport));
-      } catch (e) {}
+      } catch (e) { }
 
       const targetId = snippetToExport.id || snippetToExport.slug || 'use-debounce';
       window.location.href = `studio.html?id=${encodeURIComponent(targetId)}`;
@@ -457,13 +551,13 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
       try {
         const res = await fetch(`/api/snippets/${encodeURIComponent(snipId)}`);
         if (res.ok) snip = await res.json();
-      } catch (e) {}
+      } catch (e) { }
 
       if (!snip) {
         try {
           const list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
           snip = list.find(s => s.id === snipId || s.slug === snipId);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (snip) {
@@ -673,7 +767,7 @@ export function useDebounce(value, delay = 300) {
         const card = document.createElement('div');
         card.className = 'pixel-border-box';
         card.style.cssText = `background: rgba(18, 18, 24, 0.9); border: 1px solid ${isCur ? 'rgba(52, 211, 153, 0.5)' : 'rgba(139, 92, 246, 0.25)'}; padding: 12px 14px; border-radius: 6px; display: flex; flex-direction: column; gap: 8px; box-shadow: ${isCur ? '0 0 16px rgba(52, 211, 153, 0.15)' : 'none'};`;
-        
+
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 6px;">
@@ -908,7 +1002,7 @@ export function useDebounce(value, delay = 300) {
           localList[idx].code = targetVer.code;
           localStorage.setItem('pluck_user_snippets', JSON.stringify(localList));
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // 4. Persist to Spring Boot backend if available
       try {
@@ -916,8 +1010,8 @@ export function useDebounce(value, delay = 300) {
         const apiBase = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '4000')) ? 'http://localhost:4000/api' : '/api';
         fetch(`${apiBase}/snippets/${encodeURIComponent(snipId)}/restore/${encodeURIComponent(tag)}`, {
           method: 'POST'
-        }).catch(() => {});
-      } catch (e) {}
+        }).catch(() => { });
+      } catch (e) { }
 
       // 5. Update version history states
       snippetVersions.forEach(v => {
@@ -1132,7 +1226,7 @@ export function useDebounce(value, delay = 300) {
             return;
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       // Fallback local simulation calculation
       const terms = query.toLowerCase().split(/\s+/);
@@ -1188,7 +1282,7 @@ export function useDebounce(value, delay = 300) {
       pill.style.borderColor = '#fbbf24';
 
       out.innerHTML = `<span style="color: #a78bfa;">[SANDBOX START]</span> Initializing execution environment...\n` +
-                      `<span style="color: #64748b;">[CONFIG] Language: <strong>${language}</strong> | Mode: <strong>${engine === 'backend' ? 'Backend Sandbox (Port 4000)' : 'Web Worker (In-Browser)'}</strong></span>\n`;
+        `<span style="color: #64748b;">[CONFIG] Language: <strong>${language}</strong> | Mode: <strong>${engine === 'backend' ? 'Backend Sandbox (Port 4000)' : 'Web Worker (In-Browser)'}</strong></span>\n`;
 
       try {
         let result = null;

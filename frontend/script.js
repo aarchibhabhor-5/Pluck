@@ -1072,6 +1072,11 @@ function selectChapter(step) {
   const time = document.getElementById('walkthrough-time');
   if (fill) fill.style.width = `${currentProgress}%`;
   if (time) time.textContent = data.time;
+
+  // Sync AnimatedList selection if active
+  if (window.AnimatedList && window.AnimatedList.landingInstances && window.AnimatedList.landingInstances.walkthrough) {
+    window.AnimatedList.landingInstances.walkthrough.setSelected(step - 1);
+  }
 }
 
 function toggleWalkthroughPlay() {

@@ -19,31 +19,94 @@ public class SearchController {
         this.snippetRepository = snippetRepository;
     }
 
+    // Support both GET (legacy) and POST (PRD §2.6.2)
     @GetMapping
-    public ResponseEntity<Map<String, Object>> search(@RequestParam(required = false, defaultValue = "") String q) {
+    public ResponseEntity<Map<String, Object>> searchGet(@RequestParam(required = false, defaultValue = "") String q) {
+        return performSearch(q, null, null);
+    }
+
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> searchPost(@RequestBody Map<String, Object> body) {
+        String query = (String) body.getOrDefault("query", "");
+        String language = (String) body.getOrDefault("language", null);
+        String pkg = (String) body.getOrDefault("package", null);
+        return performSearch(query, language, pkg);
+    }
+
+    private ResponseEntity<Map<String, Object>> performSearch(String q, String langFilter, String pkgFilter) {
         List<Snippet> all = snippetRepository.findAll();
-        String query = q.toLowerCase().trim();
+        long startTime = System.currentTimeMillis();
+        String query = q != null ? q.toLowerCase().trim() : "";
 
         if (query.isEmpty()) {
             List<Snippet> top = all.size() > 5 ? all.subList(0, 5) : all;
-            Map<String, Object> res = new HashMap<>();
+            Map<String, Object> res = new LinkedHashMap<>();
             res.put("results", top);
             res.put("query", "");
             res.put("count", top.size());
+            res.put("meta", Map.of("tookMs", System.currentTimeMillis() - startTime, "degraded", false));
             return ResponseEntity.ok(res);
         }
 
-        String[] terms = query.split("\\s+");
+        // Parse inline filters from query (PRD §2.3.8: lang:ts, pkg:zod)
+        String effectiveQuery = query;
+        if (effectiveQuery.contains("lang:")) {
+            String[] parts = effectiveQuery.split("lang:");
+            if (parts.length > 1) {
+                String langPart = parts[1].split("\\s+")[0];
+                if (langFilter == null) langFilter = langPart;
+                effectiveQuery = effectiveQuery.replace("lang:" + langPart, "").trim();
+            }
+        }
+        if (effectiveQuery.contains("pkg:")) {
+            String[] parts = effectiveQuery.split("pkg:");
+            if (parts.length > 1) {
+                String pkgPart = parts[1].split("\\s+")[0];
+                if (pkgFilter == null) pkgFilter = pkgPart;
+                effectiveQuery = effectiveQuery.replace("pkg:" + pkgPart, "").trim();
+            }
+        }
+
+        String[] terms = effectiveQuery.split("\\s+");
+        final String finalLangFilter = langFilter;
+        final String finalPkgFilter = pkgFilter;
+
         List<Map<String, Object>> scoredList = new ArrayList<>();
 
         for (Snippet s : all) {
+            // Apply language filter
+            if (finalLangFilter != null && !finalLangFilter.isEmpty()) {
+                if (s.getLanguage() == null || !s.getLanguage().toLowerCase().contains(finalLangFilter.toLowerCase())) {
+                    continue;
+                }
+            }
+
+            // Apply package filter
+            if (finalPkgFilter != null && !finalPkgFilter.isEmpty()) {
+                boolean hasPkg = false;
+                if (s.getDependencies() != null) {
+                    for (var dep : s.getDependencies()) {
+                        if (dep.get("name") != null && dep.get("name").toLowerCase().contains(finalPkgFilter.toLowerCase())) {
+                            hasPkg = true;
+                            break;
+                        }
+                    }
+                }
+                if (!hasPkg) continue;
+            }
+
             int score = 0;
             String titleLower = s.getTitle() != null ? s.getTitle().toLowerCase() : "";
             String codeLower = s.getCode() != null ? s.getCode().toLowerCase() : "";
             String summaryLower = s.getAiSummary() != null ? s.getAiSummary().toLowerCase() : "";
+            String descLower = s.getDescription() != null ? s.getDescription().toLowerCase() : "";
+            List<String> matchedBy = new ArrayList<>();
 
             for (String term : terms) {
+                if (term.length() < 2) continue;
+
                 if (titleLower.contains(term)) score += 10;
+                if (descLower.contains(term)) score += 7;
                 if (summaryLower.contains(term)) score += 6;
                 if (codeLower.contains(term)) score += 2;
                 if (s.getTags() != null) {
@@ -53,7 +116,10 @@ public class SearchController {
                 }
                 if (s.getAiKeywords() != null) {
                     for (String k : s.getAiKeywords()) {
-                        if (k.toLowerCase().contains(term) || term.contains(k.toLowerCase())) score += 8;
+                        if (k.toLowerCase().contains(term) || term.contains(k.toLowerCase())) {
+                            score += 8;
+                            if (!matchedBy.contains("semantic")) matchedBy.add("semantic");
+                        }
                     }
                 }
                 if (s.getDesignPattern() != null && s.getDesignPattern().toLowerCase().contains(term)) {
@@ -61,30 +127,54 @@ public class SearchController {
                 }
             }
 
+            // Usage prior boost (PRD §2.4.3: ln(1+copy_count))
+            score += (int) (3 * Math.log(1 + s.getCopyCount()));
+
             if (score > 0) {
-                Map<String, Object> item = new HashMap<>();
-                item.put("id", s.getId());
-                item.put("title", s.getTitle());
-                item.put("language", s.getLanguage());
-                item.put("code", s.getCode());
-                item.put("folderId", s.getFolderId());
-                item.put("dependencies", s.getDependencies());
-                item.put("aiSummary", s.getAiSummary());
-                item.put("aiKeywords", s.getAiKeywords());
-                item.put("designPattern", s.getDesignPattern());
-                item.put("matchedBy", (summaryLower.contains(query) || (s.getAiKeywords() != null && !s.getAiKeywords().isEmpty())) ? List.of("semantic", "keyword") : List.of("keyword"));
-                item.put("relevanceScore", score);
+                if (!matchedBy.contains("keyword")) matchedBy.add("keyword");
+                if (titleLower.contains(effectiveQuery)) {
+                    if (!matchedBy.contains("name")) matchedBy.add("name");
+                }
+
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("snippet", buildSnippetSummary(s));
+                item.put("score", score / 100.0);
+                item.put("matchedBy", matchedBy);
                 scoredList.add(item);
             }
         }
 
-        scoredList.sort((a, b) -> (Integer) b.get("relevanceScore") - (Integer) a.get("relevanceScore"));
+        scoredList.sort((a, b) -> Double.compare(
+                ((Number) b.get("score")).doubleValue(),
+                ((Number) a.get("score")).doubleValue()
+        ));
 
-        Map<String, Object> res = new HashMap<>();
+        long tookMs = System.currentTimeMillis() - startTime;
+
+        Map<String, Object> res = new LinkedHashMap<>();
         res.put("results", scoredList);
-        res.put("query", query);
+        res.put("meta", Map.of(
+                "tookMs", tookMs,
+                "degraded", false,
+                "query", q
+        ));
         res.put("count", scoredList.size());
-        res.put("latencyMs", 22);
         return ResponseEntity.ok(res);
+    }
+
+    private Map<String, Object> buildSnippetSummary(Snippet s) {
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("id", s.getId());
+        item.put("slug", s.getSlug());
+        item.put("title", s.getTitle());
+        item.put("language", s.getLanguage());
+        item.put("previewCode", s.getPreviewCode());
+        item.put("folderId", s.getFolderId());
+        item.put("dependencies", s.getDependencies());
+        item.put("aiSummary", s.getAiSummary());
+        item.put("aiKeywords", s.getAiKeywords());
+        item.put("designPattern", s.getDesignPattern());
+        item.put("copyCount", s.getCopyCount());
+        return item;
     }
 }

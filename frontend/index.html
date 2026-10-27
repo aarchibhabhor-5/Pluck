@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="magic-bento.css" />
   <link rel="stylesheet" href="border-glow.css" />
+  <link rel="stylesheet" href="animated-list.css" />
 </head>
 
 <body>
@@ -106,6 +107,15 @@
           <span class="detect-tag tag-yellow">0 env keys</span>
         </div>
       </div>
+    </div>
+
+    <!-- ░░░ HERO VAULT LIVE ANIMATED LIST (Powered by React Bits AnimatedList) ░░░ -->
+    <div class="hero-vault-preview-container" id="hero-vault-container">
+      <div class="hero-vault-header">
+        <span class="vault-badge">⚡ VAULT EXPLORER</span>
+        <span class="vault-sub">Select a snippet below or use ↑↓ keys to preview battle-tested code &amp; live AST detection</span>
+      </div>
+      <div id="hero-vault-animated-list" class="hero-vault-animated-list"></div>
     </div>
 
     <p class="hero-sub">Stop saving dead text. Pluck battle-tested, dependency-aware code<br />out of past projects and
@@ -302,6 +312,9 @@
         </button>
       </div>
 
+      <!-- Step-by-Step AnimatedList Chapter View -->
+      <div id="walkthrough-animated-list" class="walkthrough-animated-list-wrap"></div>
+
       <!-- Active Step Explainer Guidance Card -->
       <div class="walkthrough-guide-card" id="walkthrough-guide-card">
         <div style="flex: 1; min-width: 280px;">
@@ -453,44 +466,58 @@
     <p class="plans-sub">Pluck scales with how you build, from quick personal snippets to fully async, team-wide snippet
       libraries. Choose the plan that gives you the speed, search depth, and AI integration you need.</p>
 
+    <!-- AnimatedList Interactive Animation Switcher -->
+    <div class="plans-animation-controls">
+      <span class="anim-label">LIST ANIMATION:</span>
+      <button class="anim-pill-btn active" data-anim="pop">Pop</button>
+      <button class="anim-pill-btn" data-anim="slide">Slide</button>
+      <button class="anim-pill-btn" data-anim="fade">Fade</button>
+    </div>
+
     <div class="plans-grid">
       <div class="plan-card pixel-border-box" id="plan-free">
         <div class="plan-signal"><span class="bar bar-on"></span><span class="bar"></span><span class="bar"></span>
         </div>
         <h3>Pluck <span class="plan-tier-badge">Free</span></h3>
         <p class="plan-desc">Get started with real snippet management.</p>
-        <ul class="plan-features">
-          <li>Up to 100 snippets</li>
-          <li>Semantic search (shared quota)</li>
-          <li>CLI access via PAT</li>
-          <li>1 personal collection</li>
-        </ul>
+        <div id="plan-free-list" class="plan-animated-list-wrap">
+          <ul class="plan-features">
+            <li>Up to 100 snippets</li>
+            <li>Semantic search (shared quota)</li>
+            <li>CLI access via PAT</li>
+            <li>1 personal collection</li>
+          </ul>
+        </div>
       </div>
       <div class="plan-card pixel-border-box plan-card-pro" id="plan-pro">
         <div class="plan-signal"><span class="bar bar-on"></span><span class="bar bar-on"></span><span
             class="bar"></span></div>
         <h3>Pluck <span class="plan-tier-badge plan-tier-pro">Pro</span></h3>
         <p class="plan-desc">For devs who ship daily and want to stay in the flow.</p>
-        <ul class="plan-features">
-          <li>Unlimited snippets</li>
-          <li>Priority semantic search p95 &lt;200ms</li>
-          <li>Full CLI + MCP server access</li>
-          <li>Unlimited collections</li>
-          <li>Team workspace (up to 5 members)</li>
-        </ul>
+        <div id="plan-pro-list" class="plan-animated-list-wrap">
+          <ul class="plan-features">
+            <li>Unlimited snippets</li>
+            <li>Priority semantic search p95 &lt;200ms</li>
+            <li>Full CLI + MCP server access</li>
+            <li>Unlimited collections</li>
+            <li>Team workspace (up to 5 members)</li>
+          </ul>
+        </div>
       </div>
       <div class="plan-card pixel-border-box" id="plan-team">
         <div class="plan-signal"><span class="bar bar-on"></span><span class="bar bar-on"></span><span
             class="bar bar-on"></span></div>
         <h3>Pluck <span class="plan-tier-badge plan-tier-team">Team</span></h3>
         <p class="plan-desc">For builders who run AI-assisted dev at scale.</p>
-        <ul class="plan-features">
-          <li>Everything in Pro</li>
-          <li>Unlimited team members + RBAC</li>
-          <li>In-browser sandbox (JS/TS + Python)</li>
-          <li>Advanced activity feed + version history</li>
-          <li>Priority MCP quota + SLA</li>
-        </ul>
+        <div id="plan-team-list" class="plan-animated-list-wrap">
+          <ul class="plan-features">
+            <li>Everything in Pro</li>
+            <li>Unlimited team members + RBAC</li>
+            <li>In-browser sandbox (JS/TS + Python)</li>
+            <li>Advanced activity feed + version history</li>
+            <li>Priority MCP quota + SLA</li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -522,6 +549,7 @@
     </div>
   </footer>
 
+  <script src="animated-list.js"></script>
   <script src="script.js"></script>
   <script src="magic-bento.js"></script>
   <script src="border-glow.js"></script>

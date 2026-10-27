@@ -14,16 +14,19 @@ public class Snippet {
     private String id;
     private String slug;
     private String title;
+    private String description;
     private String code;
     private String language = "typescript";
     private String folderId = "hooks";
     private String folderName = "hooks";
     private String visibility = "private";
+    private String shareId;
     private int version = 1;
     private List<Map<String, Object>> versions = new ArrayList<>();
     private List<String> tags = new ArrayList<>();
     private List<Map<String, String>> dependencies = new ArrayList<>();
     private List<String> envKeys = new ArrayList<>();
+    private List<Map<String, Object>> envSchema = new ArrayList<>();
     private List<Object> variables = new ArrayList<>();
     private String aiSummary;
     private List<String> aiKeywords = new ArrayList<>();
@@ -33,12 +36,29 @@ public class Snippet {
     private String embeddingStatus = "ready";
     private int vectorDimensions = 1536;
     private int forkCount = 0;
+    private int copyCount = 0;
+    private String forkedFromId;
+    private String secretScanStatus = "clean";
+    private String authorId;
     private String createdAt;
     private String updatedAt;
 
     public Snippet() {
         this.createdAt = Instant.now().toString();
         this.updatedAt = Instant.now().toString();
+    }
+
+    // Computed preview code (first 12 lines per PRD §2.3.4)
+    public String getPreviewCode() {
+        if (code == null || code.isEmpty()) return "";
+        String[] lines = code.split("\n");
+        int limit = Math.min(lines.length, 12);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < limit; i++) {
+            if (i > 0) sb.append("\n");
+            sb.append(lines[i]);
+        }
+        return sb.toString();
     }
 
     public String getId() { return id; }
@@ -49,6 +69,9 @@ public class Snippet {
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
     public String getCode() { return code; }
     public void setCode(String code) { this.code = code; }
@@ -65,6 +88,9 @@ public class Snippet {
     public String getVisibility() { return visibility; }
     public void setVisibility(String visibility) { this.visibility = visibility; }
 
+    public String getShareId() { return shareId; }
+    public void setShareId(String shareId) { this.shareId = shareId; }
+
     public int getVersion() { return version; }
     public void setVersion(int version) { this.version = version; }
 
@@ -79,6 +105,9 @@ public class Snippet {
 
     public List<String> getEnvKeys() { return envKeys; }
     public void setEnvKeys(List<String> envKeys) { this.envKeys = envKeys; }
+
+    public List<Map<String, Object>> getEnvSchema() { return envSchema; }
+    public void setEnvSchema(List<Map<String, Object>> envSchema) { this.envSchema = envSchema; }
 
     public List<Object> getVariables() { return variables; }
     public void setVariables(List<Object> variables) { this.variables = variables; }
@@ -106,6 +135,18 @@ public class Snippet {
 
     public int getForkCount() { return forkCount; }
     public void setForkCount(int forkCount) { this.forkCount = forkCount; }
+
+    public int getCopyCount() { return copyCount; }
+    public void setCopyCount(int copyCount) { this.copyCount = copyCount; }
+
+    public String getForkedFromId() { return forkedFromId; }
+    public void setForkedFromId(String forkedFromId) { this.forkedFromId = forkedFromId; }
+
+    public String getSecretScanStatus() { return secretScanStatus; }
+    public void setSecretScanStatus(String secretScanStatus) { this.secretScanStatus = secretScanStatus; }
+
+    public String getAuthorId() { return authorId; }
+    public void setAuthorId(String authorId) { this.authorId = authorId; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

@@ -61,7 +61,15 @@
     zip: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 11h1M11 13h1M10 15h1M11 17h1"/></svg>',
     file: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
     key: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/></svg>',
-    database: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>'
+    database: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+    check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    zap: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    shield: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    cpu: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2M9 2v2M15 20v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2"/></svg>',
+    terminal: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+    users: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    box: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    sparkles: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>'
   };
 
   const DEFAULT_ITEMS = [
@@ -595,6 +603,17 @@
       this.updateFades();
     }
 
+    setAnimation(anim) {
+      if (!anim || this.options.animation === anim) return;
+      this.options.animation = anim;
+      if (anim !== 'none') {
+        this.root.dataset.animated = '';
+      } else {
+        this.root.removeAttribute('data-animated');
+      }
+      this.sync();
+    }
+
     refresh() {
       this.entered = true;
       this.measure();
@@ -618,6 +637,359 @@
   AnimatedList.GLYPHS = GLYPHS;
   AnimatedList.THEMES = THEMES;
   AnimatedList.DEFAULT_ITEMS = DEFAULT_ITEMS;
+  AnimatedList.landingInstances = {};
+
+  // ── Pluck Landing Page Lists Controller ──
+  AnimatedList.initLandingPageLists = function (defaultAnim = 'pop') {
+    // 1. Free Plan List
+    const freeWrap = document.getElementById('plan-free-list');
+    if (freeWrap && !AnimatedList.landingInstances.free) {
+      freeWrap.innerHTML = '';
+      AnimatedList.landingInstances.free = new AnimatedList(freeWrap, {
+        items: [
+          { icon: GLYPHS.box, title: 'Up to 100 snippets', description: 'Personal storage & offline cache', meta: '100 cap' },
+          { icon: GLYPHS.code, title: 'Semantic search', description: 'Intent-based vector + keyword query', meta: 'Shared' },
+          { icon: GLYPHS.terminal, title: 'CLI access via PAT', description: 'Terminal pluck sync & pull', meta: 'v1.4' },
+          { icon: GLYPHS.folder, title: '1 personal collection', description: 'Scoped categories & tags', meta: '1 slot' }
+        ],
+        animation: defaultAnim,
+        theme: 'dark',
+        accentColor: '#22d3ee',
+        radius: 10,
+        gap: 6,
+        width: '100%',
+        frame: false,
+        showGradients: false,
+        displayScrollbar: false,
+        stagger: 0.04
+      });
+    }
+
+    // 2. Pro Plan List
+    const proWrap = document.getElementById('plan-pro-list');
+    if (proWrap && !AnimatedList.landingInstances.pro) {
+      proWrap.innerHTML = '';
+      AnimatedList.landingInstances.pro = new AnimatedList(proWrap, {
+        items: [
+          { icon: GLYPHS.zap, title: 'Unlimited snippets', description: 'Zero snippet caps or rate throttling', meta: '∞' },
+          { icon: GLYPHS.code, title: 'Priority semantic search', description: 'Sub-200ms p95 vector lookup', meta: '<200ms' },
+          { icon: GLYPHS.terminal, title: 'Full CLI + MCP access', description: 'Claude, Cursor & VS Code bridge', meta: 'Active' },
+          { icon: GLYPHS.folder, title: 'Unlimited collections', description: 'Multi-folder tagging & trees', meta: 'Unlimited' },
+          { icon: GLYPHS.users, title: 'Team workspace', description: 'Collaborate with up to 5 members', meta: '5 seats' }
+        ],
+        animation: defaultAnim,
+        theme: 'dark',
+        accentColor: '#facc15',
+        radius: 10,
+        gap: 6,
+        width: '100%',
+        frame: false,
+        showGradients: false,
+        displayScrollbar: false,
+        stagger: 0.04
+      });
+    }
+
+    // 3. Team Plan List
+    const teamWrap = document.getElementById('plan-team-list');
+    if (teamWrap && !AnimatedList.landingInstances.team) {
+      teamWrap.innerHTML = '';
+      AnimatedList.landingInstances.team = new AnimatedList(teamWrap, {
+        items: [
+          { icon: GLYPHS.zap, title: 'Everything in Pro', description: 'All pro tier capabilities included', meta: 'Included' },
+          { icon: GLYPHS.users, title: 'Unlimited team + RBAC', description: 'Admin, editor & viewer permissions', meta: 'Custom' },
+          { icon: GLYPHS.cpu, title: 'In-browser sandbox', description: 'Execute JS, TS & Python live in worker', meta: 'Sandbox' },
+          { icon: GLYPHS.file, title: 'Advanced activity feed', description: 'Audit logging & snippet version diffs', meta: 'Real-time' },
+          { icon: GLYPHS.shield, title: 'Priority MCP quota + SLA', description: 'Enterprise AI bandwidth & support', meta: '99.9%' }
+        ],
+        animation: defaultAnim,
+        theme: 'dark',
+        accentColor: '#c084fc',
+        radius: 10,
+        gap: 6,
+        width: '100%',
+        frame: false,
+        showGradients: false,
+        displayScrollbar: false,
+        stagger: 0.04
+      });
+    }
+
+    // 4. Hero Vault Snippet List Explorer
+    const heroVaultWrap = document.getElementById('hero-vault-animated-list');
+    if (heroVaultWrap && !AnimatedList.landingInstances.heroVault) {
+      heroVaultWrap.innerHTML = '';
+      const heroSnippets = [
+        {
+          id: 'use-debounce',
+          icon: GLYPHS.code,
+          title: 'useDebounce — react ^18',
+          description: 'Custom React hook with cleanup & generic type support',
+          meta: 'react ^18',
+          tags: [
+            { text: 'react ^18', cls: 'tag-cyan' },
+            { text: 'TypeScript', cls: 'tag-blue' },
+            { text: '0 secrets', cls: 'tag-green' },
+            { text: '0 env keys', cls: 'tag-yellow' }
+          ],
+          titleText: 'Pluck detected this <span class="underline-cyan">automatically.</span>',
+          code: `// Pluck snippet: useDebounce — react ^18
+import { useState, useEffect } from 'react';
+
+export function useDebounce<T>(
+  value: T,
+  delay: number = 300
+): T {
+  const [debouncedVal, setVal] =
+    useState<T>(value);
+
+  useEffect(() => {
+    const t = setTimeout(()
+      => setVal(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+
+  return debouncedVal;
+}`,
+          lines: 18
+        },
+        {
+          id: 'jwt-verify',
+          icon: GLYPHS.shield,
+          title: 'jwtVerify — jose ^5.2',
+          description: 'Edge-runtime compatible JWT signature verification',
+          meta: 'jose ^5.2',
+          tags: [
+            { text: 'jose ^5.2', cls: 'tag-cyan' },
+            { text: 'TypeScript', cls: 'tag-blue' },
+            { text: '0 secrets', cls: 'tag-green' },
+            { text: 'JWT_SECRET env', cls: 'tag-yellow' }
+          ],
+          titleText: 'Pluck scanned: <span class="underline-green">zero exposed secrets</span>, 1 env key.',
+          code: `// Pluck snippet: jwtVerify — jose ^5.2
+import { jwtVerify } from 'jose';
+
+export async function verifyAuthToken(token: string) {
+  const secretKey = new TextEncoder().encode(
+    process.env.JWT_SECRET || ''
+  );
+  
+  const { payload } = await jwtVerify(token, secretKey, {
+    issuer: 'urn:pluck:issuer',
+    audience: 'urn:pluck:audience',
+  });
+  
+  return payload;
+}`,
+          lines: 15
+        },
+        {
+          id: 'rate-limiter',
+          icon: GLYPHS.zap,
+          title: 'slidingRateLimiter — ioredis ^5.3',
+          description: 'Atomic sliding window counter using Redis pipeline',
+          meta: 'ioredis ^5.3',
+          tags: [
+            { text: 'ioredis ^5.3', cls: 'tag-cyan' },
+            { text: 'Redis', cls: 'tag-blue' },
+            { text: '0 secrets', cls: 'tag-green' },
+            { text: 'REDIS_URL env', cls: 'tag-yellow' }
+          ],
+          titleText: 'Pluck AST detected: <span class="underline-yellow">Redis client</span> with required env.',
+          code: `// Pluck snippet: slidingRateLimiter — ioredis
+import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL || '');
+
+export async function checkRateLimit(ip: string, limit = 60) {
+  const now = Date.now();
+  const windowStart = now - 60000;
+  const key = \`ratelimit:\${ip}\`;
+
+  const pipeline = redis.pipeline();
+  pipeline.zremrangebyscore(key, 0, windowStart);
+  pipeline.zadd(key, now, String(now));
+  pipeline.zcard(key);
+  pipeline.expire(key, 60);
+
+  const results = await pipeline.exec();
+  const count = (results?.[2]?.[1] as number) || 0;
+  return count <= limit;
+}`,
+          lines: 20
+        },
+        {
+          id: 's3-upload',
+          icon: GLYPHS.folder,
+          title: 's3UploadMultipart — aws-sdk ^3.5',
+          description: 'AWS S3 presigned multipart buffer streaming',
+          meta: 'aws-sdk ^3.5',
+          tags: [
+            { text: '@aws-sdk/client-s3', cls: 'tag-cyan' },
+            { text: 'AWS SDK v3', cls: 'tag-blue' },
+            { text: '0 secrets', cls: 'tag-green' },
+            { text: 'AWS_ACCESS_KEY env', cls: 'tag-yellow' }
+          ],
+          titleText: 'Pluck AST detected: <span class="underline-cyan">AWS S3 client</span> with zero hardcoded keys.',
+          code: `// Pluck snippet: s3UploadMultipart — AWS S3
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+
+const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
+
+export async function uploadToVault(key: string, body: Buffer) {
+  const cmd = new PutObjectCommand({
+    Bucket: process.env.VAULT_S3_BUCKET,
+    Key: key,
+    Body: body,
+    ContentType: 'application/octet-stream',
+  });
+  return await s3.send(cmd);
+}`,
+          lines: 15
+        },
+        {
+          id: 'retry-backoff',
+          icon: GLYPHS.cpu,
+          title: 'retryWithBackoff — zero deps',
+          description: 'Exponential backoff with full jitter & cancellation',
+          meta: 'TypeScript',
+          tags: [
+            { text: 'Zero Deps', cls: 'tag-green' },
+            { text: 'TypeScript', cls: 'tag-blue' },
+            { text: '0 secrets', cls: 'tag-green' },
+            { text: '0 env keys', cls: 'tag-yellow' }
+          ],
+          titleText: 'Pluck verified: <span class="underline-pink">100% self-contained</span> utility.',
+          code: `// Pluck snippet: retryWithBackoff — TypeScript
+export async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries = 4,
+  delayMs = 250
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries <= 0) throw err;
+    const jitter = Math.random() * delayMs;
+    await new Promise(r => setTimeout(r, delayMs + jitter));
+    return retryWithBackoff(fn, retries - 1, delayMs * 2);
+  }
+}`,
+          lines: 16
+        }
+      ];
+
+      function updateHeroEditor(snippet) {
+        const editorCode = document.querySelector('.hero-editor .editor-code code');
+        const editorGutter = document.querySelector('.hero-editor .editor-gutter');
+        const detectTitle = document.querySelector('#detect-card .detect-card-title');
+        const detectTags = document.querySelector('#detect-card .detect-tags');
+
+        if (editorCode) {
+          const highlighted = snippet.code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\b(import|export|from|function|async|await|const|let|var|return|try|catch|throw|new)\b/g, '<span class="kw">$1</span>')
+            .replace(/\b(string|number|boolean|void|Promise|Buffer|T)\b/g, '<span class="ty">$1</span>')
+            .replace(/(\/\/.+)/g, '<span class="c">$1</span>')
+            .replace(/('.*?'|".*?"|`.*?`)/g, '<span class="s">$1</span>');
+          editorCode.innerHTML = highlighted;
+        }
+
+        if (editorGutter) {
+          editorGutter.innerHTML = Array.from({ length: snippet.lines }, (_, i) => `<span>${i + 1}</span>`).join('');
+        }
+
+        if (detectTitle) {
+          detectTitle.innerHTML = snippet.titleText;
+        }
+
+        if (detectTags) {
+          detectTags.innerHTML = snippet.tags.map(t => `<span class="detect-tag ${t.cls}">${t.text}</span>`).join('');
+        }
+      }
+
+      AnimatedList.landingInstances.heroVault = new AnimatedList(heroVaultWrap, {
+        items: heroSnippets,
+        animation: defaultAnim,
+        theme: 'dark',
+        accentColor: '#06b6d4',
+        radius: 12,
+        gap: 8,
+        width: '100%',
+        maxHeight: 280,
+        fadeSize: 40,
+        showGradients: true,
+        displayScrollbar: true,
+        frame: true,
+        initialSelectedIndex: 0,
+        stagger: 0.04,
+        onItemSelect: (item) => {
+          updateHeroEditor(item);
+        }
+      });
+    }
+
+    // 5. Walkthrough Chapters AnimatedList
+    const wtWrap = document.getElementById('walkthrough-animated-list');
+    if (wtWrap && !AnimatedList.landingInstances.walkthrough) {
+      wtWrap.innerHTML = '';
+      const wtItems = [
+        { id: 1, icon: GLYPHS.code, title: 'Step 01: Vault & ⌘K Search', description: 'Intent-based natural language code retrieval', meta: '00:00 - 00:35' },
+        { id: 2, icon: GLYPHS.shield, title: 'Step 02: Studio & Secret Redact', description: 'Automatic AST detection & 1-click token redaction', meta: '00:35 - 01:05' },
+        { id: 3, icon: GLYPHS.cpu, title: 'Step 03: Variables & Sandbox', description: 'Dynamic runtime params & in-browser WebWorker runner', meta: '01:05 - 01:40' },
+        { id: 4, icon: GLYPHS.terminal, title: 'Step 04: AI MCP & CLI Sync', description: 'Zero-config connection to Claude, Cursor & CLI', meta: '01:40 - 02:10' }
+      ];
+
+      AnimatedList.landingInstances.walkthrough = new AnimatedList(wtWrap, {
+        items: wtItems,
+        animation: defaultAnim,
+        theme: 'dark',
+        accentColor: '#a855f7',
+        radius: 12,
+        gap: 8,
+        width: '100%',
+        frame: true,
+        showGradients: false,
+        displayScrollbar: false,
+        initialSelectedIndex: 0,
+        stagger: 0.05,
+        onItemSelect: (item) => {
+          if (typeof window.selectChapter === 'function') {
+            window.selectChapter(item.id);
+          }
+        }
+      });
+    }
+
+    // 6. Connect Animation Switcher Buttons
+    const animButtons = document.querySelectorAll('.anim-pill-btn');
+    animButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        animButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const anim = btn.dataset.anim || 'pop';
+        Object.values(AnimatedList.landingInstances).forEach(inst => {
+          if (inst && typeof inst.setAnimation === 'function') {
+            inst.setAnimation(anim);
+          }
+        });
+      });
+    });
+  };
+
+  // Auto-run when DOM is loaded
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        AnimatedList.initLandingPageLists();
+      });
+    } else {
+      AnimatedList.initLandingPageLists();
+    }
+  }
 
   global.AnimatedList = AnimatedList;
 })(window);
+

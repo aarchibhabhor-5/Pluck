@@ -38,8 +38,7 @@
           <div class="folder-tree">
             <a href="#" class="folder-item active" id="tab-nav-collections"
               onclick="switchTeamTab('collections', event)">📁 Collections</a>
-            <a href="#" class="folder-item" id="tab-nav-members" onclick="switchTeamTab('members', event)">👥 Members
-              (4)</a>
+            <a href="#" class="folder-item" id="tab-nav-members" onclick="switchTeamTab('members', event)">👥 Members</a>
             <a href="#" class="folder-item" id="tab-nav-activity" onclick="switchTeamTab('activity', event)">⚡ Audit
               Activity</a>
             <a href="#" class="folder-item" id="tab-nav-settings" onclick="switchTeamTab('settings', event)">⚙️ Team
@@ -59,7 +58,7 @@
             Admin</span>
         </div>
         <div class="topbar-actions">
-          <button class="btn-solid-pixel" onclick="inviteMemberPrompt()">+ Invite Member</button>
+          <button class="btn-solid-pixel" id="btn-open-invite" onclick="openInviteModal()">+ Invite Member</button>
         </div>
       </header>
 
@@ -106,15 +105,14 @@
           </div>
         </div>
 
-        <!-- ░░░ TAB 2: MEMBERS (PRD §2.3.8) ░░░ -->
+        <!-- ░░░ TAB 2: MEMBERS & INVITES (PRD §2.6.2) ░░░ -->
         <div id="team-section-members" style="display: none; flex-direction: column; gap: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
               <h3 style="font-size: 18px; color: var(--white);">Team Members</h3>
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Role-based access control.
-                Server-authoritative write permissions.</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Role-based access control. Server-authoritative write permissions.</p>
             </div>
-            <button class="btn-solid-pixel" onclick="inviteMemberPrompt()">+ Invite Member</button>
+            <button class="btn-solid-pixel" id="btn-open-invite-members" onclick="openInviteModal()">+ Invite Member</button>
           </div>
 
           <div
@@ -130,41 +128,13 @@
                   <th style="padding: 12px 16px; text-align: right;">ACTION</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="team-members-tbody">
+                <!-- Loaded dynamically from /api/teams/:id/members -->
                 <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
                   <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Alex Developer (You)</td>
                   <td style="padding: 14px 16px; color: var(--muted);">alex@pluck.dev</td>
-                  <td style="padding: 14px 16px;"><span class="dep-chip"
-                      style="color: var(--yellow); border-color: var(--yellow);">Admin</span></td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">Admin</span></td>
                   <td style="padding: 14px 16px; text-align: right; color: var(--muted); font-size: 11px;">Owner</td>
-                </tr>
-                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
-                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Sarah Jenkins</td>
-                  <td style="padding: 14px 16px; color: var(--muted);">sarah@company.com</td>
-                  <td style="padding: 14px 16px;">
-                    <select class="select-pixel" style="font-size: 11px;">
-                      <option selected>Editor</option>
-                      <option>Admin</option>
-                      <option>Viewer</option>
-                    </select>
-                  </td>
-                  <td style="padding: 14px 16px; text-align: right;">
-                    <button class="btn-outline-danger" onclick="removeMember(this)">Remove</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Leo Chen</td>
-                  <td style="padding: 14px 16px; color: var(--muted);">leo@company.com</td>
-                  <td style="padding: 14px 16px;">
-                    <select class="select-pixel" style="font-size: 11px;">
-                      <option>Editor</option>
-                      <option>Admin</option>
-                      <option selected>Viewer</option>
-                    </select>
-                  </td>
-                  <td style="padding: 14px 16px; text-align: right;">
-                    <button class="btn-outline-danger" onclick="removeMember(this)">Remove</button>
-                  </td>
                 </tr>
               </tbody>
             </table>
@@ -175,40 +145,13 @@
         <div id="team-section-activity" style="display: none; flex-direction: column; gap: 20px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Team Audit Log</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Live feed polling every 30s. Every snippet
-              modification is version-tracked.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Live feed polling every 30s. Every snippet modification is version-tracked.</p>
           </div>
 
-          <div
+          <div id="team-activity-list"
             style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="color: var(--cyan);">●</span>
-                <span style="color: var(--white); font-size: 12px;"><strong>Sarah Jenkins</strong> updated <code
-                    style="color: var(--purple-light);">auth-middleware</code> (v1.3)</span>
-              </div>
-              <span style="font-size: 10px; color: var(--muted);">12m ago</span>
-            </div>
-
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="color: var(--green);">●</span>
-                <span style="color: var(--white); font-size: 12px;"><strong>Alex Developer</strong> created snippet
-                  <code style="color: var(--purple-light);">redis-ratelimit</code></span>
-              </div>
-              <span style="font-size: 10px; color: var(--muted);">2h ago</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="color: var(--pink);">●</span>
-                <span style="color: var(--white); font-size: 12px;"><strong>Leo Chen</strong> copied <code
-                    style="color: var(--purple-light);">s3-presigned-upload</code> via CLI</span>
-              </div>
-              <span style="font-size: 10px; color: var(--muted);">5h ago</span>
-            </div>
+            <!-- Loaded dynamically from /api/teams/:id/activity -->
+            <div style="color: var(--muted); font-size: 12px;">Loading activity feed...</div>
           </div>
         </div>
 
@@ -216,30 +159,28 @@
         <div id="team-section-settings" style="display: none; flex-direction: column; gap: 20px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Team Policy &amp; Security Controls</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Configure workspace-wide security
-              guardrails.</p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Configure workspace-wide security guardrails.</p>
           </div>
 
           <div class="pixel-border-box"
             style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 16px;">
             <label
               style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
-              <input type="checkbox" checked />
-              <span>Strict Secret Gating: Block saving snippets with detected high/critical secrets</span>
+              <input type="checkbox" id="policy-strict-secret" checked disabled />
+              <span>Strict Secret Gating: Block saving snippets with detected high/critical secrets (Enforced by PRD Goal G3)</span>
             </label>
             <label
               style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
-              <input type="checkbox" checked />
-              <span>Only Team Admins can publish snippets to Public or Unlisted scope</span>
+              <input type="checkbox" id="policy-editors-publish" />
+              <span>Editors Can Publish: Allow Editor role to publish snippets to Public or Unlisted scope</span>
             </label>
             <label
               style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
-              <input type="checkbox" checked />
+              <input type="checkbox" id="policy-mcp-access" checked />
               <span>Enable AI MCP Server Access for Team Collections</span>
             </label>
             <div style="margin-top: 10px;">
-              <button class="btn-solid-pixel" onclick="showToast('Team policies updated', 'success')">Save
-                Policies</button>
+              <button class="btn-solid-pixel" onclick="saveTeamPolicies()">Save Policies</button>
             </div>
           </div>
         </div>
@@ -250,6 +191,8 @@
 
   <script src="app-script.js"></script>
   <script>
+    const currentTeamId = 'acme-core-eng';
+
     function switchTeamTab(tab, e) {
       if (e) e.preventDefault();
       ['collections', 'members', 'activity', 'settings'].forEach(t => {
@@ -258,6 +201,8 @@
         const secEl = document.getElementById(`team-section-${t}`);
         if (secEl) secEl.style.display = t === tab ? 'flex' : 'none';
       });
+      if (tab === 'activity') loadActivity();
+      if (tab === 'members') loadMembers();
     }
 
     // Read ?tab= query parameter on load
@@ -266,20 +211,375 @@
       switchTeamTab(params.get('tab'));
     }
 
-    function inviteMemberPrompt() {
-      const email = prompt('Enter colleague email address:');
-      if (email) {
-        showToast(`Invitation sent to ${email} (Role: Editor)`, 'success');
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = localStorage.getItem('pluck_token');
+      let user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('pluck_user') || 'null');
+      } catch (e) {}
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      if (user && user.id) headers['X-User-Id'] = user.id;
+      if (user && user.email) headers['X-User-Email'] = user.email;
+      return headers;
+    }
+
+    async function loadTeamData() {
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          const team = data.team;
+          if (team) {
+            const publishCheckbox = document.getElementById('policy-editors-publish');
+            if (publishCheckbox) publishCheckbox.checked = !!team.editorsCanPublish;
+          }
+        }
+      } catch (e) {
+        console.warn('Using local team state:', e);
       }
     }
 
-    function removeMember(btn) {
-      if (confirm('Remove this member from the team workspace?')) {
-        btn.closest('tr').remove();
-        showToast('Member removed from team', 'info');
+    async function loadMembers() {
+      const tbody = document.getElementById('team-members-tbody');
+      if (!tbody) return;
+
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/members`, { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          const members = data.members || [];
+          const invites = data.pendingInvites || [];
+
+          const countNav = document.getElementById('tab-nav-members');
+          if (countNav) countNav.textContent = `👥 Members (${members.length})`;
+
+          let currentUser = null;
+          try {
+            currentUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
+          } catch(e) {}
+
+          let html = '';
+          members.forEach(m => {
+            const isCaller = currentUser && (
+              (currentUser.id && m.userId === currentUser.id) ||
+              (currentUser.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+            );
+            const isOwner = !!(m.isOwner || m.owner || isCaller);
+            const displayName = (isCaller && currentUser.name) ? currentUser.name : (m.name || m.email);
+            const displayEmail = (isCaller && currentUser.email) ? currentUser.email : m.email;
+            const role = m.role || 'Editor';
+
+            html += `
+              <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
+                <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">${displayName} ${isOwner ? '(You)' : ''}</td>
+                <td style="padding: 14px 16px; color: var(--muted);">${displayEmail}</td>
+                <td style="padding: 14px 16px;">
+                  ${isOwner ? '<span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">Admin</span>' : `
+                    <select class="select-pixel" style="font-size: 11px;" onchange="changeMemberRole('${m.userId}', this.value, this)">
+                      <option value="Admin" ${role.toLowerCase() === 'admin' ? 'selected' : ''}>Admin</option>
+                      <option value="Editor" ${role.toLowerCase() === 'editor' ? 'selected' : ''}>Editor</option>
+                      <option value="Viewer" ${role.toLowerCase() === 'viewer' ? 'selected' : ''}>Viewer</option>
+                    </select>
+                  `}
+                </td>
+                <td style="padding: 14px 16px; text-align: right;">
+                  ${isOwner ? '<span style="color: var(--muted); font-size: 11px;">Owner</span>' : `
+                    <button class="btn-outline-danger" onclick="removeMember('${m.userId}', '${m.name || m.email}')">Remove</button>
+                  `}
+                </td>
+              </tr>
+            `;
+          });
+
+          // Add pending invites section if any
+          if (invites.length > 0) {
+            invites.forEach(inv => {
+              html += `
+                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15); opacity: 0.75;">
+                  <td style="padding: 14px 16px; color: var(--cyan-light);">Invited Colleague</td>
+                  <td style="padding: 14px 16px; color: var(--muted);">${inv.email}</td>
+                  <td style="padding: 14px 16px;"><span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan);">${inv.role} (Pending)</span></td>
+                  <td style="padding: 14px 16px; text-align: right;">
+                    <button class="btn-outline-pixel" style="font-size: 10px; padding: 4px 8px;" onclick="revokeInvite('${inv.id}')">Revoke</button>
+                  </td>
+                </tr>
+              `;
+            });
+          }
+
+          tbody.innerHTML = html;
+        }
+      } catch (e) {
+        console.warn('Failed to load members from server:', e);
       }
     }
+
+    async function changeMemberRole(userId, newRole, selectEl) {
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/members/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Role updated to ${newRole}`, 'success');
+          loadActivity();
+        } else {
+          showToast(data.message || 'Error updating role', 'error');
+          loadMembers(); // Revert select
+        }
+      } catch (e) {
+        showToast('Failed to update member role', 'error');
+      }
+    }
+
+    async function removeMember(userId, name) {
+      if (!confirm(`Remove ${name} from this team workspace?`)) return;
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/members/${userId}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`${name} removed from team`, 'info');
+          loadMembers();
+          loadActivity();
+        } else {
+          showToast(data.message || 'Cannot remove member', 'error');
+        }
+      } catch (e) {
+        showToast('Error removing member', 'error');
+      }
+    }
+
+    async function revokeInvite(inviteId) {
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/invites/${inviteId}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          showToast('Invitation revoked', 'info');
+          loadMembers();
+        }
+      } catch (e) {
+        showToast('Failed to revoke invite', 'error');
+      }
+    }
+
+    function openInviteModal() {
+      const modal = document.getElementById('invite-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('invite-result-box').style.display = 'none';
+        document.getElementById('invite-email-input').value = '';
+        const btn = document.getElementById('btn-submit-invite');
+        btn.innerText = 'Send Invite';
+        btn.disabled = false;
+        setTimeout(() => document.getElementById('invite-email-input').focus(), 50);
+      }
+    }
+
+    function closeInviteModal() {
+      const modal = document.getElementById('invite-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function submitInvite() {
+      const emailInput = document.getElementById('invite-email-input');
+      const roleSelect = document.getElementById('invite-role-select');
+      const email = emailInput ? emailInput.value.trim() : '';
+      const role = roleSelect ? roleSelect.value : 'Editor';
+
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid email address', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-invite');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Sending...';
+      }
+
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/invites`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, role })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Invitation generated for ${email}!`, 'success');
+          const resultBox = document.getElementById('invite-result-box');
+          const linkDisplay = document.getElementById('invite-link-display');
+          const emailBadge = document.getElementById('invite-email-status-badge');
+          const fullUrl = window.location.origin + (data.inviteUrl || '');
+
+          if (resultBox && linkDisplay) {
+            resultBox.style.display = 'block';
+            linkDisplay.innerText = fullUrl;
+
+            const delivery = data.emailDelivery || {};
+            if (delivery.delivered) {
+              emailBadge.innerHTML = `<span style="color: #10b981; font-weight: 700;">📨 INVITATION EMAIL DISPATCHED TO ${email}</span>`;
+            } else {
+              emailBadge.innerHTML = `<span style="color: #f59e0b; font-weight: 700;">⚡ LINK READY (SMTP NOT CONFIGURED)</span>
+                <p style="font-size: 10px; color: var(--muted); margin: 4px 0 0 0;">
+                  Set <code>SPRING_MAIL_USERNAME</code> &amp; <code>SPRING_MAIL_PASSWORD</code> in <code>application.properties</code> to deliver live emails. Teammates can join immediately using the link below:
+                </p>`;
+            }
+          }
+          if (btn) {
+            btn.innerText = 'Invite Another';
+            btn.disabled = false;
+          }
+          loadMembers();
+          loadActivity();
+        } else {
+          showToast(data.message || 'Failed to send invite', 'error');
+          if (btn) {
+            btn.innerText = 'Send Invite';
+            btn.disabled = false;
+          }
+        }
+      } catch (e) {
+        showToast('Network error sending invite', 'error');
+        if (btn) {
+          btn.innerText = 'Send Invite';
+          btn.disabled = false;
+        }
+      }
+    }
+
+    function copyInviteLink() {
+      const linkDisplay = document.getElementById('invite-link-display');
+      if (linkDisplay && linkDisplay.innerText) {
+        navigator.clipboard.writeText(linkDisplay.innerText).then(() => {
+          showToast('Invitation link copied to clipboard!', 'success');
+          const copyBtn = document.getElementById('btn-copy-invite-link');
+          if (copyBtn) {
+            const originalText = copyBtn.innerText;
+            copyBtn.innerText = '✓ Copied!';
+            setTimeout(() => { copyBtn.innerText = originalText; }, 2000);
+          }
+        }).catch(() => {
+          showToast('Could not copy link automatically', 'error');
+        });
+      }
+    }
+
+    async function loadActivity() {
+      const list = document.getElementById('team-activity-list');
+      if (!list) return;
+
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/activity`);
+        if (res.ok) {
+          const data = await res.json();
+          const events = data.activity || [];
+          if (events.length === 0) {
+            list.innerHTML = '<div style="color: var(--muted); font-size: 12px;">No activity events recorded yet.</div>';
+            return;
+          }
+
+          let html = '';
+          events.slice(0, 20).forEach(ev => {
+            const iconColor = ev.icon || 'cyan';
+            let timeStr = 'Just now';
+            if (ev.createdAt) {
+              const diffMs = Date.now() - new Date(ev.createdAt).getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              if (diffMins < 1) timeStr = 'Just now';
+              else if (diffMins < 60) timeStr = `${diffMins}m ago`;
+              else timeStr = `${Math.floor(diffMins / 60)}h ago`;
+            }
+
+            html += `
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(124,58,237,0.15); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="color: var(--${iconColor});">●</span>
+                  <span style="color: var(--white); font-size: 12px;">${ev.text || (ev.actorName + ' ' + ev.type)}</span>
+                </div>
+                <span style="font-size: 10px; color: var(--muted);">${timeStr}</span>
+              </div>
+            `;
+          });
+          list.innerHTML = html;
+        }
+      } catch (e) {
+        console.warn('Failed to fetch activity feed:', e);
+      }
+    }
+
+    async function saveTeamPolicies() {
+      const editorsCanPublish = document.getElementById('policy-editors-publish').checked;
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ editorsCanPublish })
+        });
+        if (res.ok) {
+          showToast('Team policies updated successfully', 'success');
+          loadActivity();
+        } else {
+          const data = await res.json();
+          showToast(data.message || 'Failed to update policies', 'error');
+        }
+      } catch (e) {
+        showToast('Error saving policies', 'error');
+      }
+    }
+
+    // Initial load
+    loadTeamData();
+    loadMembers();
+    loadActivity();
+
+    // PRD §2.3.8: Poll activity feed every 30 seconds
+    setInterval(() => {
+      const activitySection = document.getElementById('team-section-activity');
+      if (activitySection && activitySection.style.display !== 'none') {
+        loadActivity();
+      }
+    }, 30000);
   </script>
+  <!-- Invite Member Modal -->
+  <div id="invite-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="pixel-border-box" style="background: #141417; border: 1px solid var(--purple-light); padding: 24px; width: 90%; max-width: 460px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(124,58,237,0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-family: var(--mono); font-size: 15px; color: var(--white); margin: 0;">Invite Teammate</h3>
+        <button onclick="closeInviteModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px;">✕</button>
+      </div>
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono);">TEAMMATE EMAIL</label>
+        <input type="email" id="invite-email-input" placeholder="colleague@company.com" style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-family: var(--mono); font-size: 12px; border-radius: 4px;" />
+      </div>
+      <div style="margin-bottom: 18px;">
+        <label style="display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono);">WORKSPACE ROLE</label>
+        <select id="invite-role-select" style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-family: var(--mono); font-size: 12px; border-radius: 4px;">
+          <option value="Editor">Editor (Create, edit, copy snippets)</option>
+          <option value="Viewer">Viewer (Read-only, copy snippets)</option>
+          <option value="Admin">Admin (Full workspace management)</option>
+        </select>
+      </div>
+      <div id="invite-result-box" style="display: none; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 4px; padding: 14px; margin-bottom: 16px;">
+        <div id="invite-email-status-badge" style="font-size: 11px; margin-bottom: 8px; font-family: var(--mono);"></div>
+        <div style="font-size: 10px; color: var(--muted); margin-bottom: 4px; font-family: var(--mono);">INVITATION LINK:</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="flex: 1; font-size: 11px; color: var(--purple-light); word-break: break-all; font-family: var(--mono); background: #0c0c0e; padding: 6px 8px; border-radius: 4px; border: 1px solid rgba(124,58,237,0.3);" id="invite-link-display"></div>
+          <button id="btn-copy-invite-link" class="btn-outline-pixel" style="font-size: 10px; padding: 6px 10px; white-space: nowrap;" onclick="copyInviteLink()">Copy Link</button>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-outline-pixel" onclick="closeInviteModal()">Cancel</button>
+        <button class="btn-solid-pixel" id="btn-submit-invite" onclick="submitInvite()">Send Invite</button>
+      </div>
+    </div>
+  </div>
+
   <script src="magic-bento.js"></script>
   <script src="border-glow.js"></script>
 </body>
