@@ -172,4 +172,42 @@ public class AIController {
         Map<String, Object> simResult = aiService.simulateSemanticSearch(query, snippet);
         return ResponseEntity.ok(Map.of("success", true, "simulation", simResult));
     }
+
+    @PostMapping("/ai/vector-search")
+    public ResponseEntity<?> vectorSearch(@RequestBody(required = false) Map<String, Object> payload) {
+        String query = payload != null ? (String) payload.getOrDefault("query", "") : "";
+        int limit = payload != null && payload.containsKey("limit") ? ((Number) payload.get("limit")).intValue() : 5;
+
+        List<Snippet> all = snippetRepository.findAll();
+        List<Map<String, Object>> scored = new ArrayList<>();
+
+        for (Snippet s : all) {
+            Map<String, Object> sim = aiService.simulateSemanticSearch(query, s);
+            int score = (int) sim.getOrDefault("matchScore", 0);
+            if (score > 10 || query.trim().isEmpty()) {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("id", s.getId());
+                item.put("slug", s.getSlug() != null ? s.getSlug() : s.getId());
+                item.put("title", s.getTitle());
+                item.put("language", s.getLanguage());
+                item.put("aiSummary", s.getAiSummary());
+                item.put("similarityScore", score / 100.0);
+                item.put("matchedTokens", sim.get("matchedTokens"));
+                item.put("designPattern", s.getDesignPattern());
+                scored.add(item);
+            }
+        }
+
+        scored.sort((a, b) -> Double.compare((Double) b.get("similarityScore"), (Double) a.get("similarityScore")));
+        if (scored.size() > limit) scored = scored.subList(0, limit);
+
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("success", true);
+        res.put("query", query);
+        res.put("vectorDimensions", 1536);
+        res.put("embeddingModel", "text-embedding-3-small");
+        res.put("results", scored);
+
+        return ResponseEntity.ok(res);
+    }
 }

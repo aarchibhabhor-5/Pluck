@@ -19,12 +19,17 @@ public class Token {
     private String expires = "in 90 days";
     private String createdAt;
 
+    private String userId;
+
     public Token() {
         this.createdAt = Instant.now().toString();
     }
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

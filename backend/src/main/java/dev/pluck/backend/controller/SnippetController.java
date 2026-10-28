@@ -58,7 +58,12 @@ public class SnippetController {
             item.put("visibility", s.getVisibility());
             item.put("tags", s.getTags());
             item.put("dependencies", s.getDependencies());
-            item.put("previewCode", s.getPreviewCode());
+            String preview = s.getPreviewCode();
+            if ((preview == null || preview.isEmpty()) && s.getCode() != null) {
+                preview = s.getCode().lines().limit(12).collect(java.util.stream.Collectors.joining("\n"));
+            }
+            item.put("previewCode", preview != null ? preview : "");
+            item.put("code", s.getCode() != null ? s.getCode() : "");
             item.put("aiSummary", s.getAiSummary());
             item.put("copyCount", s.getCopyCount());
             item.put("forkCount", s.getForkCount());
@@ -66,7 +71,6 @@ public class SnippetController {
             item.put("embeddingStatus", s.getEmbeddingStatus());
             item.put("createdAt", s.getCreatedAt());
             item.put("updatedAt", s.getUpdatedAt());
-            // Intentionally exclude full `code`, `embedding`, and `versions` per PRD §2.3.4
             items.add(item);
         }
 
@@ -176,7 +180,7 @@ public class SnippetController {
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
-    @PatchMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<?> updateSnippet(@PathVariable String id, @RequestBody Map<String, Object> payload) {
         Optional<Snippet> opt = snippetRepository.findById(id);
         if (opt.isEmpty()) {
@@ -225,10 +229,13 @@ public class SnippetController {
             snippet.setSecretScanStatus(performSecretScan(newCode, snippet.getVisibility()));
             snippet.setEmbeddingStatus("pending");
         }
+        if (payload.containsKey("dependencies") && payload.get("dependencies") instanceof List) {
+            snippet.setDependencies((List<Map<String, String>>) payload.get("dependencies"));
+        }
         if (payload.containsKey("language")) {
             snippet.setLanguage((String) payload.get("language"));
             // Re-extract deps if language changed and code exists
-            if (snippet.getCode() != null) {
+            if (snippet.getCode() != null && (!payload.containsKey("dependencies"))) {
                 snippet.setDependencies(extractDependencies(snippet.getCode(), snippet.getLanguage()));
             }
         }

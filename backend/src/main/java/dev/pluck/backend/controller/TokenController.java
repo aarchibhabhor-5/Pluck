@@ -14,10 +14,12 @@ import java.util.*;
 public class TokenController {
 
     private final TokenRepository tokenRepository;
+    private final dev.pluck.backend.repository.UserRepository userRepository;
 
     @Autowired
-    public TokenController(TokenRepository tokenRepository) {
+    public TokenController(TokenRepository tokenRepository, dev.pluck.backend.repository.UserRepository userRepository) {
         this.tokenRepository = tokenRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -29,7 +31,10 @@ public class TokenController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createToken(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> createToken(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
         String name = (String) body.get("name");
         if (name == null || name.trim().isEmpty()) {
             Map<String, String> err = new HashMap<>();
@@ -42,8 +47,18 @@ public class TokenController {
         String fullToken = "pluck_pat_" + rawHex;
         String prefix = "pluck_pat_" + rawHex.substring(0, 4) + "...";
 
+        String callerUserId = AuthController.resolveUserId(authHeader);
+        if (callerUserId == null) {
+            callerUserId = userRepository.findAll().stream()
+                    .filter(u -> !"test_dev@pluck.dev".equalsIgnoreCase(u.getEmail()))
+                    .findFirst()
+                    .map(dev.pluck.backend.model.User::getId)
+                    .orElse("usr_alex");
+        }
+
         Token token = new Token();
         token.setId("tok_" + rawHex.substring(0, 8));
+        token.setUserId(callerUserId);
         token.setName(name);
         token.setPrefix(prefix);
         token.setTokenHash("hash_" + rawHex.substring(0, 8));

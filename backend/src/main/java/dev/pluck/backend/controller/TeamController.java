@@ -567,4 +567,176 @@ public class TeamController {
         List<ActivityEvent> events = activityService.getTeamActivity(team.getId());
         return ResponseEntity.ok(Map.of("activity", events));
     }
+
+    /**
+     * 13. GET /api/teams/{id}/collections — List team collections
+     */
+    @GetMapping("/{id}/collections")
+    public ResponseEntity<?> getCollections(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        User caller = resolveCaller(authHeader);
+        Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
+                .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
+                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+
+        List<Map<String, Object>> collections = team.getCollections();
+        if (collections == null) collections = new ArrayList<>();
+
+        return ResponseEntity.ok(Map.of("success", true, "collections", collections));
+    }
+
+    /**
+     * 14. POST /api/teams/{id}/collections — Create new collection
+     */
+    @PostMapping("/{id}/collections")
+    public ResponseEntity<?> createCollection(
+            @PathVariable String id,
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        User caller = resolveCaller(authHeader);
+        Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
+                .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
+                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+
+        if (!permissionService.can(team, caller, PermissionService.Action.CREATE_SNIPPET)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "FORBIDDEN", "message", "Viewers cannot create collections."));
+        }
+
+        String name = (String) body.get("name");
+        if (name == null || name.trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "NAME_REQUIRED", "message", "Collection name is required."));
+        }
+
+        String emoji = (String) body.getOrDefault("emoji", "📁");
+        String desc = (String) body.getOrDefault("desc", "");
+
+        String rawSlug = name.trim().toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+        String colId = "col_" + (rawSlug.isEmpty() ? UUID.randomUUID().toString().substring(0, 8) : rawSlug);
+
+        List<Map<String, Object>> collections = team.getCollections();
+        if (collections == null) {
+            collections = new ArrayList<>();
+            team.setCollections(collections);
+        }
+
+        for (Map<String, Object> existing : collections) {
+            if (name.trim().equalsIgnoreCase(String.valueOf(existing.get("name")))) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "COLLECTION_EXISTS", "message", "A collection with this name already exists."));
+            }
+        }
+
+        Map<String, Object> newCol = new HashMap<>();
+        newCol.put("id", colId);
+        newCol.put("name", name.trim());
+        newCol.put("emoji", emoji != null && !emoji.trim().isEmpty() ? emoji.trim() : "📁");
+        newCol.put("desc", desc != null ? desc.trim() : "");
+        newCol.put("count", 0);
+        newCol.put("createdAt", Instant.now().toString());
+
+        collections.add(newCol);
+        teamRepository.save(team);
+
+        activityService.record(team.getId(), caller.getId(), caller.getName(), "collection.created", null, null,
+                caller.getName() + " created collection '" + name.trim() + "'", "purple", Map.of("collection", name.trim(), "id", colId));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("success", true, "collection", newCol, "message", "Collection created successfully."));
+    }
+
+    /**
+     * 15. PATCH /api/teams/{id}/collections/{colId} — Update collection
+     */
+    @PatchMapping("/{id}/collections/{colId}")
+    public ResponseEntity<?> updateCollection(
+            @PathVariable String id,
+            @PathVariable String colId,
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        User caller = resolveCaller(authHeader);
+        Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
+                .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
+                .orElse(null);
+
+        if (team == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+
+        if (!permissionService.can(team, caller, PermissionService.Action.EDIT_SNIPPET)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "FORBIDDEN", "message", "Viewers cannot edit collections."));
+        }
+
+        List<Map<String, Object>> collections = team.getCollections();
+        if (collections == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "COLLECTION_NOT_FOUND"));
+
+        Map<String, Object> target = null;
+        for (Map<String, Object> c : collections) {
+            if (colId.equalsIgnoreCase(String.valueOf(c.get("id")))) {
+                target = c;
+                break;
+            }
+        }
+
+        if (target == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "COLLECTION_NOT_FOUND"));
+
+        if (body.containsKey("name") && body.get("name") != null && !String.valueOf(body.get("name")).trim().isEmpty()) {
+            target.put("name", String.valueOf(body.get("name")).trim());
+        }
+        if (body.containsKey("emoji") && body.get("emoji") != null && !String.valueOf(body.get("emoji")).trim().isEmpty()) {
+            target.put("emoji", String.valueOf(body.get("emoji")).trim());
+        }
+        if (body.containsKey("desc")) {
+            target.put("desc", body.get("desc") != null ? String.valueOf(body.get("desc")).trim() : "");
+        }
+        target.put("updatedAt", Instant.now().toString());
+
+        teamRepository.save(team);
+        return ResponseEntity.ok(Map.of("success", true, "collection", target));
+    }
+
+    /**
+     * 16. DELETE /api/teams/{id}/collections/{colId} — Delete collection
+     */
+    @DeleteMapping("/{id}/collections/{colId}")
+    public ResponseEntity<?> deleteCollection(
+            @PathVariable String id,
+            @PathVariable String colId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+        User caller = resolveCaller(authHeader);
+        Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
+                .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
+                .orElse(null);
+
+        if (team == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+
+        if (!permissionService.can(team, caller, PermissionService.Action.DELETE_ANY_SNIPPET)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "FORBIDDEN", "message", "Only Admins can delete team collections."));
+        }
+
+        List<Map<String, Object>> collections = team.getCollections();
+        if (collections == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "COLLECTION_NOT_FOUND"));
+
+        String removedName = null;
+        boolean removed = false;
+        Iterator<Map<String, Object>> iter = collections.iterator();
+        while (iter.hasNext()) {
+            Map<String, Object> c = iter.next();
+            if (colId.equalsIgnoreCase(String.valueOf(c.get("id")))) {
+                removedName = String.valueOf(c.get("name"));
+                iter.remove();
+                removed = true;
+                break;
+            }
+        }
+
+        if (!removed) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "COLLECTION_NOT_FOUND"));
+
+        teamRepository.save(team);
+
+        activityService.record(team.getId(), caller.getId(), caller.getName(), "collection.deleted", null, null,
+                caller.getName() + " deleted collection '" + (removedName != null ? removedName : colId) + "'", "pink", Map.of("collectionId", colId));
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Collection deleted successfully."));
+    }
 }

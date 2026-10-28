@@ -32,8 +32,17 @@ build/
 ### VS Code ###
 .vscode/
 
-### Environment Files ###
+### Environment Files & Secrets ###
 .env
+.env.*
 *.env
-.env.local
-.env.*.local
+*.env.*
+!.env.example
+!*.env.example
+
+### Credentials & Key files ###
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
