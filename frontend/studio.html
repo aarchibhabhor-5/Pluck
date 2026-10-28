@@ -2473,6 +2473,8 @@
 
     // ── 4. Save to MongoDB & Local Storage ───────────────────
     const API_BASE = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '4000')) ? 'http://localhost:4000/api' : '/api';
+    let currentEditingSnippetId = null;
+    let currentEditingBaseVersion = 1;
 
     async function saveSnippet() {
       if (!editorInstance) return;
@@ -2486,44 +2488,61 @@
       const tagsVal = document.getElementById('snippet-tags').value;
       const tags = tagsVal ? tagsVal.split(',').map(t => t.trim()).filter(Boolean) : [];
 
+      const isEditing = !!currentEditingSnippetId;
       const btn = document.getElementById('btn-save');
-      btn.textContent = 'Saving to MongoDB...';
+      btn.textContent = isEditing ? 'Updating in MongoDB...' : 'Saving to MongoDB...';
       btn.disabled = true;
 
       const depList = (detectedPkgs instanceof Map)
         ? Array.from(detectedPkgs.entries()).map(([name, eco]) => ({ name, version: 'latest', ecosystem: eco }))
         : Array.from(detectedPkgs).map(p => ({ name: typeof p === 'string' ? p : p.name, version: 'latest' }));
 
+      const payload = {
+        title,
+        code,
+        language,
+        folderId,
+        folderName: folderId,
+        visibility,
+        tags,
+        description: desc,
+        dependencies: depList,
+        envKeys: Array.from(detectedEnvKeys),
+        acknowledgeSecrets: true
+      };
+
+      if (isEditing) {
+        payload.baseVersion = currentEditingBaseVersion;
+      }
+
+      const token = localStorage.getItem('pluck_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       let savedSnippet = null;
       try {
-        const res = await fetch(`${API_BASE}/snippets`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title,
-            code,
-            language,
-            folderId,
-            folderName: folderId,
-            visibility,
-            tags,
-            description: desc,
-            dependencies: depList,
-            envKeys: Array.from(detectedEnvKeys),
-            acknowledgeSecrets: true
-          })
+        const endpoint = isEditing ? `${API_BASE}/snippets/${encodeURIComponent(currentEditingSnippetId)}` : `${API_BASE}/snippets`;
+        const method = isEditing ? 'PATCH' : 'POST';
+
+        const res = await fetch(endpoint, {
+          method,
+          headers,
+          body: JSON.stringify(payload)
         });
 
         if (res.ok) {
           const json = await res.json();
           savedSnippet = json.snippet;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || (isEditing ? 'Failed to update snippet' : 'Failed to save snippet'));
         }
       } catch (err) {
-        console.warn('Backend unavailable, caching locally:', err);
+        console.warn('Backend request failed, updating locally:', err);
       }
 
       if (!savedSnippet) {
-        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'snip_' + Date.now();
+        const slug = isEditing ? currentEditingSnippetId : (title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'snip_' + Date.now());
         savedSnippet = {
           id: slug,
           slug,
@@ -2547,60 +2566,83 @@
         localSnippets = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
       } catch (e) { localSnippets = []; }
 
-      const idx = localSnippets.findIndex(s => s.id === savedSnippet.id);
-      if (idx >= 0) {
-        localSnippets[idx] = savedSnippet;
+      if (isEditing) {
+        const idx = localSnippets.findIndex(s => s.id === currentEditingSnippetId || s.slug === currentEditingSnippetId);
+        if (idx >= 0) {
+          localSnippets[idx] = savedSnippet;
+        } else {
+          localSnippets.unshift(savedSnippet);
+        }
       } else {
-        localSnippets.unshift(savedSnippet);
+        const idx = localSnippets.findIndex(s => s.id === savedSnippet.id);
+        if (idx >= 0) {
+          localSnippets[idx] = savedSnippet;
+        } else {
+          localSnippets.unshift(savedSnippet);
+        }
       }
+
       try {
         localStorage.setItem('pluck_user_snippets', JSON.stringify(localSnippets));
       } catch (e) {}
 
-      showToast(`Snippet "${title}" saved to MongoDB Vault!`, 'success');
+      // Clean up session storage active snippet
+      try {
+        sessionStorage.removeItem('pluck_active_snippet');
+      } catch (e) {}
+
+      showToast(isEditing ? `Snippet "${title}" updated in MongoDB Vault!` : `Snippet "${title}" saved to MongoDB Vault!`, 'success');
       setTimeout(() => {
         window.location.href = 'app.html';
       }, 500);
     }
 
     // ── 5. Edit Existing Snippet Support (?id=...) ───────────
+    let isEditModeLoaded = false;
     async function checkEditMode() {
+      if (isEditModeLoaded) return;
       const urlParams = new URLSearchParams(window.location.search);
       const editId = urlParams.get('id');
       if (!editId) return;
 
       let s = null;
 
-      // 1. Check sessionStorage (active snippet from snippet.html or app.html)
+      // 1. Authoritative MongoDB backend fetch
       try {
-        const stored = sessionStorage.getItem('pluck_active_snippet');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (parsed && (parsed.id === editId || parsed.slug === editId || editId === 'active' || editId === 'use-debounce')) {
-            s = parsed;
-          }
+        const token = localStorage.getItem('pluck_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE}/snippets/${encodeURIComponent(editId)}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          s = data.snippet || data;
         }
-      } catch (e) {}
+      } catch (err) {
+        console.warn('Backend fetch for snippet edit failed, checking local caches:', err);
+      }
 
-      // 2. Check localStorage (saved user snippets)
-      if (!s) {
+      // 2. Fallback to sessionStorage active snippet
+      if (!s || !s.code) {
         try {
-          const list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
-          s = list.find(item => item.id === editId || item.slug === editId);
+          const stored = sessionStorage.getItem('pluck_active_snippet');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed && (parsed.id === editId || parsed.slug === editId || editId === 'active')) {
+              if (parsed.code) s = parsed;
+            }
+          }
         } catch (e) {}
       }
 
-      // 3. Check backend API
-      if (!s) {
+      // 3. Fallback to localStorage saved user snippets
+      if (!s || !s.code) {
         try {
-          const res = await fetch(`${API_BASE}/snippets/${encodeURIComponent(editId)}`);
-          if (res.ok) {
-            const data = await res.json();
-            s = data.snippet || data;
+          const list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
+          const found = list.find(item => item.id === editId || item.slug === editId);
+          if (found && (found.code || found.previewCode)) {
+            s = { ...found, code: found.code || found.previewCode };
           }
-        } catch (err) {
-          console.warn('Failed to fetch snippet for editing:', err);
-        }
+        } catch (e) {}
       }
 
       // 4. Built-in use-debounce fallback
@@ -2614,28 +2656,30 @@
           visibility: 'private',
           tags: ['react', 'hook', 'performance'],
           description: 'Debounces rapidly changing values with a configurable timeout window in React 18 using useEffect cleanup to eliminate race conditions and redundant network requests.',
-          code: `import { useState, useEffect } from 'react';
-
-export function useDebounce<T>(value: T, delay: number = 300): T {
-  const [debouncedVal, setVal] = useState<T>(value);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVal(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-
-  return debouncedVal;
-}`
+          code: `import { useState, useEffect } from 'react';\n\nexport function useDebounce<T>(value: T, delay: number = 300): T {\n  const [debouncedVal, setVal] = useState<T>(value);\n\n  useEffect(() => {\n    const t = setTimeout(() => setVal(value), delay);\n    return () => clearTimeout(t);\n  }, [value, delay]);\n\n  return debouncedVal;\n}`
         };
       }
 
       // 5. Populate Studio with snippet data
       if (s) {
-        isLoadingSnippet = true;
+        isEditModeLoaded = true;
+        currentEditingSnippetId = s.id || s.slug || editId;
+        currentEditingBaseVersion = s.version || 1;
+
+        // Visual update: indicate Edit Mode
+        const saveBtn = document.getElementById('btn-save');
+        if (saveBtn) {
+          saveBtn.textContent = 'Update Snippet';
+          saveBtn.title = 'Update this existing snippet in MongoDB';
+        }
+
         const titleEl = document.getElementById('snippet-title');
         if (titleEl) titleEl.value = s.title || '';
+        document.title = `Edit: ${s.title || 'Snippet'} — Pluck Studio`;
 
-        // 1. Sync language dropdown, Monaco model, presets, and stdlib FIRST
+        isLoadingSnippet = true;
+
+        // Sync dropdowns and fields
         if (s.language) {
           selectLanguage(s.language, true);
         }
@@ -2654,18 +2698,35 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
           descEl.value = s.description;
         }
 
-        // 2. Set code AFTER language is synced
-        if (s.code && editorInstance) {
-          editorInstance.setValue(s.code);
+        // Set code in Monaco editor
+        const snippetCode = s.code || s.previewCode || '';
+        if (editorInstance) {
+          editorInstance.setValue(snippetCode);
+          isLoadingSnippet = false;
+          if (snippetCode) {
+            handleCodeAnalysis(snippetCode);
+          }
+        } else {
+          let waitCount = 0;
+          const waitInterval = setInterval(() => {
+            waitCount++;
+            if (editorInstance) {
+              clearInterval(waitInterval);
+              editorInstance.setValue(snippetCode);
+              isLoadingSnippet = false;
+              if (snippetCode) {
+                handleCodeAnalysis(snippetCode);
+              }
+            } else if (waitCount > 100) {
+              clearInterval(waitInterval);
+              isLoadingSnippet = false;
+            }
+          }, 50);
         }
 
-        isLoadingSnippet = false;
-
-        // 3. Run live AST analysis with matching language
-        if (s.code) {
-          handleCodeAnalysis(s.code);
-        }
-        showToast(`Loaded snippet "${s.title}" for editing`, 'info');
+        showToast(`Editing snippet: "${s.title}"`, 'info');
+      } else {
+        showToast(`Snippet "${editId}" not found`, 'error');
       }
     }
 
@@ -2694,7 +2755,10 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
       }
     });
 
-    document.addEventListener('DOMContentLoaded', loadFoldersDropdown);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadFoldersDropdown();
+      checkEditMode();
+    });
   </script>
   <script src="border-glow.js"></script>
 </body>

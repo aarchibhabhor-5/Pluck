@@ -39,8 +39,9 @@
       </div>
 
       <!-- OAuth Providers -->
-      <div class="oauth-buttons">
-        <button class="btn-oauth" onclick="simulateOAuth('Google')">
+      <div class="oauth-buttons" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div id="google-gsi-btn" style="display: none; width: 100%; justify-content: center;"></div>
+        <button class="btn-oauth" id="google-custom-btn" onclick="simulateOAuth('Google')" style="width: 100%;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -245,20 +246,100 @@
     }
 
     // ── Google OAuth Integration ───────────────────────────
-    function simulateOAuth(provider) {
-      // Check if user has an active Google Client ID configured
-      const googleClientId = localStorage.getItem('pluck_google_client_id');
-      if (window.google && window.google.accounts && googleClientId) {
-        // Trigger official Google Identity prompt
-        google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleJwtResponse
-        });
-        google.accounts.id.prompt();
-        return;
+    let activeGoogleClientId = null;
+
+    async function loadGoogleConfig() {
+      try {
+        const res = await fetch('/api/auth/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg.googleClientId) {
+            activeGoogleClientId = cfg.googleClientId;
+            localStorage.setItem('pluck_google_client_id', activeGoogleClientId);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch auth config:', e);
       }
 
-      // Open interactive Google Sign-In Dialog
+      if (!activeGoogleClientId) {
+        activeGoogleClientId = localStorage.getItem('pluck_google_client_id');
+      }
+
+      initGoogleIdentityServices();
+    }
+
+    function initGoogleIdentityServices() {
+      if (window.google && window.google.accounts && activeGoogleClientId) {
+        try {
+          google.accounts.id.initialize({
+            client_id: activeGoogleClientId,
+            callback: handleGoogleJwtResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true
+          });
+
+          // Render official Google Sign-In button
+          const btnTarget = document.getElementById('google-gsi-btn');
+          const customBtn = document.getElementById('google-custom-btn');
+          if (btnTarget) {
+            google.accounts.id.renderButton(btnTarget, {
+              theme: 'filled_black',
+              size: 'large',
+              type: 'standard',
+              shape: 'rectangular',
+              text: 'continue_with',
+              logo_alignment: 'left',
+              width: 340
+            });
+            btnTarget.style.display = 'flex';
+            if (customBtn) customBtn.style.display = 'none';
+          }
+
+          // Also trigger One-Tap if allowed
+          google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              console.log('Google One-Tap notice:', notification.getNotDisplayedReason());
+            }
+          });
+        } catch (err) {
+          console.warn('Failed to initialize Google Identity Services:', err);
+        }
+      }
+    }
+
+    // Call on load and window.onload
+    loadGoogleConfig();
+    window.addEventListener('load', () => {
+      setTimeout(initGoogleIdentityServices, 300);
+    });
+
+    function simulateOAuth(provider) {
+      if (window.google && window.google.accounts && activeGoogleClientId) {
+        // Trigger official Google Identity prompt
+        try {
+          google.accounts.id.initialize({
+            client_id: activeGoogleClientId,
+            callback: handleGoogleJwtResponse,
+            auto_select: false
+          });
+          google.accounts.id.prompt((notification) => {
+            // If browser blocks one-tap popup or user has disabled 3rd party cookies, show modal fallback
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              openGoogleModal();
+            }
+          });
+          return;
+        } catch (e) {
+          console.warn('Google prompt exception:', e);
+        }
+      }
+
+      // Open interactive Google Sign-In Dialog fallback
+      openGoogleModal();
+    }
+
+    function openGoogleModal() {
       document.getElementById('google-modal').style.display = 'block';
       document.getElementById('google-backdrop').style.display = 'block';
       const emailField = document.getElementById('email').value.trim();
@@ -318,39 +399,104 @@
       }
     }
 
-    function handleGoogleJwtResponse(response) {
+    async function handleGoogleJwtResponse(response) {
       try {
-        const base64Url = response.credential.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-        const payload = JSON.parse(jsonPayload);
+        showToast('Verifying Google token with Pluck backend...', 'info');
+        let email = null;
+        let name = null;
+        let avatar = null;
 
-        fetch('/api/auth/oauth', {
+        if (response.credential) {
+          try {
+            const base64Url = response.credential.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+            const payload = JSON.parse(jsonPayload);
+            email = payload.email;
+            name = payload.name;
+            avatar = payload.picture;
+          } catch (e) {
+            console.warn('Local JWT parse warning (backend will verify):', e);
+          }
+        }
+
+        const res = await fetch('/api/auth/oauth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             provider: 'Google',
-            email: payload.email,
-            name: payload.name,
-            avatar: payload.picture
+            idToken: response.credential,
+            credential: response.credential,
+            email: email,
+            name: name,
+            avatar: avatar
           })
-        }).then(res => res.json()).then(data => {
-          if (data.user) localStorage.setItem('pluck_user', JSON.stringify(data.user));
-          if (data.token) localStorage.setItem('pluck_token', data.token);
-          showToast(`Welcome, ${data.user.name}!`, 'success');
-          setTimeout(() => { window.location.href = nextUrl; }, 600);
         });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || 'Google OAuth verification failed on server');
+        }
+
+        if (data.user) localStorage.setItem('pluck_user', JSON.stringify(data.user));
+        if (data.token) {
+          localStorage.setItem('pluck_token', data.token);
+          document.cookie = `pluck_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
+        }
+
+        showToast(`Welcome, ${data.user.name}! (Signed in with Google)`, 'success');
+        setTimeout(() => { window.location.href = nextUrl; }, 600);
       } catch (e) {
-        showToast('Failed to parse Google credential token', 'error');
+        showToast(e.message || 'Failed to authenticate with Google', 'error');
       }
     }
 
-    function openForgotModal(e) {
+    async function openForgotModal(e) {
       e.preventDefault();
       const email = prompt('Enter your registered email to receive a password reset link:');
-      if (email) {
-        showToast(`Password reset link dispatched to ${email}`, 'success');
+      if (!email || !email.includes('@')) return;
+      showToast('Dispatching reset instructions...', 'info');
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim() })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message || `Password reset link dispatched to ${email}`, 'success');
+        } else {
+          showToast(data.message || 'Error sending reset email', 'error');
+        }
+      } catch (err) {
+        showToast('Network error requesting password reset', 'error');
       }
+    }
+
+    // Check if URL has ?reset=pluck_reset_...
+    const resetToken = params.get('reset');
+    if (resetToken) {
+      setTimeout(async () => {
+        const newPassword = prompt('Enter your new password (must be at least 10 characters):');
+        if (newPassword) {
+          try {
+            const res = await fetch('/api/auth/reset-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: resetToken, newPassword })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              showToast(data.message || 'Password reset successfully! Please sign in.', 'success');
+              switchAuthMode('login');
+            } else {
+              showToast(data.message || 'Failed to reset password', 'error');
+            }
+          } catch (e) {
+            showToast('Error resetting password', 'error');
+          }
+        }
+      }, 300);
     }
 
     // Read query parameter ?mode=signup

@@ -10,10 +10,666 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="app-style.css" />
-  <link rel="stylesheet" href="magic-bento.css" />
-  <link rel="stylesheet" href="border-glow.css" />
+  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="app-style.css?v=2" />
+  <link rel="stylesheet" href="animated-list.css?v=2" />
+  <link rel="stylesheet" href="magic-bento.css?v=2" />
+  <link rel="stylesheet" href="border-glow.css?v=2" />
+
+  <style>
+    /* ══════════════════════════════════════════════════════
+       CUSTOM ANIMATED DROPDOWNS (React Bits Integration)
+       ══════════════════════════════════════════════════════ */
+    .custom-dropdown-container {
+      position: relative;
+    }
+
+    .custom-dropdown-trigger {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 10px !important;
+      background: linear-gradient(180deg, #1e2438 0%, #101422 100%) !important;
+      border: 1px solid #3b4262 !important;
+      border-bottom: 2px solid #080b12 !important;
+      border-radius: 6px !important;
+      color: #38bdf8 !important;
+      font-family: var(--mono) !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      padding: 7px 13px !important;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+      cursor: pointer !important;
+      outline: none !important;
+      transition: all 0.15s ease !important;
+      user-select: none !important;
+      white-space: nowrap !important;
+    }
+
+    .custom-dropdown-trigger:hover {
+      border-color: #818cf8 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 5px 14px rgba(129, 140, 248, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+
+    .custom-dropdown-trigger.active {
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35) !important;
+      background: linear-gradient(180deg, #252e46 0%, #151a2c 100%) !important;
+    }
+
+    .custom-dropdown-trigger .dropdown-chevron {
+      transition: transform 0.22s cubic-bezier(0.34, 1.5, 0.64, 1) !important;
+    }
+
+    .custom-dropdown-trigger.active .dropdown-chevron {
+      transform: rotate(180deg) !important;
+    }
+
+    .custom-dropdown-popover {
+      z-index: 1000 !important;
+      filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.95)) !important;
+      animation: dropdownPopFade 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+      transform-origin: top right !important;
+    }
+
+    .custom-dropdown-popover .animated-list {
+      box-shadow: none !important;
+      outline: none !important;
+    }
+    .custom-dropdown-popover .animated-list--framed {
+      background: #0c0f17 !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    .custom-dropdown-popover .animated-list__frame-rim {
+      display: none !important;
+    }
+    .custom-dropdown-popover .animated-list:has(> .animated-list__viewport:focus-visible) {
+      outline: none !important;
+    }
+
+    @keyframes dropdownPopFade {
+      from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes snippetCardPop {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       3D ELEVATED VIEW SWITCHER BUTTONS (Grid / List)
+       Matching Topbar Button Tactility & Extruded Bevel
+       ══════════════════════════════════════════════════════ */
+    .view-mode-btn {
+      width: 38px !important;
+      height: 34px !important;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+      border: 1px solid #475569 !important;
+      border-bottom: 3px solid #1e293b !important;
+      border-radius: 6px !important;
+      color: #94a3b8 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: pointer !important;
+      box-shadow:
+        0 4px 0 0 #020617,
+        0 8px 18px rgba(0, 0, 0, 0.7),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+      transform: translateY(0) !important;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      outline: none !important;
+      user-select: none !important;
+    }
+
+    .view-mode-btn:hover {
+      border-color: var(--cyan) !important;
+      color: var(--cyan-light) !important;
+      background: linear-gradient(180deg, #334155 0%, #1e293b 100%) !important;
+      transform: translateY(-2px) !important;
+      border-bottom: 3px solid #0891b2 !important;
+      box-shadow:
+        0 6px 0 0 #020617,
+        0 14px 24px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(6, 182, 212, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .view-mode-btn.active {
+      background: linear-gradient(180deg, #1d334d 0%, #0c1c2e 100%) !important;
+      border-color: #38bdf8 !important;
+      border-bottom: 3px solid #0284c7 !important;
+      color: #38bdf8 !important;
+      box-shadow:
+        0 4px 0 0 #020617,
+        0 10px 20px rgba(0, 0, 0, 0.75),
+        0 0 18px rgba(56, 189, 248, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+    }
+
+    .view-mode-btn:active {
+      transform: translateY(2px) !important;
+      border-bottom: 1px solid #020617 !important;
+      box-shadow:
+        0 1px 0 0 #020617,
+        0 3px 6px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       LIST VIEW LAYOUT (Full-width sleek horizontal rows)
+       ══════════════════════════════════════════════════════ */
+    .snippet-grid.list-view {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+    }
+
+    .snippet-grid.list-view .snippet-card {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 10px 18px !important;
+      gap: 16px !important;
+      border-radius: 6px !important;
+      min-height: 58px !important;
+      background: #11141c !important;
+      border: 1px solid rgba(139, 92, 246, 0.3) !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .snippet-grid.list-view .snippet-card:hover {
+      transform: translateY(-2px) !important;
+      border-color: rgba(56, 189, 248, 0.6) !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 18px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+    }
+
+    .snippet-grid.list-view .snippet-card-header {
+      padding: 0 !important;
+      flex: 0 0 280px !important;
+      max-width: 320px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      border-bottom: none !important;
+    }
+
+    .snippet-grid.list-view .snippet-card-title-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+      overflow: hidden !important;
+    }
+
+    .snippet-grid.list-view .snippet-title {
+      font-size: 13px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      max-width: 200px !important;
+    }
+
+    .snippet-grid.list-view .snippet-crumb {
+      font-size: 10px !important;
+      color: var(--muted) !important;
+    }
+
+    .snippet-grid.list-view .snippet-card-preview {
+      flex: 1 1 auto !important;
+      padding: 6px 14px !important;
+      background: rgba(0, 0, 0, 0.45) !important;
+      border: 1px solid rgba(255, 255, 255, 0.06) !important;
+      border-radius: 4px !important;
+      overflow: hidden !important;
+      max-height: 40px !important;
+      display: flex !important;
+      align-items: center !important;
+      cursor: pointer !important;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .snippet-grid.list-view .snippet-card-preview pre {
+      margin: 0 !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+      font-size: 11px !important;
+      line-height: 1.5 !important;
+      font-family: var(--mono) !important;
+      color: #94a3b8 !important;
+    }
+
+    .snippet-grid.list-view .snippet-card-preview pre code {
+      white-space: nowrap !important;
+      display: inline-block !important;
+    }
+
+    .snippet-grid.list-view .snippet-card-footer {
+      padding: 0 !important;
+      border-top: none !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 14px !important;
+      flex: 0 0 auto !important;
+    }
+
+    .snippet-grid.list-view .snippet-deps-chips {
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      max-width: 140px !important;
+      overflow: hidden !important;
+    }
+
+    .snippet-grid.list-view .snippet-meta-right {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       ELEVATED 3D SUNKEN SEARCH BAR (Matching Studio Input)
+       ══════════════════════════════════════════════════════ */
+    .search-trigger-btn {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 14px !important;
+      padding: 9px 16px !important;
+      background: #090d16 !important;
+      border: 1px solid #334155 !important;
+      border-bottom: 2px solid #1e293b !important;
+      border-radius: 5px !important;
+      color: #94a3b8 !important;
+      font-family: var(--mono) !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      min-width: 320px !important;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+      outline: none !important;
+      transition: all 0.2s ease !important;
+      user-select: none !important;
+    }
+
+    .search-trigger-btn svg {
+      color: #64748b !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .search-trigger-btn:hover {
+      border-color: #475569 !important;
+      color: #f1f5f9 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .search-trigger-btn:hover svg {
+      color: #38bdf8 !important;
+    }
+
+    .search-trigger-btn:focus,
+    .search-trigger-btn:focus-visible,
+    .search-trigger-btn.active {
+      border-color: #38bdf8 !important;
+      background: #0d121f !important;
+      color: #f8fafc !important;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25), inset 0 2px 5px rgba(0, 0, 0, 0.75) !important;
+    }
+
+    .search-trigger-btn:focus svg,
+    .search-trigger-btn:focus-visible svg,
+    .search-trigger-btn.active svg {
+      color: #38bdf8 !important;
+    }
+
+    .search-trigger-btn:active {
+      transform: translateY(1px) !important;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9) !important;
+    }
+
+    .search-trigger-btn .kbd-badge {
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      padding: 3px 7px !important;
+      background: #111624 !important;
+      border: 1px solid #334155 !important;
+      border-bottom: 2px solid #1e293b !important;
+      color: #94a3b8 !important;
+      font-family: var(--mono) !important;
+      border-radius: 4px !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 4px rgba(0, 0, 0, 0.5) !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .search-trigger-btn:hover .kbd-badge {
+      border-color: #475569 !important;
+      color: #cbd5e1 !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       3D ELEVATED COLLECTIONS / FOLDERS SECTION
+       ══════════════════════════════════════════════════════ */
+    .sidebar-section-container {
+      margin-bottom: 24px;
+    }
+
+    .nav-section-title {
+      font-family: var(--mono) !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      letter-spacing: 1.5px !important;
+      text-transform: uppercase !important;
+      color: #ffffff !important;
+      margin-bottom: 10px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      user-select: none !important;
+    }
+
+    .nav-section-icon {
+      color: #38bdf8 !important;
+      font-size: 9px !important;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6)) !important;
+    }
+
+    .folder-tree {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 5px !important;
+    }
+
+    .folder-item {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 8px 12px !important;
+      background: linear-gradient(180deg, #131826 0%, #0d111d 100%) !important;
+      border: 1px solid #232b3e !important;
+      border-bottom: 2px solid #090c14 !important;
+      border-radius: 6px !important;
+      color: #94a3b8 !important;
+      font-family: var(--mono) !important;
+      font-size: 12px !important;
+      font-weight: 500 !important;
+      text-decoration: none !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+      transform: translateY(0) translateX(0) !important;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      position: relative !important;
+      overflow: hidden !important;
+      user-select: none !important;
+    }
+
+    .folder-item::before {
+      content: "" !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      width: 3px !important;
+      background: transparent !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .folder-item:hover {
+      background: linear-gradient(180deg, #1e263d 0%, #131929 100%) !important;
+      border-color: #3b4560 !important;
+      border-bottom-color: #0d121f !important;
+      color: #f8fafc !important;
+      transform: translateY(-1px) translateX(3px) !important;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .folder-item:hover .folder-3d-emoji {
+      transform: scale(1.18) translateY(-1px) rotate(4deg) !important;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6)) brightness(1.1) !important;
+    }
+
+    .folder-item:hover::before {
+      background: #64748b !important;
+    }
+
+    .folder-item.active {
+      background: linear-gradient(180deg, #15273e 0%, #0c1827 100%) !important;
+      border: 1px solid #0284c7 !important;
+      border-bottom: 3px solid #0369a1 !important;
+      color: #38bdf8 !important;
+      font-weight: 700 !important;
+      transform: translateX(4px) !important;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25), 0 0 16px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(56, 189, 248, 0.35) !important;
+    }
+
+    .folder-item.active::before {
+      background: #38bdf8 !important;
+      box-shadow: 0 0 10px #38bdf8 !important;
+    }
+
+    .folder-item.active .folder-3d-emoji {
+      transform: scale(1.15) translateY(-1px) !important;
+      filter: drop-shadow(0 4px 8px rgba(56, 189, 248, 0.35)) brightness(1.12) !important;
+    }
+
+    .folder-item:active {
+      transform: translateY(1px) translateX(4px) !important;
+      border-bottom-width: 1px !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+    }
+
+    .folder-left {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+
+    .folder-3d-emoji {
+      width: 20px !important;
+      height: 20px !important;
+      object-fit: contain !important;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5)) !important;
+      transition: transform 0.22s cubic-bezier(0.34, 1.5, 0.64, 1), filter 0.22s ease !important;
+      flex-shrink: 0 !important;
+    }
+
+    .folder-name {
+      line-height: 1 !important;
+      letter-spacing: 0.2px !important;
+    }
+
+    .folder-count {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 22px !important;
+      height: 19px !important;
+      padding: 0 6px !important;
+      font-family: var(--mono) !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      color: #64748b !important;
+      background: #090d16 !important;
+      border: 1px solid #232b3e !important;
+      border-bottom: 2px solid #090c14 !important;
+      border-radius: 4px !important;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .folder-item:hover .folder-count {
+      color: #94a3b8 !important;
+      border-color: #3b4560 !important;
+    }
+
+    .folder-item.active .folder-count {
+      background: #071729 !important;
+      border-color: #0284c7 !important;
+      border-bottom: 2px solid #0369a1 !important;
+      color: #38bdf8 !important;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       3D ELEVATED FILTER CHIPS & BUTTONS (Languages & Tags)
+       ══════════════════════════════════════════════════════ */
+    .filter-group {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 7px !important;
+      padding: 2px 0 10px 0 !important;
+    }
+
+    .filter-chip {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      padding: 6px 11px !important;
+      background: linear-gradient(180deg, #171d2b 0%, #0d121c 100%) !important;
+      border: 1px solid #2a3449 !important;
+      border-bottom: 2px solid #080b12 !important;
+      border-radius: 5px !important;
+      color: #94a3b8 !important;
+      font-family: var(--mono) !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      outline: none !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+      transform: translateY(0) !important;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      user-select: none !important;
+      text-decoration: none !important;
+    }
+
+    .filter-chip-label {
+      line-height: 1 !important;
+      letter-spacing: 0.2px !important;
+    }
+
+    .filter-chip-count {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-width: 17px !important;
+      height: 16px !important;
+      padding: 0 4px !important;
+      font-size: 9.5px !important;
+      font-weight: 700 !important;
+      border-radius: 3px !important;
+      background: #090d16 !important;
+      border: 1px solid #232b3e !important;
+      border-bottom: 1px solid #000000 !important;
+      color: #64748b !important;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+      transition: all 0.18s ease !important;
+    }
+
+    .filter-chip:hover {
+      background: linear-gradient(180deg, #222b3e 0%, #141b29 100%) !important;
+      border-color: #475569 !important;
+      border-bottom-color: #0d121f !important;
+      color: #f1f5f9 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .filter-chip:hover .filter-chip-count {
+      color: #cbd5e1 !important;
+      border-color: #3b4560 !important;
+    }
+
+    .filter-chip.active {
+      background: linear-gradient(180deg, #162b45 0%, #0c1c2e 100%) !important;
+      border: 1px solid #0284c7 !important;
+      border-bottom: 3px solid #0369a1 !important;
+      color: #38bdf8 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35), 0 0 14px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(56, 189, 248, 0.45) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    .filter-chip.active .filter-chip-count {
+      background: #081a2e !important;
+      border-color: #0284c7 !important;
+      color: #38bdf8 !important;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.35), inset 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    .filter-chip:active {
+      transform: translateY(1px) !important;
+      border-bottom-width: 1px !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       3D ELEVATED SETTINGS GEAR BUTTON
+       ══════════════════════════════════════════════════════ */
+    .btn-settings-3d {
+      width: 32px !important;
+      height: 32px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: linear-gradient(180deg, #1b2336 0%, #0d121c 100%) !important;
+      border: 1px solid #334155 !important;
+      border-bottom: 2px solid #090d16 !important;
+      border-radius: 6px !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+      cursor: pointer !important;
+      text-decoration: none !important;
+      transform: translateY(0) !important;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      outline: none !important;
+    }
+
+    .settings-3d-gear {
+      width: 19px !important;
+      height: 19px !important;
+      object-fit: contain !important;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)) !important;
+      transition: transform 0.4s cubic-bezier(0.34, 1.5, 0.64, 1), filter 0.2s ease !important;
+    }
+
+    .btn-settings-3d:hover {
+      background: linear-gradient(180deg, #25304a 0%, #131a29 100%) !important;
+      border-color: #38bdf8 !important;
+      border-bottom-color: #0284c7 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), 0 0 14px rgba(56, 189, 248, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .btn-settings-3d:hover .settings-3d-gear {
+      transform: rotate(60deg) scale(1.12) !important;
+      filter: drop-shadow(0 3px 6px rgba(56, 189, 248, 0.4)) brightness(1.15) !important;
+    }
+
+    .btn-settings-3d:active {
+      transform: translateY(1px) !important;
+      border-bottom-width: 1px !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+    }
+  </style>
 </head>
 
 <body>
@@ -30,12 +686,9 @@
           <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="26" height="26" />
           <span class="logo-wordmark" style="font-size: 13px;">Pluck</span>
         </a>
-        <a href="settings.html" title="Settings" style="color: var(--muted);"><svg width="16" height="16"
-            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3" />
-            <path
-              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-          </svg></a>
+        <a href="settings.html" class="btn-settings-3d" title="Settings">
+          <img src="assets/emojis/gear_3d.png" alt="Settings" class="settings-3d-gear" />
+        </a>
       </div>
 
       <!-- Workspace Switcher with Interactive Dropdown -->
@@ -84,27 +737,44 @@
 
       <div class="app-sidebar-content">
         <!-- Folders Section -->
-        <div>
-          <div class="nav-section-title">Collections / Folders</div>
+        <div class="sidebar-section-container">
+          <div class="nav-section-title">
+            <span class="nav-section-icon">❖</span> Collections / Folders
+          </div>
           <div class="folder-tree" id="folder-tree">
             <a href="#" class="folder-item active" data-folder="all" onclick="filterFolder('all', event)">
-              <div class="folder-left"><span>📁</span> <span>All Snippets</span></div>
+              <div class="folder-left">
+                <img src="assets/emojis/file_folder_3d.png" alt="All Snippets" class="folder-3d-emoji" />
+                <span class="folder-name">All Snippets</span>
+              </div>
               <span class="folder-count" id="count-all">0</span>
             </a>
             <a href="#" class="folder-item" data-folder="hooks" onclick="filterFolder('hooks', event)">
-              <div class="folder-left"><span>🪝</span> <span>hooks</span></div>
+              <div class="folder-left">
+                <img src="assets/emojis/hook_3d.png" alt="hooks" class="folder-3d-emoji" />
+                <span class="folder-name">hooks</span>
+              </div>
               <span class="folder-count" id="count-hooks">0</span>
             </a>
             <a href="#" class="folder-item" data-folder="auth" onclick="filterFolder('auth', event)">
-              <div class="folder-left"><span>🔐</span> <span>auth</span></div>
+              <div class="folder-left">
+                <img src="assets/emojis/locked_with_key_3d.png" alt="auth" class="folder-3d-emoji" />
+                <span class="folder-name">auth</span>
+              </div>
               <span class="folder-count" id="count-auth">0</span>
             </a>
             <a href="#" class="folder-item" data-folder="aws-infra" onclick="filterFolder('aws-infra', event)">
-              <div class="folder-left"><span>☁️</span> <span>aws-infra</span></div>
+              <div class="folder-left">
+                <img src="assets/emojis/cloud_3d.png" alt="aws-infra" class="folder-3d-emoji" />
+                <span class="folder-name">aws-infra</span>
+              </div>
               <span class="folder-count" id="count-aws-infra">0</span>
             </a>
             <a href="#" class="folder-item" data-folder="database" onclick="filterFolder('database', event)">
-              <div class="folder-left"><span>🗄️</span> <span>database</span></div>
+              <div class="folder-left">
+                <img src="assets/emojis/file_cabinet_3d.png" alt="database" class="folder-3d-emoji" />
+                <span class="folder-name">database</span>
+              </div>
               <span class="folder-count" id="count-database">0</span>
             </a>
           </div>
@@ -137,17 +807,22 @@
 
       <!-- User Profile Footer -->
       <div class="app-sidebar-footer">
-        <div class="sidebar-user" style="cursor: pointer;" title="Account Profile">
-          <div style="display: flex; align-items: center; gap: 10px;"
-            onclick="window.location.href='settings.html?tab=account'">
+        <div class="sidebar-user">
+          <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer;"
+            onclick="window.location.href='settings.html?tab=account'" title="Manage Account Profile">
             <div class="user-avatar" id="sidebar-user-avatar">A</div>
             <div class="user-meta">
               <span class="user-name" id="sidebar-user-name">Alex Developer</span>
               <span class="user-email" id="sidebar-user-email">alex@pluck.dev</span>
             </div>
           </div>
-          <a href="auth.html" title="Sign Out" onclick="return confirmSignOut(event)"
-            style="color: var(--muted); font-size: 11px; text-decoration: none;">🚪</a>
+          <button type="button" class="btn-sidebar-signout" onclick="confirmSignOut(event)" title="Sign Out of Pluck" aria-label="Sign Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
         </div>
       </div>
     </aside>
@@ -187,13 +862,38 @@
           </div>
 
           <div class="view-tools">
-            <select class="select-pixel" onchange="sortSnippets(this.value)">
+            <select id="select-sort" class="select-pixel" style="display:none;" onchange="sortSnippets(this.value)">
               <option value="updated">Sort by: Recently Updated</option>
               <option value="created">Sort by: Date Created</option>
               <option value="title">Sort by: Title (A-Z)</option>
             </select>
-            <div class="btn-icon-pixel active" title="Grid View">⊞</div>
-            <div class="btn-icon-pixel" title="List View" onclick="showToast('List view activated')">☰</div>
+
+            <!-- Sort Dropdown (Powered by React Bits AnimatedList) -->
+            <div class="custom-dropdown-container" id="sort-dropdown-container">
+              <button type="button" class="custom-dropdown-trigger" id="sort-dropdown-trigger" onclick="toggleSortDropdown(event)">
+                <span id="sort-dropdown-text">Sort by: Recently Updated</span>
+                <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div id="sort-dropdown-popover" class="custom-dropdown-popover" style="display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 1000; min-width: 290px;">
+                <div id="sort-animated-list"></div>
+              </div>
+            </div>
+
+            <button type="button" class="view-mode-btn active" id="btn-view-grid" title="Grid View (⊞)" onclick="setViewMode('grid')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+              </svg>
+            </button>
+            <button type="button" class="view-mode-btn" id="btn-view-list" title="List View (☰)" onclick="setViewMode('list')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="18" x2="20" y2="18"></line>
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -276,16 +976,28 @@
       if (!code) return '<code>// Empty snippet</code>';
       const lines = code.split('\n').slice(0, 7).join('\n');
       const escaped = escapeHtml(lines);
-      return escaped
-        .replace(/\b(import|export|from|function|const|let|var|return|def|class|async|await)\b/g, '<span style="color:#f472b6;">$1</span>')
-        .replace(/\b(true|false|null|undefined|number|string|boolean)\b/g, '<span style="color:#60a5fa;">$1</span>')
-        .replace(/('[\s\S]*?'|"[\s\S]*?"|`[\s\S]*?`)/g, '<span style="color:#a7f3d0;">$1</span>');
+      return escaped.replace(/(&quot;[\s\S]*?&quot;|&#39;[\s\S]*?&#39;|`[\s\S]*?`|\/\/[^\n]*|\/\*[\s\S]*?\*\/|\b(?:import|export|from|function|const|let|var|return|def|class|async|await|public|private|protected|static|void|int|double|float|char|new|for|while|if|else)\b|\b(?:true|false|null|undefined)\b)/g, (match) => {
+        if (match.startsWith('&quot;') || match.startsWith('&#39;') || match.startsWith('`')) {
+          return `<span style="color:#a7f3d0;">${match}</span>`;
+        }
+        if (match.startsWith('//') || match.startsWith('/*')) {
+          return `<span style="color:#64748b; font-style:italic;">${match}</span>`;
+        }
+        if (['true', 'false', 'null', 'undefined'].includes(match)) {
+          return `<span style="color:#60a5fa;">${match}</span>`;
+        }
+        return `<span style="color:#f472b6;">${match}</span>`;
+      });
     }
 
     async function fetchUserSnippets() {
-      let serverSnippets = [];
+      let serverSnippets = null;
       try {
-        const res = await fetch('/api/snippets');
+        const token = localStorage.getItem('pluck_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('/api/snippets', { headers });
         if (res.ok) {
           const data = await res.json();
           serverSnippets = data.snippets || [];
@@ -294,26 +1006,21 @@
         console.warn('Backend unavailable, reading local vault:', err);
       }
 
-      // Check localStorage for any snippets created by user
-      let localSnippets = [];
-      try {
-        localSnippets = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
-      } catch (e) {
-        localSnippets = [];
+      if (serverSnippets !== null) {
+        // Backend / MongoDB Atlas is online: it is the authoritative source of truth.
+        // Update local storage to match server state (cleans up any deleted/zombie snippets)
+        userSnippets = serverSnippets;
+        try {
+          localStorage.setItem('pluck_user_snippets', JSON.stringify(userSnippets));
+        } catch (e) {}
+      } else {
+        // Fallback only when server is completely unreachable
+        try {
+          userSnippets = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
+        } catch (e) {
+          userSnippets = [];
+        }
       }
-
-      // Merge avoiding duplicates by id
-      const map = new Map();
-      serverSnippets.forEach(s => map.set(s.id, s));
-      localSnippets.forEach(s => {
-        if (!map.has(s.id)) map.set(s.id, s);
-      });
-
-      userSnippets = Array.from(map.values());
-      // Save merged list
-      try {
-        localStorage.setItem('pluck_user_snippets', JSON.stringify(userSnippets));
-      } catch (e) {}
 
       applySortAndRender();
       updateSidebarFilters();
@@ -336,6 +1043,7 @@
     function renderSnippetCards(allList) {
       const grid = document.getElementById('snippet-grid');
       grid.innerHTML = '';
+      grid.classList.toggle('list-view', currentViewMode === 'list');
 
       if (userSnippets.length === 0) {
         grid.innerHTML = `
@@ -382,11 +1090,12 @@
         return;
       }
 
-      filtered.forEach(s => {
+      filtered.forEach((s, idx) => {
         const badge = getLangBadge(s.language);
         const visIcon = s.visibility === 'public' ? '🌐' : s.visibility === 'team' ? '👥' : '🔒';
         const card = document.createElement('div');
         card.className = 'snippet-card pixel-border-box';
+        card.style.animation = `snippetCardPop 0.28s cubic-bezier(0.16, 1, 0.3, 1) ${idx * 0.04}s both`;
         card.setAttribute('data-id', s.id);
         card.setAttribute('data-folder', s.folderId || 'hooks');
         card.setAttribute('data-lang', (s.language || 'typescript').toLowerCase());
@@ -416,15 +1125,16 @@
             </div>
           </div>
           <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=${encodeURIComponent(s.id)}'" style="cursor: pointer;">
-            <pre><code>${formatCodePreview(s.code)}</code></pre>
+            <pre><code>${formatCodePreview(s.code || s.previewCode)}</code></pre>
           </div>
           <div class="snippet-card-footer">
             <div class="snippet-deps-chips">
               ${depsHtml}
             </div>
-            <div class="snippet-meta-right">
+            <div class="snippet-meta-right" style="display: flex; align-items: center; gap: 6px;">
               <span class="snippet-updated">${timeAgo(s.updatedAt || s.createdAt)}</span>
-              <button class="btn-copy-card" onclick="copySnippetCard('${escapeHtml(s.id)}', event)">Copy</button>
+              <a href="studio.html?id=${encodeURIComponent(s.id || s.slug)}" class="btn-copy-card" style="text-decoration: none; padding: 3px 8px; font-size: 10px; color: var(--cyan); border-color: rgba(6,182,212,0.4);" onclick="event.stopPropagation(); try { sessionStorage.setItem('pluck_active_snippet', JSON.stringify(s)); } catch(e){}" title="Edit Snippet in Studio">✎ Edit</a>
+              <button class="btn-copy-card" onclick="copySnippetCard('${escapeHtml(s.id || s.slug)}', event)">Copy</button>
             </div>
           </div>
         `;
@@ -470,15 +1180,12 @@
       } else {
         langGroup.innerHTML = '';
         languages.forEach((cnt, lang) => {
-          const chip = document.createElement('span');
+          const chip = document.createElement('button');
+          chip.type = 'button';
           chip.className = `filter-chip ${activeLanguages.has(lang) ? 'active' : ''}`;
-          chip.textContent = `${lang.charAt(0).toUpperCase() + lang.slice(1)} (${cnt})`;
-          chip.onclick = () => {
-            if (activeLanguages.has(lang)) activeLanguages.delete(lang);
-            else activeLanguages.add(lang);
-            chip.classList.toggle('active');
-            applySortAndRender();
-          };
+          chip.setAttribute('data-filter-val', `lang:${lang}`);
+          chip.innerHTML = `<span class="filter-chip-label">${escapeHtml(lang.charAt(0).toUpperCase() + lang.slice(1))}</span><span class="filter-chip-count">${cnt}</span>`;
+          chip.onclick = () => selectFilterChip('language', lang);
           langGroup.appendChild(chip);
         });
       }
@@ -490,15 +1197,12 @@
       } else {
         tagGroup.innerHTML = '';
         tags.forEach((cnt, t) => {
-          const chip = document.createElement('span');
+          const chip = document.createElement('button');
+          chip.type = 'button';
           chip.className = `filter-chip ${activeTags.has(t) ? 'active' : ''}`;
-          chip.textContent = `#${t} (${cnt})`;
-          chip.onclick = () => {
-            if (activeTags.has(t)) activeTags.delete(t);
-            else activeTags.add(t);
-            chip.classList.toggle('active');
-            applySortAndRender();
-          };
+          chip.setAttribute('data-filter-val', `tag:${t}`);
+          chip.innerHTML = `<span class="filter-chip-label">#${escapeHtml(t)}</span><span class="filter-chip-count">${cnt}</span>`;
+          chip.onclick = () => selectFilterChip('tag', t);
           tagGroup.appendChild(chip);
         });
       }
@@ -512,39 +1216,128 @@
         packages.forEach((cnt, p) => {
           const chip = document.createElement('span');
           chip.className = 'filter-chip';
-          chip.textContent = `${p} (${cnt})`;
+          chip.style.cursor = 'default';
+          chip.innerHTML = `<span class="filter-chip-label">${escapeHtml(p)}</span><span class="filter-chip-count">${cnt}</span>`;
           pkgGroup.appendChild(chip);
         });
       }
     }
 
+    function selectFilterChip(category, value) {
+      if (category === 'language') {
+        const wasActive = activeLanguages.has(value);
+        activeLanguages.clear();
+        activeTags.clear();
+        if (!wasActive) {
+          activeLanguages.add(value);
+          showToast(`Filtered by language: ${value.charAt(0).toUpperCase() + value.slice(1)}`);
+        } else {
+          showToast('Language filter removed');
+        }
+      } else if (category === 'tag') {
+        const wasActive = activeTags.has(value);
+        activeTags.clear();
+        activeLanguages.clear();
+        if (!wasActive) {
+          activeTags.add(value);
+          showToast(`Filtered by tag: #${value}`);
+        } else {
+          showToast('Tag filter removed');
+        }
+      }
+
+      // Update DOM: unhighlight all filter chips, then highlight only the active one
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+
+      if (category === 'language' && activeLanguages.has(value)) {
+        const activeChip = document.querySelector(`.filter-chip[data-filter-val="lang:${value}"]`);
+        if (activeChip) activeChip.classList.add('active');
+      } else if (category === 'tag' && activeTags.has(value)) {
+        const activeChip = document.querySelector(`.filter-chip[data-filter-val="tag:${value}"]`);
+        if (activeChip) activeChip.classList.add('active');
+      }
+
+      applySortAndRender();
+    }
+
     async function deleteUserSnippet(id, e) {
-      if (e) e.stopPropagation();
-      const snip = userSnippets.find(s => s.id === id);
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const snip = userSnippets.find(s => s.id === id || s.slug === id);
       const title = snip ? snip.title : id;
       if (!confirm(`Are you sure you want to delete snippet "${title}"?`)) return;
 
+      showToast(`Deleting "${title}" from vault...`, 'info');
+
       try {
-        await fetch(`/api/snippets/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const token = localStorage.getItem('pluck_token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`/api/snippets/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: headers
+        });
+
+        if (!res.ok && res.status !== 404) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || 'Server returned error deleting snippet');
+        }
       } catch (err) {
-        console.warn('Backend delete failed, removing locally:', err);
+        console.warn('Backend delete error:', err);
       }
 
-      userSnippets = userSnippets.filter(s => s.id !== id);
+      // Purge from memory and local storage
+      userSnippets = userSnippets.filter(s => s.id !== id && s.slug !== id);
       try {
         localStorage.setItem('pluck_user_snippets', JSON.stringify(userSnippets));
       } catch (e) {}
 
       applySortAndRender();
       updateSidebarFilters();
-      showToast(`Snippet "${title}" deleted from vault`, 'info');
+      showToast(`Snippet "${title}" deleted from vault`, 'success');
     }
 
-    function copySnippetCard(id, e) {
-      if (e) e.stopPropagation();
-      const snip = userSnippets.find(s => s.id === id);
-      if (!snip) return;
-      copySnippetText(snip.code || '', `Copied "${snip.title}" to clipboard!`);
+    async function copySnippetCard(id, e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const snip = userSnippets.find(s => s.id === id || s.slug === id);
+      let codeToCopy = (snip && snip.code) ? snip.code : '';
+
+      // If full code is missing from memory, fetch it on-demand from MongoDB
+      if (!codeToCopy && id) {
+        try {
+          const token = localStorage.getItem('pluck_token');
+          const headers = {};
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+          const res = await fetch(`/api/snippets/${encodeURIComponent(id)}`, { headers });
+          if (res.ok) {
+            const data = await res.json();
+            const full = data.snippet || data;
+            if (full && full.code) {
+              codeToCopy = full.code;
+              if (snip) snip.code = codeToCopy;
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch snippet for copy:', err);
+        }
+      }
+
+      if (!codeToCopy && snip && snip.previewCode) {
+        codeToCopy = snip.previewCode;
+      }
+
+      if (!codeToCopy) {
+        showToast('Snippet has no code to copy', 'error');
+        return;
+      }
+
+      copySnippetText(codeToCopy, `Copied "${snip ? snip.title : 'Snippet'}" code to clipboard!`);
     }
 
     function clearFilters() {
@@ -554,6 +1347,7 @@
       document.querySelectorAll('.folder-tree .folder-item').forEach(f => {
         f.classList.toggle('active', f.getAttribute('data-folder') === 'all');
       });
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
       document.getElementById('current-folder-title').textContent = 'Personal Vault';
       applySortAndRender();
       updateSidebarFilters();
@@ -563,18 +1357,124 @@
     function filterFolder(folderName, e) {
       if (e) e.preventDefault();
       activeFolder = folderName;
+      activeLanguages.clear();
+      activeTags.clear();
       document.querySelectorAll('.folder-tree .folder-item').forEach(f => f.classList.remove('active'));
       if (e && e.currentTarget) e.currentTarget.classList.add('active');
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
       document.getElementById('current-folder-title').textContent = folderName === 'all' ? 'Personal Vault' : `Folder: ${folderName}`;
       applySortAndRender();
       showToast(`Showing ${folderName === 'all' ? 'all snippets' : 'folder: ' + folderName}`);
     }
 
-    function sortSnippets(val) {
-      currentSort = val;
-      applySortAndRender();
-      showToast(`Sorted by: ${val}`);
+    // ── Sort Dropdown (React Bits AnimatedList) ──────────────────────────
+    const SORT_LIST = [
+      {
+        id: 'updated',
+        title: 'Sort by: Recently Updated',
+        description: 'Latest modifications & edits first',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="18" x="4" y="3" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+        meta: 'Recent'
+      },
+      {
+        id: 'created',
+        title: 'Sort by: Date Created',
+        description: 'Newest vault additions first',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>',
+        meta: 'Newest'
+      },
+      {
+        id: 'title',
+        title: 'Sort by: Title (A-Z)',
+        description: 'Alphabetical lexicographic order',
+        icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+        meta: 'A → Z'
+      }
+    ];
+
+    let sortDropdownList = null;
+
+    function toggleSortDropdown(event) {
+      if (event) event.stopPropagation();
+      const popover = document.getElementById('sort-dropdown-popover');
+      const trigger = document.getElementById('sort-dropdown-trigger');
+      const isOpen = popover && popover.style.display !== 'none';
+
+      if (isOpen) {
+        closeSortDropdown();
+      } else {
+        popover.style.display = 'block';
+        trigger.classList.add('active');
+
+        const currentIndex = SORT_LIST.findIndex(s => s.id === currentSort);
+
+        if (!sortDropdownList && window.AnimatedList) {
+          const items = SORT_LIST.map(s => ({
+            id: s.id,
+            icon: s.icon,
+            title: s.title,
+            description: s.description,
+            meta: s.meta
+          }));
+
+          sortDropdownList = new AnimatedList('#sort-animated-list', {
+            items,
+            animation: 'pop',
+            theme: 'dark',
+            radius: 12,
+            gap: 6,
+            width: 290,
+            maxHeight: 260,
+            fadeSize: 20,
+            showGradients: true,
+            displayScrollbar: false,
+            frame: true,
+            stagger: 0.04,
+            initialSelectedIndex: currentIndex >= 0 ? currentIndex : 0,
+            onItemSelect: (item) => {
+              selectSortOption(item.id);
+            }
+          });
+        } else if (sortDropdownList) {
+          if (currentIndex >= 0) sortDropdownList.setSelected(currentIndex);
+          sortDropdownList.refresh();
+        }
+      }
     }
+
+    function selectSortOption(val) {
+      currentSort = val;
+      const selectEl = document.getElementById('select-sort');
+      if (selectEl) selectEl.value = val;
+
+      const found = SORT_LIST.find(s => s.id === val);
+      const textEl = document.getElementById('sort-dropdown-text');
+      if (textEl && found) {
+        textEl.textContent = found.title;
+      }
+      closeSortDropdown();
+      applySortAndRender();
+      showToast(`Sorted by: ${found ? found.meta : val}`);
+    }
+
+    function closeSortDropdown() {
+      const popover = document.getElementById('sort-dropdown-popover');
+      const trigger = document.getElementById('sort-dropdown-trigger');
+      if (popover) popover.style.display = 'none';
+      if (trigger) trigger.classList.remove('active');
+    }
+
+    function sortSnippets(val) {
+      selectSortOption(val);
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#sort-dropdown-container')) closeSortDropdown();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeSortDropdown();
+    });
 
     function toggleWorkspaceDropdown() {
       const d = document.getElementById('ws-dropdown');
@@ -597,14 +1497,18 @@
     });
 
     function confirmSignOut(e) {
-      if (!confirm('Are you sure you want to sign out of Pluck?')) {
+      if (e) {
         e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!confirm('Are you sure you want to sign out of Pluck?')) {
         return false;
       }
       localStorage.removeItem('pluck_user');
       localStorage.removeItem('pluck_token');
       document.cookie = 'pluck_session=; max-age=0; path=/;';
       fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      window.location.href = 'auth.html';
       return true;
     }
 
@@ -615,19 +1519,55 @@
           const avatarEl = document.getElementById('sidebar-user-avatar');
           const nameEl = document.getElementById('sidebar-user-name');
           const emailEl = document.getElementById('sidebar-user-email');
-          if (avatarEl) avatarEl.textContent = cachedUser.avatar || (cachedUser.name ? cachedUser.name.charAt(0).toUpperCase() : 'P');
+          if (avatarEl) {
+            const avatarVal = (cachedUser.avatar || '').trim();
+            if (avatarVal.startsWith('http://') || avatarVal.startsWith('https://')) {
+              avatarEl.innerHTML = `<img src="${avatarVal}" alt="avatar" style="width: 100%; height: 100%; object-fit: cover; display: block;" referrerpolicy="no-referrer" onerror="this.onerror=null; this.parentElement.textContent='${(cachedUser.name ? cachedUser.name.charAt(0).toUpperCase() : 'P')}';" />`;
+            } else {
+              const letter = (avatarVal && avatarVal.length <= 2) ? avatarVal : (cachedUser.name ? cachedUser.name.charAt(0).toUpperCase() : 'P');
+              avatarEl.textContent = letter;
+            }
+          }
           if (nameEl) nameEl.textContent = cachedUser.name || 'Developer';
           if (emailEl) emailEl.textContent = cachedUser.email || '';
         }
       } catch (e) {}
     }
 
-    // Initialize snippets and user session on page load
+    // ── Grid / List View Mode Switcher ───────────────────
+    let currentViewMode = localStorage.getItem('pluck_view_mode') || 'grid';
+
+    function setViewMode(mode, silent = false) {
+      currentViewMode = mode;
+      try {
+        localStorage.setItem('pluck_view_mode', mode);
+      } catch (e) {}
+
+      const btnGrid = document.getElementById('btn-view-grid');
+      const btnList = document.getElementById('btn-view-list');
+      const grid = document.getElementById('snippet-grid');
+
+      if (mode === 'list') {
+        if (btnList) btnList.classList.add('active');
+        if (btnGrid) btnGrid.classList.remove('active');
+        if (grid) grid.classList.add('list-view');
+        if (!silent) showToast('Switched to List View', 'info');
+      } else {
+        if (btnGrid) btnGrid.classList.add('active');
+        if (btnList) btnList.classList.remove('active');
+        if (grid) grid.classList.remove('list-view');
+        if (!silent) showToast('Switched to Grid View', 'info');
+      }
+    }
+
+    // Initialize snippets, view mode, and user session on page load
     document.addEventListener('DOMContentLoaded', () => {
       syncUserSession();
+      setViewMode(currentViewMode, true);
       fetchUserSnippets();
     });
   </script>
+  <script src="animated-list.js"></script>
   <script src="app-script.js"></script>
   <script src="magic-bento.js"></script>
   <script src="border-glow.js"></script>

@@ -90,26 +90,8 @@
                 </tr>
               </thead>
               <tbody id="token-table-body">
-                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
-                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">MacBook Cursor Agent</td>
-                  <td style="padding: 14px 16px; color: var(--purple-light);">pluck_pat_8f19...</td>
-                  <td style="padding: 14px 16px;"><span class="dep-chip" style="font-size: 9px;">mcp</span> <span
-                      class="dep-chip" style="font-size: 9px;">snippets:read</span></td>
-                  <td style="padding: 14px 16px; color: var(--muted);">12m ago</td>
-                  <td style="padding: 14px 16px; color: #a7f3d0;">in 88 days</td>
-                  <td style="padding: 14px 16px; text-align: right;">
-                    <button class="btn-outline-danger" onclick="revokeToken(this)">Revoke</button>
-                  </td>
-                </tr>
                 <tr>
-                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">CLI Terminal Token</td>
-                  <td style="padding: 14px 16px; color: var(--purple-light);">pluck_pat_4a22...</td>
-                  <td style="padding: 14px 16px;"><span class="dep-chip" style="font-size: 9px;">all scopes</span></td>
-                  <td style="padding: 14px 16px; color: var(--muted);">3d ago</td>
-                  <td style="padding: 14px 16px; color: #a7f3d0;">Never</td>
-                  <td style="padding: 14px 16px; text-align: right;">
-                    <button class="btn-outline-danger" onclick="revokeToken(this)">Revoke</button>
-                  </td>
+                  <td colspan="6" style="padding: 24px; text-align: center; color: var(--muted);">Loading access tokens...</td>
                 </tr>
               </tbody>
             </table>
@@ -143,7 +125,7 @@
               <code>claude_desktop_config.json</code>:</p>
             <div style="position: relative; margin-top: 8px;">
               <pre
-                style="background: #141416; padding: 14px; border: 1px solid rgba(139, 92, 246, 0.25); color: #a78bfa; font-size: 12px; margin: 0; overflow-x: auto;"><code>{
+                style="background: #141416; padding: 14px; border: 1px solid rgba(139, 92, 246, 0.25); color: #a78bfa; font-size: 12px; margin: 0; overflow-x: auto;"><code id="mcp-config-code">{
   "mcpServers": {
     "pluck": {
       "command": "npx",
@@ -155,8 +137,7 @@
   }
 }</code></pre>
               <button class="btn-copy-card" style="position: absolute; top: 10px; right: 10px;"
-                onclick="copySnippetText('{\n  &quot;mcpServers&quot;: {\n    &quot;pluck&quot;: {\n      &quot;command&quot;: &quot;npx&quot;,\n      &quot;args&quot;: [&quot;-y&quot;, &quot;pluck-cli&quot;, &quot;mcp&quot;],\n      &quot;env&quot;: {\n        &quot;PLUCK_TOKEN&quot;: &quot;pluck_pat_...&quot;\n      }\n    }\n  }\n}', 'MCP Config copied!')">Copy
-                JSON</button>
+                onclick="copyMcpJson()">Copy JSON</button>
             </div>
           </div>
         </div>
@@ -166,39 +147,35 @@
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Developer Preferences</h3>
             <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Custom defaults applied to all snippet
-              install and copy actions.</p>
+              install and copy actions across Pluck.</p>
           </div>
 
           <div class="pixel-border-box"
             style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 18px;">
             <div class="form-group">
               <label class="form-label">DEFAULT NODE PACKAGE MANAGER</label>
-              <div style="display: flex; gap: 10px; margin-top: 6px;">
-                <button class="btn-solid-pixel" style="font-size: 11px;">npm</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;"
-                  onclick="showToast('pnpm selected as default')">pnpm</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;"
-                  onclick="showToast('yarn selected as default')">yarn</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;"
-                  onclick="showToast('bun selected as default')">bun</button>
+              <div style="display: flex; gap: 10px; margin-top: 6px;" id="pm-button-group">
+                <button type="button" class="btn-solid-pixel pm-btn" data-pm="npm" onclick="updatePackageManager('npm')">npm</button>
+                <button type="button" class="btn-outline-pixel pm-btn" data-pm="pnpm" onclick="updatePackageManager('pnpm')">pnpm</button>
+                <button type="button" class="btn-outline-pixel pm-btn" data-pm="yarn" onclick="updatePackageManager('yarn')">yarn</button>
+                <button type="button" class="btn-outline-pixel pm-btn" data-pm="bun" onclick="updatePackageManager('bun')">bun</button>
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">PYTHON PACKAGE INSTALLER</label>
-              <div style="display: flex; gap: 10px; margin-top: 6px;">
-                <button class="btn-solid-pixel" style="font-size: 11px;">pip</button>
-                <button class="btn-outline-pixel" style="font-size: 11px;"
-                  onclick="showToast('uv selected as default')">uv</button>
+              <div style="display: flex; gap: 10px; margin-top: 6px;" id="py-button-group">
+                <button type="button" class="btn-solid-pixel py-btn" data-py="pip" onclick="updatePythonInstaller('pip')">pip</button>
+                <button type="button" class="btn-outline-pixel py-btn" data-py="uv" onclick="updatePythonInstaller('uv')">uv</button>
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">STUDIO EDITOR KEYMAP</label>
-              <select class="select-pixel" style="max-width: 240px; margin-top: 6px;">
-                <option>Standard (VS Code)</option>
-                <option>Vim Modal</option>
-                <option>Emacs</option>
+              <select id="editor-keymap-select" class="select-pixel" style="max-width: 260px; margin-top: 6px;" onchange="updateEditorKeymap(this.value)">
+                <option value="Standard (VS Code)">Standard (VS Code)</option>
+                <option value="Vim Modal">Vim Modal</option>
+                <option value="Emacs">Emacs</option>
               </select>
             </div>
           </div>
@@ -208,36 +185,39 @@
         <div id="section-account" style="display: none; flex-direction: column; gap: 24px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Account Profile</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity and OAuth provider links.
-            </p>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity, display name, and authentication.</p>
           </div>
 
           <div class="pixel-border-box"
             style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 18px;">
             <div class="form-group">
               <label class="form-label">FULL NAME</label>
-              <input type="text" class="var-input" value="Alex Developer" style="max-width: 320px;" />
+              <div style="display: flex; gap: 10px; max-width: 440px;">
+                <input type="text" id="profile-name" class="var-input" placeholder="Developer Name" style="flex: 1;" />
+                <button type="button" class="btn-solid-pixel" id="btn-save-name" onclick="saveProfileName()" style="font-size: 11px;">Save</button>
+              </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">WORK EMAIL</label>
-              <input type="email" class="var-input" value="alex@pluck.dev" style="max-width: 320px;" disabled />
+              <input type="email" id="profile-email" class="var-input" value="Loading..." style="max-width: 320px;" disabled />
             </div>
 
             <div class="form-group">
               <label class="form-label">LINKED AUTHENTICATION PROVIDERS</label>
-              <div style="display: flex; gap: 12px; margin-top: 6px;">
-                <div
+              <div style="display: flex; gap: 12px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
+                <div id="provider-badge"
                   style="padding: 6px 12px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #a7f3d0; font-size: 11px;">
-                  ✓ GitHub Linked (@alexdev)
+                  ✓ Email/Password Authenticated
                 </div>
-                <button class="btn-outline-pixel" style="font-size: 11px;"
-                  onclick="showToast('Connecting Google account...')">Connect Google</button>
+                <button type="button" class="btn-outline-pixel" style="font-size: 11px;"
+                  onclick="showToast('OAuth connected via auth.html')">Linked</button>
               </div>
             </div>
-            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--purple-dim);">
-              <a href="auth.html" class="btn-outline-danger"
-                style="text-decoration: none; display: inline-block; padding: 8px 14px;">Sign Out of Pluck</a>
+            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--purple-dim); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <button type="button" class="btn-outline-danger" onclick="handleLogout()"
+                style="display: inline-block; padding: 8px 14px;">Sign Out of Pluck</button>
+              <span id="account-created-at" style="font-size: 11px; color: var(--muted);"></span>
             </div>
           </div>
         </div>
@@ -246,8 +226,85 @@
     </main>
   </div>
 
+  <!-- Modal: Generate PAT Token -->
+  <div id="token-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div class="pixel-border-box" style="background: #121214; border: 1px solid var(--purple-primary); padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 16px 40px rgba(0,0,0,0.9);">
+      
+      <!-- Step 1: Form -->
+      <div id="token-modal-form-step">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 16px; color: var(--white); font-family: var(--mono); margin: 0;">Generate Personal Access Token</h3>
+          <button onclick="closeTokenModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px;">✕</button>
+        </div>
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">
+          Personal tokens allow the <code style="color:var(--cyan)">pluck-cli</code> and AI coding assistants (Claude Desktop, Cursor) to securely query your snippet vault.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">TOKEN DESCRIPTOR / NAME</label>
+          <input type="text" id="new-token-name" class="var-input" placeholder="e.g. Cursor MacBook Agent, CLI Terminal" style="width: 100%; margin-top: 6px;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label">SCOPES &amp; PERMISSIONS</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="scope-read" checked /> snippets:read
+            </label>
+            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="scope-write" /> snippets:write
+            </label>
+            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="scope-mcp" checked /> mcp:context
+            </label>
+            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="scope-cli" /> cli:full
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="btn-outline-pixel" onclick="closeTokenModal()">Cancel</button>
+          <button class="btn-solid-pixel" id="btn-submit-token" onclick="submitCreateToken()">Generate Key</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Generated Token Secret Display -->
+      <div id="token-modal-result-step" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 16px; color: #34d399; font-family: var(--mono); margin: 0;">✓ Token Generated!</h3>
+          <button onclick="closeTokenModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px;">✕</button>
+        </div>
+        <p style="font-size: 12px; color: #fca5a5; margin-bottom: 12px; font-weight: 700;">
+          ⚠️ Copy this secret key now. You will never be able to see it again!
+        </p>
+
+        <div style="position: relative; background: #09090b; border: 1px solid #10b981; padding: 12px 14px; margin-bottom: 16px;">
+          <code id="display-raw-token" style="color: #6ee7b7; font-size: 12px; word-break: break-all; user-select: all;"></code>
+          <button class="btn-copy-card" style="margin-top: 8px; width: 100%; justify-content: center;" onclick="copyRawToken()">📋 Copy Token to Clipboard</button>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button class="btn-solid-pixel" onclick="closeTokenModal()">I Have Saved My Token</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <script src="app-script.js"></script>
   <script>
+    // Auth header helper
+    function getAuthHeaders() {
+      const token = localStorage.getItem('pluck_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return headers;
+    }
+
+    // Tab switching
     function switchSettingsTab(tab, e) {
       if (e) e.preventDefault();
       ['tokens', 'climcp', 'pref', 'account'].forEach(t => {
@@ -264,19 +321,308 @@
       switchSettingsTab(params.get('tab'));
     }
 
-    function openTokenModal() {
-      const name = prompt('Enter a descriptor for this Personal Access Token:');
-      if (name) {
-        showToast(`Token generated: pluck_pat_9a8f... (Saved)`, 'success');
+    // ── Tokens Subsystem ────────────────────────────────────────────────
+    let activeRawToken = '';
+
+    async function loadTokens() {
+      const tbody = document.getElementById('token-table-body');
+      if (!tbody) return;
+      try {
+        const res = await fetch('/api/tokens', { headers: getAuthHeaders() });
+        const data = await res.json();
+        const tokens = data.tokens || [];
+
+        if (tokens.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="padding: 24px; text-align: center; color: var(--muted); font-size: 11px;">
+                No personal access tokens generated yet. Click <strong>+ Generate New Token</strong> above.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = tokens.map(tok => {
+          const scopes = (tok.scopes || []).map(s => `<span class="dep-chip" style="font-size: 9px; margin-right: 4px;">${s}</span>`).join('');
+          return `
+            <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
+              <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">${tok.name || 'Unnamed Token'}</td>
+              <td style="padding: 14px 16px; color: var(--purple-light); font-family: monospace;">${tok.prefix || 'pluck_pat_...'}</td>
+              <td style="padding: 14px 16px;">${scopes || '<span class="dep-chip" style="font-size: 9px;">read</span>'}</td>
+              <td style="padding: 14px 16px; color: var(--muted);">${tok.lastUsed || 'Never'}</td>
+              <td style="padding: 14px 16px; color: #a7f3d0;">${tok.expires || 'Never'}</td>
+              <td style="padding: 14px 16px; text-align: right;">
+                <button class="btn-outline-danger" onclick="revokeToken('${tok.id}', '${tok.name}')">Revoke</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Update MCP sample config if token exists
+        if (tokens.length > 0) {
+          const mcpCode = document.getElementById('mcp-config-code');
+          if (mcpCode) {
+            mcpCode.textContent = JSON.stringify({
+              mcpServers: {
+                pluck: {
+                  command: "npx",
+                  args: ["-y", "pluck-cli", "mcp"],
+                  env: { PLUCK_TOKEN: tokens[0].prefix.replace('...', 'YOUR_FULL_KEY') }
+                }
+              }
+            }, null, 2);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load tokens', err);
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 16px; text-align: center; color: #f87171;">Failed to load tokens from server.</td></tr>`;
       }
     }
 
-    function revokeToken(btn) {
-      if (confirm('Revoke this access token? Any connected CLI or MCP instances will immediately lose access.')) {
-        btn.closest('tr').remove();
-        showToast('Token revoked successfully', 'info');
+    function openTokenModal() {
+      const modal = document.getElementById('token-modal');
+      const formStep = document.getElementById('token-modal-form-step');
+      const resStep = document.getElementById('token-modal-result-step');
+      const nameInput = document.getElementById('new-token-name');
+      if (nameInput) nameInput.value = '';
+      if (formStep) formStep.style.display = 'block';
+      if (resStep) resStep.style.display = 'none';
+      if (modal) modal.style.display = 'flex';
+      if (nameInput) setTimeout(() => nameInput.focus(), 50);
+    }
+
+    function closeTokenModal() {
+      const modal = document.getElementById('token-modal');
+      if (modal) modal.style.display = 'none';
+      loadTokens();
+    }
+
+    async function submitCreateToken() {
+      const nameInput = document.getElementById('new-token-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!name) {
+        showToast('Please enter a descriptor name for this token', 'error');
+        return;
+      }
+
+      const scopes = [];
+      if (document.getElementById('scope-read')?.checked) scopes.push('snippets:read');
+      if (document.getElementById('scope-write')?.checked) scopes.push('snippets:write');
+      if (document.getElementById('scope-mcp')?.checked) scopes.push('mcp');
+      if (document.getElementById('scope-cli')?.checked) scopes.push('cli');
+
+      try {
+        const res = await fetch('/api/tokens', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name, scopes })
+        });
+        const data = await res.json();
+        if (data.success && data.rawToken) {
+          activeRawToken = data.rawToken;
+          document.getElementById('display-raw-token').textContent = activeRawToken;
+          document.getElementById('token-modal-form-step').style.display = 'none';
+          document.getElementById('token-modal-result-step').style.display = 'block';
+          showToast('Access token generated!', 'success');
+        } else {
+          showToast(data.message || 'Failed to generate token', 'error');
+        }
+      } catch (err) {
+        console.error('Token create error', err);
+        showToast('Failed to connect to backend', 'error');
       }
     }
+
+    function copyRawToken() {
+      if (activeRawToken) {
+        navigator.clipboard.writeText(activeRawToken);
+        showToast('Token copied to clipboard!', 'success');
+      }
+    }
+
+    async function revokeToken(tokenId, name) {
+      if (!confirm(`Revoke token "${name || tokenId}"? CLI or MCP agents using this key will immediately be disconnected.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/tokens/${tokenId}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || 'Token revoked successfully', 'info');
+          loadTokens();
+        } else {
+          showToast(data.message || 'Failed to revoke token', 'error');
+        }
+      } catch (err) {
+        console.error('Failed to revoke token', err);
+        showToast('Error revoking token', 'error');
+      }
+    }
+
+    function copyMcpJson() {
+      const code = document.getElementById('mcp-config-code')?.textContent;
+      if (code) {
+        navigator.clipboard.writeText(code);
+        showToast('MCP config JSON copied!', 'success');
+      }
+    }
+
+    // ── Developer Preferences Subsystem ──────────────────────────────────
+    async function loadPreferences() {
+      try {
+        const res = await fetch('/api/user/preferences', { headers: getAuthHeaders() });
+        const data = await res.json();
+        const prefs = data.preferences || {};
+
+        // 1. Package Manager
+        const activePm = prefs.defaultPackageManager || 'npm';
+        document.querySelectorAll('.pm-btn').forEach(btn => {
+          const isMatch = btn.getAttribute('data-pm') === activePm;
+          btn.className = isMatch ? 'btn-solid-pixel pm-btn' : 'btn-outline-pixel pm-btn';
+        });
+
+        // 2. Python Installer
+        const activePy = prefs.pythonInstaller || 'pip';
+        document.querySelectorAll('.py-btn').forEach(btn => {
+          const isMatch = btn.getAttribute('data-py') === activePy;
+          btn.className = isMatch ? 'btn-solid-pixel py-btn' : 'btn-outline-pixel py-btn';
+        });
+
+        // 3. Keymap
+        const keymapSelect = document.getElementById('editor-keymap-select');
+        if (keymapSelect && prefs.editorKeymap) {
+          keymapSelect.value = prefs.editorKeymap;
+        }
+      } catch (err) {
+        console.warn('Preferences load error', err);
+      }
+    }
+
+    async function updatePackageManager(pm) {
+      document.querySelectorAll('.pm-btn').forEach(btn => {
+        btn.className = btn.getAttribute('data-pm') === pm ? 'btn-solid-pixel pm-btn' : 'btn-outline-pixel pm-btn';
+      });
+      try {
+        const res = await fetch('/api/user/preferences', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ defaultPackageManager: pm })
+        });
+        if (res.ok) {
+          showToast(`Default package manager set to ${pm}`, 'success');
+        }
+      } catch (err) {
+        showToast(`Selected ${pm} locally`, 'info');
+      }
+    }
+
+    async function updatePythonInstaller(py) {
+      document.querySelectorAll('.py-btn').forEach(btn => {
+        btn.className = btn.getAttribute('data-py') === py ? 'btn-solid-pixel py-btn' : 'btn-outline-pixel py-btn';
+      });
+      try {
+        const res = await fetch('/api/user/preferences', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ pythonInstaller: py })
+        });
+        if (res.ok) {
+          showToast(`Python installer set to ${py}`, 'success');
+        }
+      } catch (err) {
+        showToast(`Selected ${py} locally`, 'info');
+      }
+    }
+
+    async function updateEditorKeymap(keymap) {
+      try {
+        const res = await fetch('/api/user/preferences', {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ editorKeymap: keymap })
+        });
+        if (res.ok) {
+          showToast(`Editor keymap set to ${keymap}`, 'success');
+        }
+      } catch (err) {
+        showToast(`Keymap updated: ${keymap}`, 'info');
+      }
+    }
+
+    // ── Account Profile Subsystem ────────────────────────────────────────
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/user/profile', { headers: getAuthHeaders() });
+        const data = await res.json();
+        const user = data.user || {};
+
+        const nameInput = document.getElementById('profile-name');
+        const emailInput = document.getElementById('profile-email');
+        const createdSpan = document.getElementById('account-created-at');
+
+        if (nameInput && user.name) nameInput.value = user.name;
+        if (emailInput && user.email) emailInput.value = user.email;
+        if (createdSpan && user.createdAt) {
+          createdSpan.textContent = `Member since ${new Date(user.createdAt).toLocaleDateString()}`;
+        }
+      } catch (err) {
+        console.warn('Failed to load user profile', err);
+      }
+    }
+
+    async function saveProfileName() {
+      const nameInput = document.getElementById('profile-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!name) {
+        showToast('Please enter your name', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Profile name updated!', 'success');
+          // Update cached local user
+          const cached = localStorage.getItem('pluck_user');
+          if (cached) {
+            try {
+              const u = JSON.parse(cached);
+              u.name = name;
+              localStorage.setItem('pluck_user', JSON.stringify(u));
+            } catch (e) {}
+          }
+        } else {
+          showToast(data.message || 'Failed to update profile', 'error');
+        }
+      } catch (err) {
+        showToast('Failed to save profile changes', 'error');
+      }
+    }
+
+    async function handleLogout() {
+      try {
+        await fetch('/api/auth/logout', { method: 'POST', headers: getAuthHeaders() });
+      } catch (e) {}
+      localStorage.removeItem('pluck_token');
+      localStorage.removeItem('pluck_user');
+      window.location.href = 'auth.html';
+    }
+
+    // Initial load on page ready
+    document.addEventListener('DOMContentLoaded', () => {
+      loadTokens();
+      loadPreferences();
+      loadProfile();
+    });
   </script>
   <script src="magic-bento.js"></script>
   <script src="border-glow.js"></script>

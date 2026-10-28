@@ -33,9 +33,12 @@
               border-color 0.25s ease !important;
 }
 
-/* Allow hero editor to display bottom peeking mascot octopus */
+/* Allow hero editor to display peeking mascot octopus around outer perimeter */
+#hero-editor,
+.hero-editor,
 .border-glow-card.hero-editor,
-.border-glow-card.code-editor-card {
+.border-glow-card.code-editor-card,
+.border-glow-card#hero-editor {
   overflow: visible !important;
 }
 
@@ -100,9 +103,15 @@
 }
 
 /* Ensure inner content sits securely above glow pseudo-elements */
-.border-glow-card > *:not(.edge-light) {
+.border-glow-card > *:not(.edge-light):not(.peeking-mascot):not(#peeking-mascot) {
   position: relative;
   z-index: 1;
+}
+
+.border-glow-card > .peeking-mascot,
+.border-glow-card > #peeking-mascot {
+  position: absolute !important;
+  z-index: 40 !important;
 }
 
 .border-glow-card:not(:hover):not(.sweep-active)::before,

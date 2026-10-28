@@ -69,39 +69,13 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-end;">
             <div>
               <h3 style="font-size: 18px; color: var(--white);">Team Collections</h3>
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Shared snippet folders accessible to all
-                Acme Core Eng engineers.</p>
+              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Shared snippet folders accessible to all team engineers.</p>
             </div>
-            <button class="btn-outline-pixel" onclick="showToast('Created new collection')">+ New Collection</button>
+            <button class="btn-outline-pixel" id="btn-open-create-collection" onclick="openCollectionModal()">+ New Collection</button>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
-            <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); cursor: pointer;"
-              onclick="window.location.href='app.html'">
-              <div style="font-size: 20px; margin-bottom: 8px;">🔐</div>
-              <h4 style="font-size: 14px; color: var(--white);">auth-middleware</h4>
-              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">JWT verification, RBAC guards, and
-                session decryptors.</p>
-              <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">8 verified snippets</div>
-            </div>
-
-            <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); cursor: pointer;"
-              onclick="window.location.href='app.html'">
-              <div style="font-size: 20px; margin-bottom: 8px;">☁️</div>
-              <h4 style="font-size: 14px; color: var(--white);">aws-infrastructure</h4>
-              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Boto3 client setups, DynamoDB
-                pagination, and S3 uploaders.</p>
-              <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">12 verified snippets</div>
-            </div>
-
-            <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); cursor: pointer;"
-              onclick="window.location.href='app.html'">
-              <div style="font-size: 20px; margin-bottom: 8px;">🗄️</div>
-              <h4 style="font-size: 14px; color: var(--white);">prisma-extensions</h4>
-              <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Soft delete, audit logging triggers, and
-                read-replica routers.</p>
-              <div style="margin-top: 14px; font-size: 10px; color: var(--purple-light);">5 verified snippets</div>
-            </div>
+          <div id="team-collections-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px;">
+            <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--muted); font-size: 12px;">Loading collections...</div>
           </div>
         </div>
 
@@ -533,8 +507,123 @@
       }
     }
 
+    // ── Team Collections Subsystem ─────────────────────────────────────
+    async function loadCollections() {
+      const grid = document.getElementById('team-collections-grid');
+      if (!grid) return;
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/collections`, { headers: getAuthHeaders() });
+        const data = await res.json();
+        const collections = data.collections || [];
+
+        const countNav = document.getElementById('tab-nav-collections');
+        if (countNav) countNav.textContent = `📁 Collections (${collections.length})`;
+
+        if (collections.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: #121212; border: 1px dashed rgba(139, 92, 246, 0.35);">
+              <div style="font-size: 28px; margin-bottom: 8px;">📂</div>
+              <div style="color: var(--white); font-weight: 700; font-size: 14px; margin-bottom: 6px;">No team collections yet</div>
+              <div style="color: var(--muted); font-size: 12px; margin-bottom: 16px;">Group related snippets into collections for your entire team.</div>
+              <button class="btn-solid-pixel" onclick="openCollectionModal()">+ Create First Collection</button>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = collections.map(col => `
+          <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.35); box-shadow: 0 4px 12px rgba(0,0,0,0.5), 0 0 15px rgba(124,58,237,0.12); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div style="font-size: 24px;">${col.emoji || '📁'}</div>
+                <button class="btn-outline-danger" style="font-size: 9px; padding: 2px 7px;" onclick="deleteCollection('${col.id}', '${col.name}')" title="Delete Collection">✕</button>
+              </div>
+              <h4 style="font-size: 14px; color: var(--white); cursor: pointer; margin: 0;" onclick="window.location.href='app.html?folder=${col.id}'">${col.name}</h4>
+              <p style="font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.4;">${col.desc || 'No description provided.'}</p>
+            </div>
+            <div style="margin-top: 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(139,92,246,0.15); padding-top: 10px;">
+              <span style="font-size: 10px; color: var(--purple-light);">${col.count || 0} verified snippets</span>
+              <a href="app.html?folder=${col.id}" class="btn-outline-pixel" style="font-size: 9px; padding: 3px 8px; text-decoration: none;">Browse Vault →</a>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('Failed to load collections', err);
+        grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 20px; text-align: center; color: #f87171;">Failed to load collections from server.</div>`;
+      }
+    }
+
+    function openCollectionModal() {
+      const modal = document.getElementById('collection-modal');
+      const nameInput = document.getElementById('new-collection-name');
+      const descInput = document.getElementById('new-collection-desc');
+      if (nameInput) nameInput.value = '';
+      if (descInput) descInput.value = '';
+      if (modal) modal.style.display = 'flex';
+      if (nameInput) setTimeout(() => nameInput.focus(), 50);
+    }
+
+    function closeCollectionModal() {
+      const modal = document.getElementById('collection-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function submitCreateCollection() {
+      const name = document.getElementById('new-collection-name')?.value.trim();
+      const emoji = document.getElementById('new-collection-emoji')?.value.trim() || '📁';
+      const desc = document.getElementById('new-collection-desc')?.value.trim() || '';
+
+      if (!name) {
+        showToast('Please enter a collection name', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/collections`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name, emoji, desc })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`Collection '${name}' created!`, 'success');
+          closeCollectionModal();
+          loadCollections();
+          loadActivity();
+        } else {
+          showToast(data.message || 'Failed to create collection', 'error');
+        }
+      } catch (err) {
+        console.error('Failed to create collection', err);
+        showToast('Error communicating with backend', 'error');
+      }
+    }
+
+    async function deleteCollection(colId, name) {
+      if (!confirm(`Delete collection '${name}'? This will remove the folder grouping.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/teams/${currentTeamId}/collections/${colId}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`Collection '${name}' deleted`, 'info');
+          loadCollections();
+          loadActivity();
+        } else {
+          showToast(data.message || 'Failed to delete collection', 'error');
+        }
+      } catch (err) {
+        showToast('Error deleting collection', 'error');
+      }
+    }
+
     // Initial load
     loadTeamData();
+    loadCollections();
     loadMembers();
     loadActivity();
 
@@ -546,6 +635,38 @@
       }
     }, 30000);
   </script>
+
+  <!-- Create Collection Modal -->
+  <div id="collection-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="pixel-border-box" style="background: #141417; border: 1px solid var(--purple-light); padding: 24px; width: 90%; max-width: 460px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(124,58,237,0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-family: var(--mono); font-size: 15px; color: var(--white); margin: 0;">Create Team Collection</h3>
+        <button onclick="closeCollectionModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px;">✕</button>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+        <div style="width: 80px;">
+          <label style="display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono);">EMOJI</label>
+          <input type="text" id="new-collection-emoji" value="📁" maxlength="2" style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-size: 16px; text-align: center; border-radius: 4px;" />
+        </div>
+        <div style="flex: 1;">
+          <label style="display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono);">COLLECTION NAME</label>
+          <input type="text" id="new-collection-name" placeholder="e.g. database-queries, api-hooks" style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-family: var(--mono); font-size: 12px; border-radius: 4px;" />
+        </div>
+      </div>
+
+      <div style="margin-bottom: 18px;">
+        <label style="display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono);">DESCRIPTION (OPTIONAL)</label>
+        <textarea id="new-collection-desc" rows="3" placeholder="What kind of snippets belong in this collection?" style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-family: var(--mono); font-size: 12px; border-radius: 4px; resize: none;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-outline-pixel" onclick="closeCollectionModal()">Cancel</button>
+        <button class="btn-solid-pixel" id="btn-submit-collection" onclick="submitCreateCollection()">Create Collection</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Invite Member Modal -->
   <div id="invite-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
     <div class="pixel-border-box" style="background: #141417; border: 1px solid var(--purple-light); padding: 24px; width: 90%; max-width: 460px; box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(124,58,237,0.3);">

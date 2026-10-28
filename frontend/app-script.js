@@ -194,16 +194,43 @@ function showToast(message, type = 'info') {
 
 // ── 4. Quick Copy Helper ───────────────────────────────
 function copySnippetText(text, label = 'Code copied to clipboard!') {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast(label, 'success');
-  }).catch(() => {
+  if (text === undefined || text === null) text = '';
+
+  function fallbackCopy(str) {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = str;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '0';
+      textarea.setAttribute('readonly', '');
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const success = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (success) {
+        showToast(label, 'success');
+        return;
+      }
+    } catch (e) {}
     showToast('Failed to copy', 'error');
-  });
+  }
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(label, 'success');
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
 }
 
 // ── 5. React Bits Dock Magnification Engine for Primary Buttons ──
 (function initDockButtons() {
-  const buttons = document.querySelectorAll('.btn-solid-pixel, .btn-outline-pixel, .topbar-actions a, .topbar-actions button');
+  const buttons = document.querySelectorAll('.btn-solid-pixel, .btn-outline-pixel, .topbar-actions a, .topbar-actions button, .view-mode-btn');
   if (!buttons.length) return;
 
   const DISTANCE = 140;

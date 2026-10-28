@@ -1,8 +1,20 @@
-# Environment files
+# Environment files & Secrets
 .env
+.env.*
 *.env
-.env.local
-.env.*.local
+*.env.*
+!.env.example
+!*.env.example
+!**/.env.example
+
+# Credentials & Key files
+*.pem
+*.key
+*.cert
+*.crt
+id_rsa
+id_rsa.pub
+credentials.json
 
 # Dependencies & Build artifacts
 node_modules/

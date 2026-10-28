@@ -1239,4 +1239,158 @@ setInterval(() => {
   });
 })();
 
+/* ── 12. Octopus Hero-Editor Edge Patrol ────────────────── */
+(function initOctopusEdgePatrol() {
+  const editor = document.getElementById('hero-editor');
+  const mascot = document.getElementById('peeking-mascot');
+  if (!editor || !mascot) return;
+
+  const R = 24;          // Corner radius
+  const d = 8;           // Inward offset from outer border
+  const speed = 16;      // Pixels per second (extra-slow, serene crawl)
+  let currentDist = 25;  // Initial position near bottom-left corner
+  let isHovered = false;
+  let lastTimestamp = null;
+  let animFrameId = null;
+
+  function getPerimeterPoint(s, W, H) {
+    const rArc = Math.max(1, R - d);
+    const l1 = Math.max(1, W - 2 * R); // bottom
+    const l2 = rArc * (Math.PI / 2);   // bottom-right arc
+    const l3 = Math.max(1, H - 2 * R); // right
+    const l4 = rArc * (Math.PI / 2);   // top-right arc
+    const l5 = Math.max(1, W - 2 * R); // top
+    const l6 = rArc * (Math.PI / 2);   // top-left arc
+    const l7 = Math.max(1, H - 2 * R); // left
+    const l8 = rArc * (Math.PI / 2);   // bottom-left arc
+
+    const P = l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8;
+    const lap = Math.floor(s / P);
+    let rem = ((s % P) + P) % P;
+
+    let x, y, baseAngle;
+
+    if (rem < l1) {
+      // 1. Bottom edge (left to right)
+      const p = rem / l1;
+      x = R + p * l1;
+      y = H - d;
+      baseAngle = 0;
+    } else if ((rem -= l1) < l2) {
+      // 2. Bottom-Right corner
+      const p = rem / l2;
+      const alpha = p * (Math.PI / 2);
+      x = (W - R) + rArc * Math.sin(alpha);
+      y = (H - R) + rArc * Math.cos(alpha);
+      baseAngle = -90 * p;
+    } else if ((rem -= l2) < l3) {
+      // 3. Right edge (bottom to top)
+      const p = rem / l3;
+      x = W - d;
+      y = (H - R) - p * l3;
+      baseAngle = -90;
+    } else if ((rem -= l3) < l4) {
+      // 4. Top-Right corner
+      const p = rem / l4;
+      const alpha = p * (Math.PI / 2);
+      x = (W - R) + rArc * Math.cos(alpha);
+      y = R - rArc * Math.sin(alpha);
+      baseAngle = -90 - 90 * p;
+    } else if ((rem -= l4) < l5) {
+      // 5. Top edge (right to left)
+      const p = rem / l5;
+      x = (W - R) - p * l5;
+      y = d;
+      baseAngle = -180;
+    } else if ((rem -= l5) < l6) {
+      // 6. Top-Left corner
+      const p = rem / l6;
+      const alpha = p * (Math.PI / 2);
+      x = R - rArc * Math.sin(alpha);
+      y = R - rArc * Math.cos(alpha);
+      baseAngle = -180 - 90 * p;
+    } else if ((rem -= l6) < l7) {
+      // 7. Left edge (top to bottom)
+      const p = rem / l7;
+      x = d;
+      y = R + p * l7;
+      baseAngle = -270;
+    } else {
+      // 8. Bottom-Left corner
+      rem -= l7;
+      const p = Math.min(1, rem / l8);
+      const alpha = p * (Math.PI / 2);
+      x = R - rArc * Math.cos(alpha);
+      y = (H - R) + rArc * Math.sin(alpha);
+      baseAngle = -270 - 90 * p;
+    }
+
+    const angle = baseAngle - (lap * 360);
+    return { x, y, angle, P };
+  }
+
+  function step(timestamp) {
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+    lastTimestamp = timestamp;
+
+    if (!isHovered) {
+      currentDist += speed * dt;
+    }
+
+    const W = editor.clientWidth || editor.offsetWidth || 800;
+    const H = editor.clientHeight || editor.offsetHeight || 400;
+
+    const pt = getPerimeterPoint(currentDist, W, H);
+    const wobble = isHovered ? 0 : Math.sin(timestamp * 0.0018) * 1.8;
+    const finalAngle = pt.angle + wobble;
+
+    mascot.style.transform = `translate3d(${pt.x.toFixed(2)}px, ${pt.y.toFixed(2)}px, 0) rotate(${finalAngle.toFixed(2)}deg)`;
+
+    animFrameId = requestAnimationFrame(step);
+  }
+
+  // Interactive hover and click handlers
+  mascot.addEventListener('mouseenter', () => {
+    isHovered = true;
+  });
+
+  mascot.addEventListener('mouseleave', () => {
+    isHovered = false;
+  });
+
+  mascot.addEventListener('click', () => {
+    const img = mascot.querySelector('.peeking-octopus-img');
+    if (!img) return;
+    img.style.transform = 'scale(1.3) translateY(-4px)';
+    setTimeout(() => {
+      img.style.transform = '';
+    }, 300);
+  });
+
+  // Handle dynamic resize smoothly
+  if (window.ResizeObserver) {
+    let lastW = editor.clientWidth;
+    let lastH = editor.clientHeight;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const cr = entry.contentRect;
+        if (cr.width > 0 && cr.height > 0) {
+          const oldPt = getPerimeterPoint(currentDist, lastW, lastH);
+          lastW = cr.width;
+          lastH = cr.height;
+          const newPt = getPerimeterPoint(0, lastW, lastH);
+          if (oldPt.P > 0 && newPt.P > 0) {
+            currentDist = (currentDist / oldPt.P) * newPt.P;
+          }
+        }
+      }
+    });
+    ro.observe(editor);
+  }
+
+  animFrameId = requestAnimationFrame(step);
+})();
+
+
 
