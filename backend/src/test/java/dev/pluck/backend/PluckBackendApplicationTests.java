@@ -56,6 +56,15 @@ class PluckBackendApplicationTests {
     @Autowired
     private dev.pluck.backend.repository.SnippetRepository snippetRepository;
 
+    private void cleanupTestMember(User user) {
+        if (user == null || user.getEmail() == null) return;
+        dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
+        if (team != null && team.getMembers() != null) {
+            team.getMembers().removeIf(m -> user.getEmail().equalsIgnoreCase(m.getEmail()));
+            teamRepository.save(team);
+        }
+    }
+
     @Test
     void testInspectSnippetsAndRemove() {
         User user5 = userRepository.findByEmail("aarchibhabhor5@gmail.com").orElse(null);
@@ -63,48 +72,62 @@ class PluckBackendApplicationTests {
         org.junit.jupiter.api.Assertions.assertNotNull(user5);
         org.junit.jupiter.api.Assertions.assertNotNull(user6);
 
-        // Ensure user6 is explicitly set to Viewer role for this test
-        dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
-        if (team != null && team.getMembers() != null) {
-            team.getMembers().stream()
-                    .filter(m -> m.getEmail() != null && m.getEmail().equalsIgnoreCase(user6.getEmail()))
-                    .forEach(m -> m.setRole("Viewer"));
-            teamRepository.save(team);
-        }
-
-        List<dev.pluck.backend.model.Snippet> allSnippets = snippetRepository.findAll();
-        for (dev.pluck.backend.model.Snippet s : allSnippets) {
-            if ("Untitled Snippet".equals(s.getTitle()) || "java functions".equals(s.getTitle())) {
-                // 1. Admin removes snippet from collection -> expect 200 OK
-                org.springframework.http.ResponseEntity<?> res5 = snippetController.updateSnippet(
-                        s.getId(),
-                        java.util.Map.of("folderId", "general", "folderName", "general", "teamId", "acme-core-eng", "visibility", "team"),
-                        null,
-                        user5.getId(),
-                        user5.getEmail()
-                );
-                org.junit.jupiter.api.Assertions.assertEquals(200, res5.getStatusCode().value(), "Admin must be able to remove snippet from collection");
-
-                // 2. Viewer attempts to edit or remove snippet -> expect 403 FORBIDDEN
-                org.springframework.http.ResponseEntity<?> res6 = snippetController.updateSnippet(
-                        s.getId(),
-                        java.util.Map.of("folderId", "general", "folderName", "general", "teamId", "acme-core-eng", "visibility", "team"),
-                        null,
-                        user6.getId(),
-                        user6.getEmail()
-                );
-                org.junit.jupiter.api.Assertions.assertEquals(403, res6.getStatusCode().value(), "Viewer must not be able to modify team snippet collection membership");
-
-                // 3. Admin re-adds snippet back to collection
-                org.springframework.http.ResponseEntity<?> resRestore = snippetController.updateSnippet(
-                        s.getId(),
-                        java.util.Map.of("folderId", "col_database", "folderName", "database", "teamId", "acme-core-eng", "visibility", "team"),
-                        null,
-                        user5.getId(),
-                        user5.getEmail()
-                );
-                org.junit.jupiter.api.Assertions.assertEquals(200, resRestore.getStatusCode().value(), "Admin must be able to add snippet back to collection");
+        try {
+            // Ensure user6 is explicitly set to Viewer role for this test
+            dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
+            if (team != null) {
+                if (team.getMembers() == null) {
+                    team.setMembers(new java.util.ArrayList<>());
+                }
+                boolean found = false;
+                for (dev.pluck.backend.model.TeamMember m : team.getMembers()) {
+                    if (m.getEmail() != null && m.getEmail().equalsIgnoreCase(user6.getEmail())) {
+                        m.setRole("Viewer");
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    team.getMembers().add(new dev.pluck.backend.model.TeamMember(user6.getId(), user6.getName() != null ? user6.getName() : user6.getUsername(), user6.getEmail(), "Viewer", false));
+                }
+                teamRepository.save(team);
             }
+
+            List<dev.pluck.backend.model.Snippet> allSnippets = snippetRepository.findAll();
+            for (dev.pluck.backend.model.Snippet s : allSnippets) {
+                if ("Untitled Snippet".equals(s.getTitle()) || "java functions".equals(s.getTitle())) {
+                    // 1. Admin removes snippet from collection -> expect 200 OK
+                    org.springframework.http.ResponseEntity<?> res5 = snippetController.updateSnippet(
+                            s.getId(),
+                            java.util.Map.of("folderId", "general", "folderName", "general", "teamId", "acme-core-eng", "visibility", "team"),
+                            null,
+                            user5.getId(),
+                            user5.getEmail()
+                    );
+                    org.junit.jupiter.api.Assertions.assertEquals(200, res5.getStatusCode().value(), "Admin must be able to remove snippet from collection");
+
+                    // 2. Viewer attempts to edit or remove snippet -> expect 403 FORBIDDEN
+                    org.springframework.http.ResponseEntity<?> res6 = snippetController.updateSnippet(
+                            s.getId(),
+                            java.util.Map.of("folderId", "general", "folderName", "general", "teamId", "acme-core-eng", "visibility", "team"),
+                            null,
+                            user6.getId(),
+                            user6.getEmail()
+                    );
+                    org.junit.jupiter.api.Assertions.assertEquals(403, res6.getStatusCode().value(), "Viewer must not be able to modify team snippet collection membership");
+
+                    // 3. Admin re-adds snippet back to collection
+                    org.springframework.http.ResponseEntity<?> resRestore = snippetController.updateSnippet(
+                            s.getId(),
+                            java.util.Map.of("folderId", "col_database", "folderName", "database", "teamId", "acme-core-eng", "visibility", "team"),
+                            null,
+                            user5.getId(),
+                            user5.getEmail()
+                    );
+                    org.junit.jupiter.api.Assertions.assertEquals(200, resRestore.getStatusCode().value(), "Admin must be able to add snippet back to collection");
+                }
+            }
+        } finally {
+            cleanupTestMember(user6);
         }
     }
 
@@ -187,65 +210,79 @@ class PluckBackendApplicationTests {
         org.junit.jupiter.api.Assertions.assertNotNull(user5);
         org.junit.jupiter.api.Assertions.assertNotNull(user6);
 
-        // Ensure user6 is explicitly set to Viewer role for this test
-        dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
-        if (team != null && team.getMembers() != null) {
-            team.getMembers().stream()
-                    .filter(m -> m.getEmail() != null && m.getEmail().equalsIgnoreCase(user6.getEmail()))
-                    .forEach(m -> m.setRole("Viewer"));
-            teamRepository.save(team);
+        try {
+            // Ensure user6 is explicitly set to Viewer role for this test
+            dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
+            if (team != null) {
+                if (team.getMembers() == null) {
+                    team.setMembers(new java.util.ArrayList<>());
+                }
+                boolean found = false;
+                for (dev.pluck.backend.model.TeamMember m : team.getMembers()) {
+                    if (m.getEmail() != null && m.getEmail().equalsIgnoreCase(user6.getEmail())) {
+                        m.setRole("Viewer");
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    team.getMembers().add(new dev.pluck.backend.model.TeamMember(user6.getId(), user6.getName() != null ? user6.getName() : user6.getUsername(), user6.getEmail(), "Viewer", false));
+                }
+                teamRepository.save(team);
+            }
+
+            // 1. Viewer attempts to create a team snippet -> Expect 403 FORBIDDEN
+            org.springframework.http.ResponseEntity<?> createViewerRes = snippetController.createSnippet(
+                    java.util.Map.of(
+                            "title", "Viewer Illegal Snippet",
+                            "code", "console.log('should fail');",
+                            "visibility", "team",
+                            "teamId", "acme-core-eng"
+                    ),
+                    null,
+                    user6.getId(),
+                    user6.getEmail()
+            );
+            org.junit.jupiter.api.Assertions.assertEquals(403, createViewerRes.getStatusCode().value(), "Viewer must not be allowed to create team snippets");
+
+            // 2. Viewer attempts to invite member -> Expect 403 FORBIDDEN
+            org.springframework.http.ResponseEntity<?> inviteViewerRes = teamController.inviteMember(
+                    "acme-core-eng",
+                    java.util.Map.of("email", "hacker@pluck.dev", "role", "Admin"),
+                    null,
+                    user6.getId(),
+                    user6.getEmail()
+            );
+            org.junit.jupiter.api.Assertions.assertEquals(403, inviteViewerRes.getStatusCode().value(), "Viewer must not be allowed to invite members");
+
+            // 3. Viewer attempts to update member role -> Expect 403 FORBIDDEN
+            org.springframework.http.ResponseEntity<?> roleViewerRes = teamController.updateMemberRole(
+                    "acme-core-eng",
+                    user6.getId(),
+                    java.util.Map.of("role", "Admin"),
+                    null,
+                    user6.getId(),
+                    user6.getEmail()
+            );
+            org.junit.jupiter.api.Assertions.assertEquals(403, roleViewerRes.getStatusCode().value(), "Viewer must not be allowed to change roles");
+
+            // 4. Verify Admin (user5) has full access
+            org.springframework.http.ResponseEntity<?> teamRes5 = teamController.getTeam("acme-core-eng", null, user5.getId(), user5.getEmail());
+            org.junit.jupiter.api.Assertions.assertEquals(200, teamRes5.getStatusCode().value());
+            java.util.Map<?, ?> teamMap5 = (java.util.Map<?, ?>) teamRes5.getBody();
+            org.junit.jupiter.api.Assertions.assertEquals("Admin", teamMap5.get("role"));
+            org.junit.jupiter.api.Assertions.assertEquals(true, teamMap5.get("canEditSnippets"));
+            org.junit.jupiter.api.Assertions.assertEquals(true, teamMap5.get("canManageMembers"));
+
+            // 5. Verify Viewer (user6) role resolution
+            org.springframework.http.ResponseEntity<?> teamRes6 = teamController.getTeam("acme-core-eng", null, user6.getId(), user6.getEmail());
+            org.junit.jupiter.api.Assertions.assertEquals(200, teamRes6.getStatusCode().value());
+            java.util.Map<?, ?> teamMap6 = (java.util.Map<?, ?>) teamRes6.getBody();
+            org.junit.jupiter.api.Assertions.assertEquals("Viewer", teamMap6.get("role"));
+            org.junit.jupiter.api.Assertions.assertEquals(false, teamMap6.get("canEditSnippets"));
+            org.junit.jupiter.api.Assertions.assertEquals(false, teamMap6.get("canManageMembers"));
+        } finally {
+            cleanupTestMember(user6);
         }
-
-        // 1. Viewer attempts to create a team snippet -> Expect 403 FORBIDDEN
-        org.springframework.http.ResponseEntity<?> createViewerRes = snippetController.createSnippet(
-                java.util.Map.of(
-                        "title", "Viewer Illegal Snippet",
-                        "code", "console.log('should fail');",
-                        "visibility", "team",
-                        "teamId", "acme-core-eng"
-                ),
-                null,
-                user6.getId(),
-                user6.getEmail()
-        );
-        org.junit.jupiter.api.Assertions.assertEquals(403, createViewerRes.getStatusCode().value(), "Viewer must not be allowed to create team snippets");
-
-        // 2. Viewer attempts to invite member -> Expect 403 FORBIDDEN
-        org.springframework.http.ResponseEntity<?> inviteViewerRes = teamController.inviteMember(
-                "acme-core-eng",
-                java.util.Map.of("email", "hacker@pluck.dev", "role", "Admin"),
-                null,
-                user6.getId(),
-                user6.getEmail()
-        );
-        org.junit.jupiter.api.Assertions.assertEquals(403, inviteViewerRes.getStatusCode().value(), "Viewer must not be allowed to invite members");
-
-        // 3. Viewer attempts to update member role -> Expect 403 FORBIDDEN
-        org.springframework.http.ResponseEntity<?> roleViewerRes = teamController.updateMemberRole(
-                "acme-core-eng",
-                user6.getId(),
-                java.util.Map.of("role", "Admin"),
-                null,
-                user6.getId(),
-                user6.getEmail()
-        );
-        org.junit.jupiter.api.Assertions.assertEquals(403, roleViewerRes.getStatusCode().value(), "Viewer must not be allowed to change roles");
-
-        // 4. Verify Admin (user5) has full access
-        org.springframework.http.ResponseEntity<?> teamRes5 = teamController.getTeam("acme-core-eng", null, user5.getId(), user5.getEmail());
-        org.junit.jupiter.api.Assertions.assertEquals(200, teamRes5.getStatusCode().value());
-        java.util.Map<?, ?> teamMap5 = (java.util.Map<?, ?>) teamRes5.getBody();
-        org.junit.jupiter.api.Assertions.assertEquals("Admin", teamMap5.get("role"));
-        org.junit.jupiter.api.Assertions.assertEquals(true, teamMap5.get("canEditSnippets"));
-        org.junit.jupiter.api.Assertions.assertEquals(true, teamMap5.get("canManageMembers"));
-
-        // 5. Verify Viewer (user6) role resolution
-        org.springframework.http.ResponseEntity<?> teamRes6 = teamController.getTeam("acme-core-eng", null, user6.getId(), user6.getEmail());
-        org.junit.jupiter.api.Assertions.assertEquals(200, teamRes6.getStatusCode().value());
-        java.util.Map<?, ?> teamMap6 = (java.util.Map<?, ?>) teamRes6.getBody();
-        org.junit.jupiter.api.Assertions.assertEquals("Viewer", teamMap6.get("role"));
-        org.junit.jupiter.api.Assertions.assertEquals(false, teamMap6.get("canEditSnippets"));
-        org.junit.jupiter.api.Assertions.assertEquals(false, teamMap6.get("canManageMembers"));
     }
 
 }

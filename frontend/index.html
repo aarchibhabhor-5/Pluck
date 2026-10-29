@@ -9,7 +9,7 @@
     content="Stop saving dead text. Pluck battle-tested, dependency-aware code out of past projects and drop it straight into your browser, terminal, or AI coding assistant." />
   <meta property="og:title" content="Pluck — Battle-Tested Code Snippets for Developers" />
   <meta property="og:description"
-    content="Dependency-aware snippets with secret detection, CLI access, and AI integration via MCP." />
+    content="Dependency-aware snippets with secret detection, in-browser sandbox runner, and team workspaces." />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -36,7 +36,6 @@
     <nav class="nav-links" aria-label="Primary navigation">
       <a href="#features" class="nav-link">Features</a>
       <a href="#how-it-works" class="nav-link">How It Works</a>
-      <a href="settings.html?tab=climcp" class="nav-link">CLI &amp; MCP</a>
       <a href="#plans" class="nav-link">Plans</a>
       <a href="app.html" class="nav-link">Vault Demo</a>
     </nav>
@@ -195,15 +194,15 @@
           <h3>Secret Scanner</h3>
           <p>One-click redact squiggles catch API keys and tokens before they reach public scope.</p>
         </div>
-        <div class="feat-card pixel-border-box" id="feat-mcp">
+        <div class="feat-card pixel-border-box" id="feat-team">
           <div class="feat-card-icon icon-purple">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
               <path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="2" stroke-linecap="square" />
             </svg>
           </div>
-          <h3>MCP for AI Assistants</h3>
-          <p>Expose snippets to Claude, Cursor, and VS Code. Your AI gets your verified code — not hallucinations.</p>
+          <h3>Team Workspaces</h3>
+          <p>Role-based access control and collections. Share verified snippets securely with your engineering team.</p>
         </div>
       </div>
 
@@ -299,7 +298,7 @@
         </button>
         <button class="chapter-btn" id="chap-btn-4" onclick="selectChapter(4)">
           <div class="chapter-num">STEP 04</div>
-          <div class="chapter-title">AI MCP &amp; CLI Sync</div>
+          <div class="chapter-title">Profile &amp; Settings</div>
         </button>
       </div>
 
@@ -421,9 +420,7 @@
     <div class="step-row step-row-left">
       <div class="step-text">
         <div class="step-badge step-badge-pink">4</div>
-        <p>Drop it anywhere. Run <code class="inline-code">pluck get &lt;slug&gt;</code> from the terminal, copy with
-          correct deps in the web app, or let Claude and Cursor pull it directly via the MCP server. Also get an audio
-          summary of changes.</p>
+        <p>Drop it anywhere. Copy with correct package dependencies in the web app, run in-browser sandboxed tests, and share secure preview cards with your team.</p>
       </div>
       <div class="step-mockup">
         <div class="pixel-border-box mockup-box mockup-deploy" id="mockup-deploy"
@@ -464,7 +461,7 @@
         <ul class="plan-features">
           <li>Up to 100 snippets</li>
           <li>Semantic search (shared quota)</li>
-          <li>CLI access via PAT</li>
+          <li>Developer Preferences</li>
           <li>1 personal collection</li>
         </ul>
       </div>
@@ -476,7 +473,7 @@
         <ul class="plan-features">
           <li>Unlimited snippets</li>
           <li>Priority semantic search p95 &lt;200ms</li>
-          <li>Full CLI + MCP server access</li>
+          <li>Custom Editor Keymaps</li>
           <li>Unlimited collections</li>
           <li>Team workspace (up to 5 members)</li>
         </ul>
@@ -491,7 +488,7 @@
           <li>Unlimited team members + RBAC</li>
           <li>In-browser sandbox (JS/TS + Python)</li>
           <li>Advanced activity feed + version history</li>
-          <li>Priority MCP quota + SLA</li>
+          <li>Priority API Quota + SLA</li>
         </ul>
       </div>
     </div>
@@ -518,7 +515,7 @@
       </a>
       <a href="app.html" class="footer-link">Vault</a>
       <a href="studio.html" class="footer-link">Studio</a>
-      <a href="settings.html" class="footer-link">CLI &amp; MCP</a>
+      <a href="settings.html" class="footer-link">Settings</a>
       <a href="team.html" class="footer-link">Teams</a>
       <a href="https://github.com/aarchibhabhor-5/Pluck" target="_blank" rel="noreferrer" class="footer-link">GitHub</a>
     </div>

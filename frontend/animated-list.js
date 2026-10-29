@@ -673,7 +673,7 @@
         items: [
           { icon: GLYPHS.zap, title: 'Unlimited snippets', description: 'Zero snippet caps or rate throttling', meta: '∞' },
           { icon: GLYPHS.code, title: 'Priority semantic search', description: 'Sub-200ms p95 vector lookup', meta: '<200ms' },
-          { icon: GLYPHS.terminal, title: 'Full CLI + MCP access', description: 'Claude, Cursor & VS Code bridge', meta: 'Active' },
+          { icon: GLYPHS.zap, title: 'Developer Preferences', description: 'Custom package managers & editor keymaps', meta: 'Active' },
           { icon: GLYPHS.folder, title: 'Unlimited collections', description: 'Multi-folder tagging & trees', meta: 'Unlimited' },
           { icon: GLYPHS.users, title: 'Team workspace', description: 'Collaborate with up to 5 members', meta: '5 seats' }
         ],
@@ -939,7 +939,7 @@ export async function retryWithBackoff<T>(
         { id: 1, icon: GLYPHS.code, title: 'Step 01: Vault & ⌘K Search', description: 'Intent-based natural language code retrieval', meta: '00:00 - 00:35' },
         { id: 2, icon: GLYPHS.shield, title: 'Step 02: Studio & Secret Redact', description: 'Automatic AST detection & 1-click token redaction', meta: '00:35 - 01:05' },
         { id: 3, icon: GLYPHS.cpu, title: 'Step 03: Variables & Sandbox', description: 'Dynamic runtime params & in-browser WebWorker runner', meta: '01:05 - 01:40' },
-        { id: 4, icon: GLYPHS.terminal, title: 'Step 04: AI MCP & CLI Sync', description: 'Zero-config connection to Claude, Cursor & CLI', meta: '01:40 - 02:10' }
+        { id: 4, icon: GLYPHS.users, title: 'Step 04: Profile & Preferences', description: 'Custom package managers, keymaps & identity', meta: '01:40 - 02:10' }
       ];
 
       AnimatedList.landingInstances.walkthrough = new AnimatedList(wtWrap, {

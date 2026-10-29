@@ -61,11 +61,11 @@
           <span class="kbd-badge">⌘K</span>
         </button>
         <div class="topbar-actions" style="display: flex; align-items: center; gap: 8px;">
-          <button class="btn-icon-pixel" title="Copy CLI slug" onclick="copyCliCommand()">CLI</button>
           <a href="studio.html" onclick="openInStudio(event)" class="btn-solid-pixel"
             style="font-size: 11px; padding: 8px 16px;">✎ Edit</a>
           <button class="btn-outline-danger" onclick="deleteCurrentSnippet()"
-            style="font-size: 11px; padding: 7px 12px; border: 1px solid rgba(239, 68, 68, 0.45); color: #f87171; background: rgba(239, 68, 68, 0.1); cursor: pointer;" title="Delete Snippet from Vault">🗑 Delete</button>
+            style="font-size: 11px; padding: 7px 12px; border: 1px solid rgba(239, 68, 68, 0.45); color: #f87171; background: rgba(239, 68, 68, 0.1); cursor: pointer;"
+            title="Delete Snippet from Vault">🗑 Delete</button>
         </div>
       </header>
 
@@ -610,16 +610,11 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
                 });
               }
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       }
       initVersionHistory();
       loadAISummaryDetails();
-    }
-
-    function copyCliCommand() {
-      const slug = currentLoadedSnippet?.slug || currentLoadedSnippet?.id || 'use-debounce';
-      copySnippetText(`pluck get ${slug}`, `CLI Command copied: pluck get ${slug}`);
     }
 
     async function deleteCurrentSnippet() {
@@ -657,7 +652,7 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
         let list = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
         list = list.filter(s => s.id !== id && s.slug !== id);
         localStorage.setItem('pluck_user_snippets', JSON.stringify(list));
-      } catch (e) {}
+      } catch (e) { }
 
       showToast(`Snippet "${title}" deleted`, 'success');
       setTimeout(() => {

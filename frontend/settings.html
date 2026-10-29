@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings &amp; CLI Keys — Pluck</title>
+  <title>Settings — Pluck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -14,6 +14,294 @@
   <link rel="stylesheet" href="app-style.css" />
   <link rel="stylesheet" href="magic-bento.css" />
   <link rel="stylesheet" href="border-glow.css" />
+  <style>
+    /* ── 3D Elevated Account Card & Tactile Retro-Cyber Controls ── */
+    .account-card-3d-wrapper {
+      perspective: 1200px;
+      margin-top: 6px;
+    }
+
+    .account-profile-card-3d {
+      position: relative;
+      background: linear-gradient(180deg, #161824 0%, #0f1017 100%);
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      border-bottom: 5px solid #07080d;
+      border-radius: 12px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      transform: translateZ(0);
+      box-shadow:
+        0 10px 0 #07080d,
+        0 18px 38px rgba(0, 0, 0, 0.85),
+        0 0 28px rgba(124, 58, 237, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.7);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.25s ease;
+    }
+
+    .account-profile-card-3d:hover {
+      transform: translateY(-4px) translateZ(8px);
+      box-shadow:
+        0 14px 0 #07080d,
+        0 24px 48px rgba(0, 0, 0, 0.92),
+        0 0 36px rgba(124, 58, 237, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.8);
+      border-color: rgba(167, 139, 250, 0.65);
+    }
+
+    /* 3D Header Profile Banner */
+    .profile-hero-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+      background: linear-gradient(135deg, rgba(20, 24, 38, 0.9) 0%, rgba(12, 14, 22, 0.95) 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 2px solid #06070b;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      flex-wrap: wrap;
+    }
+
+    .profile-avatar-3d {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-bottom: 3px solid #1e1b4b;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .profile-meta-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .profile-display-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .profile-display-email {
+      font-size: 12px;
+      color: #94a3b8;
+      font-family: var(--mono, monospace);
+    }
+
+    .status-pill-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: 100px;
+      padding: 3px 9px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .role-badge-3d {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fbbf24;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 4px;
+      padding: 2px 7px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .id-pill-3d {
+      font-size: 11px;
+      font-family: var(--mono, monospace);
+      color: #cbd5e1;
+      background: #090a0f;
+      border: 1px solid #1e2232;
+      border-top: 1px solid #07080c;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 4px 10px;
+      border-radius: 6px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+    }
+
+    /* 3D Recessed Inputs */
+    .input-3d-recessed {
+      background: #0a0b10 !important;
+      border: 1px solid #242838 !important;
+      border-top: 2px solid #050609 !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 6px !important;
+      color: #f1f5f9 !important;
+      font-family: var(--mono, monospace) !important;
+      font-size: 13px !important;
+      padding: 10px 14px !important;
+      box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.75), inset 0 1px 2px rgba(0, 0, 0, 0.9) !important;
+      transition: all 0.2s ease !important;
+      outline: none !important;
+    }
+
+    .input-3d-recessed:focus {
+      border-color: #38bdf8 !important;
+      border-top-color: #0284c7 !important;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.3) !important;
+    }
+
+    .input-3d-recessed:disabled {
+      background: #08090d !important;
+      color: #64748b !important;
+      border-color: #1a1d29 !important;
+      cursor: not-allowed !important;
+      opacity: 0.9;
+    }
+
+    /* Tactile 3D Buttons */
+    .btn-3d-cyan {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(180deg, #06b6d4 0%, #0891b2 100%);
+      color: #041019;
+      font-family: var(--mono, monospace);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 10px 18px;
+      border: 1px solid #22d3ee;
+      border-bottom: 3px solid #0e7490;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      transform: translateY(0);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn-3d-cyan:hover {
+      background: linear-gradient(180deg, #22d3ee 0%, #06b6d4 100%);
+      box-shadow: 0 5px 14px rgba(6, 182, 212, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .btn-3d-cyan:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), inset 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-3d-danger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      background: linear-gradient(180deg, #2d1116 0%, #1a0a0d 100%);
+      color: #f87171;
+      font-family: var(--mono, monospace);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 9px 18px;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      border-bottom: 3px solid #7f1d1d;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 120, 120, 0.15);
+      transform: translateY(0);
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    .btn-3d-danger:hover {
+      background: linear-gradient(180deg, #45121a 0%, #2a0b11 100%);
+      color: #fca5a5;
+      border-color: #ef4444;
+      border-bottom-color: #991b1b;
+      box-shadow: 0 5px 14px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 150, 150, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-3d-danger:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), inset 0 1px 4px rgba(0, 0, 0, 0.6);
+    }
+
+    .auth-badge-3d {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 78, 59, 0.25) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-top: 1px solid rgba(110, 231, 183, 0.3);
+      border-bottom: 2px solid #064e3b;
+      border-radius: 6px;
+      color: #6ee7b7;
+      font-size: 11px;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-pill-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      background: #0f1118;
+      border: 1px solid #232738;
+      border-bottom: 2px solid #090a0f;
+      border-radius: 6px;
+      color: #94a3b8;
+      font-size: 11px;
+      font-family: var(--mono, monospace);
+    }
+  </style>
 </head>
 
 <body>
@@ -36,14 +324,10 @@
         <div style="margin-top: 14px;">
           <div class="nav-section-title">Settings Navigation</div>
           <div class="folder-tree">
-            <a href="#" class="folder-item active" id="side-tab-tokens" onclick="switchSettingsTab('tokens', event)">🔑
-              Access Tokens (PAT)</a>
-            <a href="#" class="folder-item" id="side-tab-climcp" onclick="switchSettingsTab('climcp', event)">🤖 CLI
-              &amp; MCP Config</a>
+            <a href="#" class="folder-item active" id="side-tab-account" onclick="switchSettingsTab('account', event)">👤
+              Account Profile</a>
             <a href="#" class="folder-item" id="side-tab-pref" onclick="switchSettingsTab('pref', event)">⚡
               Preferences</a>
-            <a href="#" class="folder-item" id="side-tab-account" onclick="switchSettingsTab('account', event)">👤
-              Account Profile</a>
           </div>
         </div>
       </div>
@@ -53,7 +337,7 @@
     <main class="app-main">
       <header class="app-topbar">
         <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Settings &amp;
-          Developer Access</h2>
+          Preferences</h2>
         <div class="topbar-actions">
           <a href="app.html" class="btn-outline-pixel" style="font-size: 11px;">Done</a>
         </div>
@@ -61,88 +345,79 @@
 
       <div class="app-content" style="max-width: 980px;">
 
-        <!-- ░░░ TAB 1: TOKENS (PRD §2.3.8) ░░░ -->
-        <div id="section-tokens" style="display: flex; flex-direction: column; gap: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-            <div>
-              <h3 style="font-size: 18px; color: var(--white);">Personal Access Tokens (PAT)</h3>
-              <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Tokens allow the <code
-                  style="color:var(--cyan);">pluck-cli</code> and AI Coding Assistants (Claude/Cursor MCP) to access
-                your vault.</p>
-            </div>
-            <button class="btn-solid-pixel" onclick="openTokenModal()">+ Generate New Token</button>
-          </div>
-
-          <!-- Tokens Table -->
-          <div
-            style="background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7), 4px 4px 0 0 rgba(0,0,0,0.8); overflow-x: auto;">
-            <table
-              style="width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; text-align: left;">
-              <thead>
-                <tr
-                  style="border-bottom: 1px solid rgba(139, 92, 246, 0.2); background: rgba(18, 18, 20, 0.9); color: var(--muted); font-size: 10px;">
-                  <th style="padding: 12px 16px;">NAME</th>
-                  <th style="padding: 12px 16px;">PREFIX</th>
-                  <th style="padding: 12px 16px;">SCOPES</th>
-                  <th style="padding: 12px 16px;">LAST USED</th>
-                  <th style="padding: 12px 16px;">EXPIRES</th>
-                  <th style="padding: 12px 16px; text-align: right;">ACTION</th>
-                </tr>
-              </thead>
-              <tbody id="token-table-body">
-                <tr>
-                  <td colspan="6" style="padding: 24px; text-align: center; color: var(--muted);">Loading access tokens...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- ░░░ TAB 2: CLI & MCP CONFIG (PRD §2.3.8) ░░░ -->
-        <div id="section-climcp" style="display: none; flex-direction: column; gap: 24px;">
+        <!-- ░░░ TAB 1: ACCOUNT (PRD §2.3.8) ░░░ -->
+        <div id="section-account" style="display: flex; flex-direction: column; gap: 20px;">
           <div>
-            <h3 style="font-size: 18px; color: var(--white);">CLI &amp; AI MCP Configuration</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Integrate Pluck directly into Claude
-              Desktop, Cursor, and your command line.</p>
+            <h3 style="font-size: 18px; color: var(--white); font-weight: 700;">Account Profile</h3>
+            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity, display name, and session credentials.</p>
           </div>
 
-          <!-- CLI Quickstart -->
-          <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
-            <div class="nav-section-title">1. Pluck CLI Quickstart</div>
-            <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Authenticate your terminal in one command:</p>
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; background: #161618; padding: 10px 14px; border: 1px solid rgba(139, 92, 246, 0.25); margin-top: 8px;">
-              <code style="color: var(--cyan);">npx pluck-cli login</code>
-              <button class="btn-copy-card"
-                onclick="copySnippetText('npx pluck-cli login', 'Command copied!')">Copy</button>
-            </div>
-          </div>
+          <div class="account-card-3d-wrapper">
+            <div class="account-profile-card-3d">
+              
+              <!-- 3D Profile Hero Banner -->
+              <div class="profile-hero-banner">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <div class="profile-avatar-3d" id="account-avatar-3d">U</div>
+                  <div class="profile-meta-block">
+                    <div class="profile-display-name">
+                      <span id="account-hero-name">User</span>
+                      <span class="role-badge-3d" id="account-hero-role">Member</span>
+                      <span class="status-pill-pulse"><span class="pulse-dot"></span> Active Session</span>
+                    </div>
+                    <div class="profile-display-email" id="account-hero-email">...</div>
+                  </div>
+                </div>
+                <div class="id-pill-3d" id="account-hero-id" title="Pluck User Identifier">ID: ...</div>
+              </div>
 
-          <!-- Stdio MCP Config -->
-          <div class="pixel-border-box" style="padding: 18px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
-            <div class="nav-section-title">2. Claude Desktop &amp; Cursor (Stdio MCP)</div>
-            <p style="font-size: 12px; color: #ddd6fe; margin-top: 6px;">Add this block to your
-              <code>claude_desktop_config.json</code>:</p>
-            <div style="position: relative; margin-top: 8px;">
-              <pre
-                style="background: #141416; padding: 14px; border: 1px solid rgba(139, 92, 246, 0.25); color: #a78bfa; font-size: 12px; margin: 0; overflow-x: auto;"><code id="mcp-config-code">{
-  "mcpServers": {
-    "pluck": {
-      "command": "npx",
-      "args": ["-y", "pluck-cli", "mcp"],
-      "env": {
-        "PLUCK_TOKEN": "pluck_pat_YOUR_TOKEN_HERE"
-      }
-    }
-  }
-}</code></pre>
-              <button class="btn-copy-card" style="position: absolute; top: 10px; right: 10px;"
-                onclick="copyMcpJson()">Copy JSON</button>
+              <!-- Form: Full Name -->
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <label class="form-label" style="font-size: 11px; letter-spacing: 0.8px; color: #94a3b8;">FULL NAME</label>
+                <div style="display: flex; gap: 10px; max-width: 480px;">
+                  <input type="text" id="profile-name" class="input-3d-recessed" placeholder="Developer Name" style="flex: 1;" />
+                  <button type="button" class="btn-3d-cyan" id="btn-save-name" onclick="saveProfileName()">Save Changes</button>
+                </div>
+              </div>
+
+              <!-- Form: Work Email -->
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; max-width: 480px;">
+                  <label class="form-label" style="font-size: 11px; letter-spacing: 0.8px; color: #94a3b8;">WORK EMAIL</label>
+                  <span style="font-size: 10px; color: #10b981; font-family: var(--mono, monospace);">✓ Verified</span>
+                </div>
+                <input type="email" id="profile-email" class="input-3d-recessed" style="max-width: 480px;" disabled />
+              </div>
+
+              <!-- Linked Authentication & Session Credentials -->
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <label class="form-label" style="font-size: 11px; letter-spacing: 0.8px; color: #94a3b8;">AUTHENTICATION &amp; CREDENTIALS</label>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                  <div class="auth-badge-3d" id="provider-badge">
+                    <span>🛡️</span>
+                    <span>Session Authenticated</span>
+                  </div>
+                  <div class="auth-pill-secondary" id="auth-method-pill">
+                    <span>🔑</span>
+                    <span id="account-auth-method">Password &amp; Session</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Bar: Sign Out & Registration Date -->
+              <div style="margin-top: 10px; padding-top: 18px; border-top: 1px solid rgba(139, 92, 246, 0.2); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <button type="button" class="btn-3d-danger" onclick="handleLogout()">
+                  <span>⏻</span>
+                  <span>Sign Out of Pluck</span>
+                </button>
+                <span id="account-created-at" style="font-size: 11px; color: #64748b; font-family: var(--mono, monospace);"></span>
+              </div>
+
             </div>
           </div>
         </div>
 
-        <!-- ░░░ TAB 3: PREFERENCES (PRD §2.3.8) ░░░ -->
+        <!-- ░░░ TAB 2: PREFERENCES (PRD §2.3.8) ░░░ -->
         <div id="section-pref" style="display: none; flex-direction: column; gap: 24px;">
           <div>
             <h3 style="font-size: 18px; color: var(--white);">Developer Preferences</h3>
@@ -181,295 +456,50 @@
           </div>
         </div>
 
-        <!-- ░░░ TAB 4: ACCOUNT (PRD §2.3.8) ░░░ -->
-        <div id="section-account" style="display: none; flex-direction: column; gap: 24px;">
-          <div>
-            <h3 style="font-size: 18px; color: var(--white);">Account Profile</h3>
-            <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">Manage identity, display name, and authentication.</p>
-          </div>
-
-          <div class="pixel-border-box"
-            style="padding: 20px; background: #121212; border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 18px;">
-            <div class="form-group">
-              <label class="form-label">FULL NAME</label>
-              <div style="display: flex; gap: 10px; max-width: 440px;">
-                <input type="text" id="profile-name" class="var-input" placeholder="Developer Name" style="flex: 1;" />
-                <button type="button" class="btn-solid-pixel" id="btn-save-name" onclick="saveProfileName()" style="font-size: 11px;">Save</button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">WORK EMAIL</label>
-              <input type="email" id="profile-email" class="var-input" value="Loading..." style="max-width: 320px;" disabled />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">LINKED AUTHENTICATION PROVIDERS</label>
-              <div style="display: flex; gap: 12px; margin-top: 6px; align-items: center; flex-wrap: wrap;">
-                <div id="provider-badge"
-                  style="padding: 6px 12px; background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #a7f3d0; font-size: 11px;">
-                  ✓ Email/Password Authenticated
-                </div>
-                <button type="button" class="btn-outline-pixel" style="font-size: 11px;"
-                  onclick="showToast('OAuth connected via auth.html')">Linked</button>
-              </div>
-            </div>
-            <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--purple-dim); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-              <button type="button" class="btn-outline-danger" onclick="handleLogout()"
-                style="display: inline-block; padding: 8px 14px;">Sign Out of Pluck</button>
-              <span id="account-created-at" style="font-size: 11px; color: var(--muted);"></span>
-            </div>
-          </div>
-        </div>
-
       </div>
     </main>
   </div>
 
-  <!-- Modal: Generate PAT Token -->
-  <div id="token-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
-    <div class="pixel-border-box" style="background: #121214; border: 1px solid var(--purple-primary); padding: 24px; width: 100%; max-width: 480px; box-shadow: 0 16px 40px rgba(0,0,0,0.9);">
-      
-      <!-- Step 1: Form -->
-      <div id="token-modal-form-step">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 16px; color: var(--white); font-family: var(--mono); margin: 0;">Generate Personal Access Token</h3>
-          <button onclick="closeTokenModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px;">✕</button>
-        </div>
-        <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">
-          Personal tokens allow the <code style="color:var(--cyan)">pluck-cli</code> and AI coding assistants (Claude Desktop, Cursor) to securely query your snippet vault.
-        </p>
-
-        <div class="form-group" style="margin-bottom: 16px;">
-          <label class="form-label">TOKEN DESCRIPTOR / NAME</label>
-          <input type="text" id="new-token-name" class="var-input" placeholder="e.g. Cursor MacBook Agent, CLI Terminal" style="width: 100%; margin-top: 6px;" />
-        </div>
-
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label class="form-label">SCOPES &amp; PERMISSIONS</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="scope-read" checked /> snippets:read
-            </label>
-            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="scope-write" /> snippets:write
-            </label>
-            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="scope-mcp" checked /> mcp:context
-            </label>
-            <label style="font-size: 11px; color: #ddd6fe; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="scope-cli" /> cli:full
-            </label>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button class="btn-outline-pixel" onclick="closeTokenModal()">Cancel</button>
-          <button class="btn-solid-pixel" id="btn-submit-token" onclick="submitCreateToken()">Generate Key</button>
-        </div>
-      </div>
-
-      <!-- Step 2: Generated Token Secret Display -->
-      <div id="token-modal-result-step" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-          <h3 style="font-size: 16px; color: #34d399; font-family: var(--mono); margin: 0;">✓ Token Generated!</h3>
-          <button onclick="closeTokenModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px;">✕</button>
-        </div>
-        <p style="font-size: 12px; color: #fca5a5; margin-bottom: 12px; font-weight: 700;">
-          ⚠️ Copy this secret key now. You will never be able to see it again!
-        </p>
-
-        <div style="position: relative; background: #09090b; border: 1px solid #10b981; padding: 12px 14px; margin-bottom: 16px;">
-          <code id="display-raw-token" style="color: #6ee7b7; font-size: 12px; word-break: break-all; user-select: all;"></code>
-          <button class="btn-copy-card" style="margin-top: 8px; width: 100%; justify-content: center;" onclick="copyRawToken()">📋 Copy Token to Clipboard</button>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end;">
-          <button class="btn-solid-pixel" onclick="closeTokenModal()">I Have Saved My Token</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
   <script src="app-script.js"></script>
   <script>
-    // Auth header helper
+    // Auth header helper with user identity context
     function getAuthHeaders() {
       const token = localStorage.getItem('pluck_token');
       const headers = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+      const cached = localStorage.getItem('pluck_user');
+      if (cached) {
+        try {
+          const u = JSON.parse(cached);
+          if (u.id) headers['X-User-Id'] = u.id;
+          if (u.email) headers['X-User-Email'] = u.email;
+        } catch (e) {}
+      }
       return headers;
     }
 
-    // Tab switching
+    // Tab switching (Account Profile & Preferences)
     function switchSettingsTab(tab, e) {
       if (e) e.preventDefault();
-      ['tokens', 'climcp', 'pref', 'account'].forEach(t => {
+      const validTabs = ['account', 'pref'];
+      const targetTab = validTabs.includes(tab) ? tab : 'account';
+      validTabs.forEach(t => {
         const sideEl = document.getElementById(`side-tab-${t}`);
-        if (sideEl) sideEl.classList.toggle('active', t === tab);
+        if (sideEl) sideEl.classList.toggle('active', t === targetTab);
         const secEl = document.getElementById(`section-${t}`);
-        if (secEl) secEl.style.display = t === tab ? 'flex' : 'none';
+        if (secEl) secEl.style.display = t === targetTab ? 'flex' : 'none';
       });
+      if (targetTab === 'account') {
+        loadProfile();
+      }
     }
 
     // Read ?tab= query parameter on load
     const params = new URLSearchParams(window.location.search);
-    if (params.get('tab')) {
-      switchSettingsTab(params.get('tab'));
-    }
-
-    // ── Tokens Subsystem ────────────────────────────────────────────────
-    let activeRawToken = '';
-
-    async function loadTokens() {
-      const tbody = document.getElementById('token-table-body');
-      if (!tbody) return;
-      try {
-        const res = await fetch('/api/tokens', { headers: getAuthHeaders() });
-        const data = await res.json();
-        const tokens = data.tokens || [];
-
-        if (tokens.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="6" style="padding: 24px; text-align: center; color: var(--muted); font-size: 11px;">
-                No personal access tokens generated yet. Click <strong>+ Generate New Token</strong> above.
-              </td>
-            </tr>
-          `;
-          return;
-        }
-
-        tbody.innerHTML = tokens.map(tok => {
-          const scopes = (tok.scopes || []).map(s => `<span class="dep-chip" style="font-size: 9px; margin-right: 4px;">${s}</span>`).join('');
-          return `
-            <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
-              <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">${tok.name || 'Unnamed Token'}</td>
-              <td style="padding: 14px 16px; color: var(--purple-light); font-family: monospace;">${tok.prefix || 'pluck_pat_...'}</td>
-              <td style="padding: 14px 16px;">${scopes || '<span class="dep-chip" style="font-size: 9px;">read</span>'}</td>
-              <td style="padding: 14px 16px; color: var(--muted);">${tok.lastUsed || 'Never'}</td>
-              <td style="padding: 14px 16px; color: #a7f3d0;">${tok.expires || 'Never'}</td>
-              <td style="padding: 14px 16px; text-align: right;">
-                <button class="btn-outline-danger" onclick="revokeToken('${tok.id}', '${tok.name}')">Revoke</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-        // Update MCP sample config if token exists
-        if (tokens.length > 0) {
-          const mcpCode = document.getElementById('mcp-config-code');
-          if (mcpCode) {
-            mcpCode.textContent = JSON.stringify({
-              mcpServers: {
-                pluck: {
-                  command: "npx",
-                  args: ["-y", "pluck-cli", "mcp"],
-                  env: { PLUCK_TOKEN: tokens[0].prefix.replace('...', 'YOUR_FULL_KEY') }
-                }
-              }
-            }, null, 2);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load tokens', err);
-        tbody.innerHTML = `<tr><td colspan="6" style="padding: 16px; text-align: center; color: #f87171;">Failed to load tokens from server.</td></tr>`;
-      }
-    }
-
-    function openTokenModal() {
-      const modal = document.getElementById('token-modal');
-      const formStep = document.getElementById('token-modal-form-step');
-      const resStep = document.getElementById('token-modal-result-step');
-      const nameInput = document.getElementById('new-token-name');
-      if (nameInput) nameInput.value = '';
-      if (formStep) formStep.style.display = 'block';
-      if (resStep) resStep.style.display = 'none';
-      if (modal) modal.style.display = 'flex';
-      if (nameInput) setTimeout(() => nameInput.focus(), 50);
-    }
-
-    function closeTokenModal() {
-      const modal = document.getElementById('token-modal');
-      if (modal) modal.style.display = 'none';
-      loadTokens();
-    }
-
-    async function submitCreateToken() {
-      const nameInput = document.getElementById('new-token-name');
-      const name = nameInput ? nameInput.value.trim() : '';
-      if (!name) {
-        showToast('Please enter a descriptor name for this token', 'error');
-        return;
-      }
-
-      const scopes = [];
-      if (document.getElementById('scope-read')?.checked) scopes.push('snippets:read');
-      if (document.getElementById('scope-write')?.checked) scopes.push('snippets:write');
-      if (document.getElementById('scope-mcp')?.checked) scopes.push('mcp');
-      if (document.getElementById('scope-cli')?.checked) scopes.push('cli');
-
-      try {
-        const res = await fetch('/api/tokens', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ name, scopes })
-        });
-        const data = await res.json();
-        if (data.success && data.rawToken) {
-          activeRawToken = data.rawToken;
-          document.getElementById('display-raw-token').textContent = activeRawToken;
-          document.getElementById('token-modal-form-step').style.display = 'none';
-          document.getElementById('token-modal-result-step').style.display = 'block';
-          showToast('Access token generated!', 'success');
-        } else {
-          showToast(data.message || 'Failed to generate token', 'error');
-        }
-      } catch (err) {
-        console.error('Token create error', err);
-        showToast('Failed to connect to backend', 'error');
-      }
-    }
-
-    function copyRawToken() {
-      if (activeRawToken) {
-        navigator.clipboard.writeText(activeRawToken);
-        showToast('Token copied to clipboard!', 'success');
-      }
-    }
-
-    async function revokeToken(tokenId, name) {
-      if (!confirm(`Revoke token "${name || tokenId}"? CLI or MCP agents using this key will immediately be disconnected.`)) {
-        return;
-      }
-      try {
-        const res = await fetch(`/api/tokens/${tokenId}`, {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        });
-        const data = await res.json();
-        if (data.success) {
-          showToast(data.message || 'Token revoked successfully', 'info');
-          loadTokens();
-        } else {
-          showToast(data.message || 'Failed to revoke token', 'error');
-        }
-      } catch (err) {
-        console.error('Failed to revoke token', err);
-        showToast('Error revoking token', 'error');
-      }
-    }
-
-    function copyMcpJson() {
-      const code = document.getElementById('mcp-config-code')?.textContent;
-      if (code) {
-        navigator.clipboard.writeText(code);
-        showToast('MCP config JSON copied!', 'success');
-      }
-    }
+    const requestedTab = params.get('tab');
+    switchSettingsTab(requestedTab === 'pref' ? 'pref' : 'account');
 
     // ── Developer Preferences Subsystem ──────────────────────────────────
     async function loadPreferences() {
@@ -553,24 +583,79 @@
       }
     }
 
-    // ── Account Profile Subsystem ────────────────────────────────────────
+    // ── Account Profile Subsystem (Dynamic & Authentic Identity) ─────────
+    function populateUserData(user) {
+      if (!user) return;
+      const displayName = user.name || user.username || 'Developer';
+      const email = user.email || '';
+      const rawRole = (user.role || 'Member').toString();
+      const role = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
+      const id = user.id || 'usr_active';
+      const initial = displayName.trim().charAt(0).toUpperCase() || 'P';
+
+      const avatarEl = document.getElementById('account-avatar-3d');
+      if (avatarEl) avatarEl.textContent = initial;
+
+      const heroNameEl = document.getElementById('account-hero-name');
+      if (heroNameEl) heroNameEl.textContent = displayName;
+
+      const heroRoleEl = document.getElementById('account-hero-role');
+      if (heroRoleEl) heroRoleEl.textContent = role;
+
+      const heroEmailEl = document.getElementById('account-hero-email');
+      if (heroEmailEl) heroEmailEl.textContent = email;
+
+      const heroIdEl = document.getElementById('account-hero-id');
+      if (heroIdEl) heroIdEl.textContent = `ID: ${id}`;
+
+      const nameInput = document.getElementById('profile-name');
+      if (nameInput) nameInput.value = displayName;
+
+      const emailInput = document.getElementById('profile-email');
+      if (emailInput) emailInput.value = email;
+
+      const createdSpan = document.getElementById('account-created-at');
+      if (createdSpan) {
+        if (user.createdAt) {
+          try {
+            const d = new Date(user.createdAt);
+            if (!isNaN(d.getTime())) {
+              createdSpan.textContent = `Member since ${d.toLocaleDateString()}`;
+            }
+          } catch (e) {
+            createdSpan.textContent = 'Active Member';
+          }
+        } else {
+          createdSpan.textContent = 'Active Member';
+        }
+      }
+    }
+
     async function loadProfile() {
+      // 1. Immediately hydrate from cached local user storage
+      try {
+        const cached = localStorage.getItem('pluck_user');
+        if (cached) {
+          populateUserData(JSON.parse(cached));
+        }
+      } catch (e) {}
+
+      // 2. Fetch authoritative user profile from backend
       try {
         const res = await fetch('/api/user/profile', { headers: getAuthHeaders() });
-        const data = await res.json();
-        const user = data.user || {};
-
-        const nameInput = document.getElementById('profile-name');
-        const emailInput = document.getElementById('profile-email');
-        const createdSpan = document.getElementById('account-created-at');
-
-        if (nameInput && user.name) nameInput.value = user.name;
-        if (emailInput && user.email) emailInput.value = user.email;
-        if (createdSpan && user.createdAt) {
-          createdSpan.textContent = `Member since ${new Date(user.createdAt).toLocaleDateString()}`;
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.user) {
+            populateUserData(data.user);
+            // Synchronize back to local storage cache
+            try {
+              const current = JSON.parse(localStorage.getItem('pluck_user') || '{}');
+              localStorage.setItem('pluck_user', JSON.stringify({ ...current, ...data.user }));
+            } catch (e) {}
+          }
         }
       } catch (err) {
-        console.warn('Failed to load user profile', err);
+        console.warn('Failed to revalidate user profile', err);
       }
     }
 
@@ -582,6 +667,12 @@
         return;
       }
 
+      const saveBtn = document.getElementById('btn-save-name');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
+
       try {
         const res = await fetch('/api/user/profile', {
           method: 'PATCH',
@@ -590,21 +681,26 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast('Profile name updated!', 'success');
+          showToast('Profile updated successfully!', 'success');
           // Update cached local user
+          let u = {};
           const cached = localStorage.getItem('pluck_user');
           if (cached) {
-            try {
-              const u = JSON.parse(cached);
-              u.name = name;
-              localStorage.setItem('pluck_user', JSON.stringify(u));
-            } catch (e) {}
+            try { u = JSON.parse(cached); } catch (e) {}
           }
+          u.name = name;
+          localStorage.setItem('pluck_user', JSON.stringify(u));
+          populateUserData(u);
         } else {
           showToast(data.message || 'Failed to update profile', 'error');
         }
       } catch (err) {
         showToast('Failed to save profile changes', 'error');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Changes';
+        }
       }
     }
 
@@ -619,7 +715,12 @@
 
     // Initial load on page ready
     document.addEventListener('DOMContentLoaded', () => {
-      loadTokens();
+      // Instant population so no empty or mock state flickers
+      try {
+        const cached = localStorage.getItem('pluck_user');
+        if (cached) populateUserData(JSON.parse(cached));
+      } catch (e) {}
+
       loadPreferences();
       loadProfile();
     });

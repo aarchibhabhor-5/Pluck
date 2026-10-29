@@ -259,11 +259,8 @@
               </thead>
               <tbody id="team-members-tbody">
                 <!-- Loaded dynamically from /api/teams/:id/members -->
-                <tr style="border-bottom: 1px solid rgba(124,58,237,0.15);">
-                  <td style="padding: 14px 16px; font-weight: 700; color: var(--white);">Alex Developer (You)</td>
-                  <td style="padding: 14px 16px; color: var(--muted);">alex@pluck.dev</td>
-                  <td style="padding: 14px 16px;"><span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow);">Admin</span></td>
-                  <td style="padding: 14px 16px; text-align: right; color: var(--muted); font-size: 11px;">Owner</td>
+                <tr id="team-loading-row" style="border-bottom: 1px solid rgba(124,58,237,0.15);">
+                  <td colspan="4" style="padding: 24px; text-align: center; color: var(--muted); font-size: 12px;">Loading workspace members...</td>
                 </tr>
               </tbody>
             </table>
@@ -303,11 +300,6 @@
               <input type="checkbox" id="policy-editors-publish" />
               <span>Editors Can Publish: Allow Editor role to publish snippets to Public or Unlisted scope</span>
             </label>
-            <label
-              style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; color: var(--white);">
-              <input type="checkbox" id="policy-mcp-access" checked />
-              <span>Enable AI MCP Server Access for Team Collections</span>
-            </label>
             <div style="margin-top: 10px;">
               <button class="btn-solid-pixel" onclick="saveTeamPolicies()">Save Policies</button>
             </div>
@@ -330,14 +322,41 @@
         const secEl = document.getElementById(`team-section-${t}`);
         if (secEl) secEl.style.display = t === tab ? 'flex' : 'none';
       });
-      if (tab === 'activity') loadActivity();
+      if (tab === 'collections') loadCollections();
       if (tab === 'members') loadMembers();
+      if (tab === 'activity') loadActivity();
+      if (tab === 'settings') loadTeamData();
     }
 
     // Read ?tab= query parameter on load
     const params = new URLSearchParams(window.location.search);
     if (params.get('tab')) {
       switchTeamTab(params.get('tab'));
+    }
+
+    // Cross-tab real-time sync channel
+    const teamSyncChannel = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('pluck_team_sync') : null;
+    if (teamSyncChannel) {
+      teamSyncChannel.onmessage = (e) => {
+        if (e.data && e.data.teamId === currentTeamId) {
+          loadTeamData();
+          loadMembers();
+          loadCollections();
+          const activitySection = document.getElementById('team-section-activity');
+          if (activitySection && activitySection.style.display !== 'none') {
+            loadActivity();
+          }
+        }
+      };
+    }
+
+    function broadcastTeamSync() {
+      if (teamSyncChannel) {
+        try { teamSyncChannel.postMessage({ type: 'TEAM_UPDATED', teamId: currentTeamId, time: Date.now() }); } catch(e) {}
+      }
+      try {
+        localStorage.setItem('pluck_team_sync_ping', `${currentTeamId}:${Date.now()}`);
+      } catch(e) {}
     }
 
     function getAuthHeaders() {
@@ -452,6 +471,26 @@
 
           const isAdminCaller = (currentCallerRole.toLowerCase() === 'admin');
 
+          // Check if the current logged-in user was removed from the team
+          const isCallerInWorkspace = !currentUser || isAdminCaller || members.some(m => (
+            (currentUser.id && m.userId === currentUser.id) ||
+            (currentUser.email && m.email && m.email.toLowerCase() === currentUser.email.toLowerCase())
+          ));
+
+          const existingNotice = document.getElementById('workspace-removed-notice');
+          if (!isCallerInWorkspace) {
+            if (!existingNotice) {
+              const notice = document.createElement('div');
+              notice.id = 'workspace-removed-notice';
+              notice.style.cssText = 'background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; padding: 12px 16px; border-radius: 6px; font-family: var(--mono); font-size: 12px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;';
+              notice.innerHTML = `<span>⚠️ You have been removed from this team workspace by an administrator.</span><a href="app.html" class="btn-outline-pixel" style="text-decoration: none; padding: 4px 10px; font-size: 11px;">Go to My Vault</a>`;
+              const memberSec = document.getElementById('team-section-members');
+              if (memberSec) memberSec.prepend(notice);
+            }
+          } else if (existingNotice) {
+            existingNotice.remove();
+          }
+
           let html = '';
           members.forEach(m => {
             const isCaller = !!(currentUser && (
@@ -525,6 +564,14 @@
           }
 
           tbody.innerHTML = html;
+        } else if (res.status === 403 || res.status === 404) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" style="padding: 32px 16px; text-align: center; color: #fca5a5; font-size: 12px; font-family: var(--mono);">
+                ⚠️ You are not a member of this workspace.
+              </td>
+            </tr>
+          `;
         }
       } catch (e) {
         console.warn('Failed to load members from server:', e);
@@ -663,6 +710,7 @@
           showToast(`Role updated to ${newRole}`, 'success');
           loadMembers();
           loadActivity();
+          broadcastTeamSync();
         } else {
           showToast(data.message || 'Error updating role', 'error');
           loadMembers();
@@ -688,6 +736,7 @@
           showToast(`${name} removed from team`, 'info');
           loadMembers();
           loadActivity();
+          broadcastTeamSync();
         } else {
           showToast(data.message || 'Cannot remove member', 'error');
         }
@@ -705,6 +754,7 @@
         if (res.ok) {
           showToast('Invitation revoked', 'info');
           loadMembers();
+          broadcastTeamSync();
         } else {
           const data = await res.json().catch(() => ({}));
           showToast(data.message || 'Failed to revoke invite', 'error');
@@ -889,6 +939,7 @@
           }
           loadMembers();
           loadActivity();
+          broadcastTeamSync();
         } else {
           showToast(data.message || 'Failed to send invite', 'error');
           if (btn) {
@@ -976,6 +1027,7 @@
         if (res.ok) {
           showToast('Team policies updated successfully', 'success');
           loadActivity();
+          broadcastTeamSync();
         } else {
           const data = await res.json();
           showToast(data.message || 'Failed to update policies', 'error');
@@ -1071,6 +1123,7 @@
           closeCollectionModal();
           loadCollections();
           loadActivity();
+          broadcastTeamSync();
         } else {
           showToast(data.message || 'Failed to create collection', 'error');
         }
@@ -1094,6 +1147,7 @@
           showToast(`Collection '${name}' deleted`, 'info');
           loadCollections();
           loadActivity();
+          broadcastTeamSync();
         } else {
           showToast(data.message || 'Failed to delete collection', 'error');
         }
@@ -1318,6 +1372,7 @@
           renderSnippetsInModal();
           loadCollections();
           loadActivity();
+          broadcastTeamSync();
         } else {
           const data = await res.json().catch(() => ({}));
           showToast(data.message || data.error || 'Failed to add snippet to collection', 'error');
@@ -1354,6 +1409,7 @@
           renderSnippetsInModal();
           loadCollections();
           loadActivity();
+          broadcastTeamSync();
         } else {
           const data = await res.json().catch(() => ({}));
           showToast(data.message || data.error || 'Failed to remove snippet', 'error');
@@ -1409,6 +1465,7 @@
 
       if (successCount > 0) {
         showToast(`Added ${successCount} snippet(s) to ${currentTargetCollectionName}!`, 'success');
+        broadcastTeamSync();
       } else if (lastErrMsg) {
         showToast(lastErrMsg, 'error');
       }
@@ -1423,13 +1480,53 @@
     loadMembers();
     loadActivity();
 
-    // PRD §2.3.8: Poll activity feed every 30 seconds
-    setInterval(() => {
+    // Listen to storage sync events across tabs
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'pluck_team_sync_ping') {
+        loadTeamData();
+        loadMembers();
+        loadCollections();
+        const activitySection = document.getElementById('team-section-activity');
+        if (activitySection && activitySection.style.display !== 'none') {
+          loadActivity();
+        }
+      }
+    });
+
+    // Auto-sync whenever user focuses or returns to this tab/window
+    window.addEventListener('focus', () => {
+      loadTeamData();
+      loadMembers();
+      loadCollections();
       const activitySection = document.getElementById('team-section-activity');
       if (activitySection && activitySection.style.display !== 'none') {
         loadActivity();
       }
-    }, 30000);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        loadTeamData();
+        loadMembers();
+        loadCollections();
+        const activitySection = document.getElementById('team-section-activity');
+        if (activitySection && activitySection.style.display !== 'none') {
+          loadActivity();
+        }
+      }
+    });
+
+    // Fast polling: auto-refresh members, team data & activity every 4 seconds when visible
+    setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadMembers();
+        loadTeamData();
+        const activitySection = document.getElementById('team-section-activity');
+        if (activitySection && activitySection.style.display !== 'none') {
+          loadActivity();
+        }
+      }
+    }, 4000);
   </script>
 
   <!-- Create Collection Modal -->

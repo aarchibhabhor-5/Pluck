@@ -1026,10 +1026,10 @@ const WALKTHROUGH_STEPS = {
   },
   4: {
     badge: 'STEP 4 OF 4',
-    title: 'Connect AI Coding Assistants (Claude / Cursor MCP)',
-    desc: 'Generate Personal Access Tokens (PAT) in Settings. Pluck provides ready-to-paste Model Context Protocol (MCP) JSON configurations for Claude Desktop and Cursor, so your AI pair-programmer retrieves your verified snippets instead of hallucinating outdated code.',
-    link: 'settings.html?tab=climcp',
-    linkText: 'View MCP Configuration →',
+    title: 'Developer Preferences & Profile Settings',
+    desc: 'Customize default package managers, editor keymaps, and account credentials directly from Settings to tailor Pluck to your development workflow.',
+    link: 'settings.html?tab=account',
+    linkText: 'View Settings Profile →',
     progress: 100,
     time: '02:10 / 02:10'
   }

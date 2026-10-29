@@ -31,22 +31,24 @@ public class UserController {
         this.authService = authService;
     }
 
-    private User resolveCaller(String authHeader, String xUserId) {
-        return authService.resolveCaller(authHeader, xUserId);
+    private User resolveCaller(String authHeader, String xUserId, String xUserEmail) {
+        return authService.resolveCaller(authHeader, xUserId, xUserEmail);
     }
 
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
-        User user = resolveCaller(authHeader, xUserId);
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
+        User user = resolveCaller(authHeader, xUserId, xUserEmail);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
         }
 
         Map<String, Object> safe = new HashMap<>();
         safe.put("id", user.getId());
-        safe.put("name", user.getName());
+        safe.put("name", user.getName() != null ? user.getName() : user.getUsername());
+        safe.put("username", user.getUsername());
         safe.put("email", user.getEmail());
         safe.put("avatar", user.getAvatar());
         safe.put("role", user.getRole());
@@ -59,9 +61,10 @@ public class UserController {
     public ResponseEntity<?> updateProfile(
             @RequestBody Map<String, String> body,
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestHeader(value = "X-User-Id", required = false) String xUserId
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User user = resolveCaller(authHeader, xUserId);
+        User user = resolveCaller(authHeader, xUserId, xUserEmail);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
         }
@@ -77,7 +80,8 @@ public class UserController {
 
         Map<String, Object> safe = new HashMap<>();
         safe.put("id", saved.getId());
-        safe.put("name", saved.getName());
+        safe.put("name", saved.getName() != null ? saved.getName() : saved.getUsername());
+        safe.put("username", saved.getUsername());
         safe.put("email", saved.getEmail());
         safe.put("avatar", saved.getAvatar());
         safe.put("role", saved.getRole());
@@ -89,8 +93,9 @@ public class UserController {
     @GetMapping("/preferences")
     public ResponseEntity<?> getPreferences(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
-        User user = resolveCaller(authHeader, xUserId);
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
+        User user = resolveCaller(authHeader, xUserId, xUserEmail);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
         }
@@ -107,9 +112,10 @@ public class UserController {
     public ResponseEntity<?> savePreferences(
             @RequestBody Map<String, String> body,
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestHeader(value = "X-User-Id", required = false) String xUserId
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User user = resolveCaller(authHeader, xUserId);
+        User user = resolveCaller(authHeader, xUserId, xUserEmail);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
         }
@@ -135,8 +141,9 @@ public class UserController {
     public ResponseEntity<?> patchPreferences(
             @RequestBody Map<String, String> body,
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @RequestHeader(value = "X-User-Id", required = false) String xUserId
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        return savePreferences(body, authHeader, xUserId);
+        return savePreferences(body, authHeader, xUserId, xUserEmail);
     }
 }
