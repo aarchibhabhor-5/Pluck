@@ -554,7 +554,12 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 
       let snip = null;
       try {
-        const res = await fetch(`/api/snippets/${encodeURIComponent(snipId)}`);
+        const token = localStorage.getItem('pluck_token');
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (cachedUser && cachedUser.id) headers['X-User-Id'] = cachedUser.id;
+        const res = await fetch(`/api/snippets/${encodeURIComponent(snipId)}`, { headers });
         if (res.ok) snip = await res.json();
       } catch (e) { }
 
@@ -585,6 +590,28 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
         document.querySelectorAll('a[href^="share.html"]').forEach(a => {
           a.href = `share.html?id=${encodeURIComponent(snip.id || snip.slug)}`;
         });
+
+        // If team snippet, check Viewer permissions
+        if (snip.visibility === 'team') {
+          const authHeaders = {};
+          if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+          if (cachedUser && cachedUser.id) authHeaders['X-User-Id'] = cachedUser.id;
+          if (cachedUser && cachedUser.email) authHeaders['X-User-Email'] = cachedUser.email;
+
+          fetch(`/api/teams/${encodeURIComponent(snip.teamId || 'acme-core-eng')}`, { headers: authHeaders })
+            .then(r => r.json())
+            .then(tData => {
+              const role = tData.role ? tData.role.toLowerCase() : '';
+              if (tData.canEditSnippets === false || role === 'viewer') {
+                const delBtn = document.querySelector('button[onclick="deleteCurrentSnippet()"]');
+                if (delBtn) delBtn.style.display = 'none';
+                document.querySelectorAll('a[href^="studio.html"]').forEach(a => {
+                  a.textContent = '🔍 View in Studio';
+                });
+              }
+            })
+            .catch(() => {});
+        }
       }
       initVersionHistory();
       loadAISummaryDetails();
@@ -603,15 +630,26 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 
       try {
         const token = localStorage.getItem('pluck_token');
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (cachedUser && cachedUser.id) headers['X-User-Id'] = cachedUser.id;
+        if (cachedUser && cachedUser.email) headers['X-User-Email'] = cachedUser.email;
 
-        await fetch(`/api/snippets/${encodeURIComponent(id)}`, {
+        const res = await fetch(`/api/snippets/${encodeURIComponent(id)}`, {
           method: 'DELETE',
           headers: headers
         });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          alert(errData.message || 'Failed to delete snippet: Permission denied.');
+          return;
+        }
       } catch (e) {
         console.warn('Backend delete error:', e);
+        alert('Network error deleting snippet.');
+        return;
       }
 
       // Purge from local cache

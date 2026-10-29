@@ -2,8 +2,10 @@ package dev.pluck.backend.controller;
 
 import dev.pluck.backend.model.Folder;
 import dev.pluck.backend.model.Snippet;
+import dev.pluck.backend.model.User;
 import dev.pluck.backend.repository.FolderRepository;
 import dev.pluck.backend.repository.SnippetRepository;
+import dev.pluck.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +19,19 @@ public class FolderController {
 
     private final FolderRepository folderRepository;
     private final SnippetRepository snippetRepository;
+    private final AuthService authService;
 
     @Autowired
-    public FolderController(FolderRepository folderRepository, SnippetRepository snippetRepository) {
+    public FolderController(FolderRepository folderRepository, SnippetRepository snippetRepository, AuthService authService) {
         this.folderRepository = folderRepository;
         this.snippetRepository = snippetRepository;
+        this.authService = authService;
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getFolders() {
+    public ResponseEntity<Map<String, Object>> getFolders(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
         List<Folder> folders = folderRepository.findAll();
         if (folders.isEmpty()) {
             // Seed default folder categories if empty
@@ -38,10 +44,13 @@ public class FolderController {
             folderRepository.saveAll(folders);
         }
 
-        List<Snippet> allSnippets = snippetRepository.findAll();
+        User caller = authService.resolveCaller(authHeader, xUserId);
+        List<Snippet> accessibleSnippets = snippetRepository.findAll().stream()
+                .filter(s -> s.getUpdatedAt() != null && authService.canAccessSnippet(s, caller))
+                .toList();
         List<Folder> withCounts = new ArrayList<>();
         for (Folder f : folders) {
-            long count = allSnippets.stream().filter(s -> f.getId().equalsIgnoreCase(s.getFolderId())).count();
+            long count = accessibleSnippets.stream().filter(s -> f.getId().equalsIgnoreCase(s.getFolderId())).count();
             f.setCount((int) count);
             withCounts.add(f);
         }

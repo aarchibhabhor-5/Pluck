@@ -13,4 +13,6 @@ public interface SnippetRepository extends MongoRepository<Snippet, String> {
     List<Snippet> findByLanguageIgnoreCase(String language);
     List<Snippet> findByTagsContaining(String tag);
     List<Snippet> findByTitleContainingIgnoreCaseOrCodeContainingIgnoreCase(String title, String code);
+    long countByTeamIdAndFolderId(String teamId, String folderId);
+    long countByTeamIdAndFolderNameIgnoreCase(String teamId, String folderName);
 }

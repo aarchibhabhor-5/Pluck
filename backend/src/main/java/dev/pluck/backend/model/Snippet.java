@@ -40,6 +40,7 @@ public class Snippet {
     private String forkedFromId;
     private String secretScanStatus = "clean";
     private String authorId;
+    private String teamId;
     private String createdAt;
     private String updatedAt;
 
@@ -147,6 +148,9 @@ public class Snippet {
 
     public String getAuthorId() { return authorId; }
     public void setAuthorId(String authorId) { this.authorId = authorId; }
+
+    public String getTeamId() { return teamId; }
+    public void setTeamId(String teamId) { this.teamId = teamId; }
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }

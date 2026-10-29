@@ -4,6 +4,7 @@ import dev.pluck.backend.model.User;
 import dev.pluck.backend.model.UserPreferences;
 import dev.pluck.backend.repository.UserPreferencesRepository;
 import dev.pluck.backend.repository.UserRepository;
+import dev.pluck.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,46 +22,27 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final UserPreferencesRepository userPreferencesRepository;
+    private final AuthService authService;
 
     @Autowired
-    public UserController(UserRepository userRepository, UserPreferencesRepository userPreferencesRepository) {
+    public UserController(UserRepository userRepository, UserPreferencesRepository userPreferencesRepository, AuthService authService) {
         this.userRepository = userRepository;
         this.userPreferencesRepository = userPreferencesRepository;
+        this.authService = authService;
     }
 
-    private User resolveCaller(String authHeader) {
-        String userId = AuthController.resolveUserId(authHeader);
-        if (userId != null) {
-            Optional<User> u = userRepository.findById(userId);
-            if (u.isPresent()) return u.get();
-        }
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
-            Optional<User> u = userRepository.findById(token);
-            if (u.isPresent()) return u.get();
-
-            Optional<User> byEmail = userRepository.findByEmail(token.toLowerCase());
-            if (byEmail.isPresent()) return byEmail.get();
-        }
-
-        List<User> users = userRepository.findAll();
-        for (User u : users) {
-            if (!"test_dev@pluck.dev".equalsIgnoreCase(u.getEmail())) {
-                return u;
-            }
-        }
-        if (!users.isEmpty()) {
-            return users.get(0);
-        }
-
-        User defaultUser = new User("usr_alex", "Alex Developer", "alex@pluck.dev", "A", "owner");
-        return userRepository.save(defaultUser);
+    private User resolveCaller(String authHeader, String xUserId) {
+        return authService.resolveCaller(authHeader, xUserId);
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        User user = resolveCaller(authHeader);
+    public ResponseEntity<?> getProfile(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
+        User user = resolveCaller(authHeader, xUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
+        }
 
         Map<String, Object> safe = new HashMap<>();
         safe.put("id", user.getId());
@@ -76,9 +58,13 @@ public class UserController {
     @PatchMapping("/profile")
     public ResponseEntity<?> updateProfile(
             @RequestBody Map<String, String> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId
     ) {
-        User user = resolveCaller(authHeader);
+        User user = resolveCaller(authHeader, xUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
+        }
 
         if (body.containsKey("name") && body.get("name") != null && !body.get("name").trim().isEmpty()) {
             user.setName(body.get("name").trim());
@@ -101,8 +87,13 @@ public class UserController {
     }
 
     @GetMapping("/preferences")
-    public ResponseEntity<?> getPreferences(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        User user = resolveCaller(authHeader);
+    public ResponseEntity<?> getPreferences(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
+        User user = resolveCaller(authHeader, xUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
+        }
         UserPreferences prefs = userPreferencesRepository.findByUserId(user.getId())
                 .orElseGet(() -> {
                     UserPreferences def = new UserPreferences(user.getId());
@@ -115,9 +106,13 @@ public class UserController {
     @PutMapping("/preferences")
     public ResponseEntity<?> savePreferences(
             @RequestBody Map<String, String> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId
     ) {
-        User user = resolveCaller(authHeader);
+        User user = resolveCaller(authHeader, xUserId);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "User session expired or invalid."));
+        }
         UserPreferences prefs = userPreferencesRepository.findByUserId(user.getId())
                 .orElseGet(() -> new UserPreferences(user.getId()));
 
@@ -139,8 +134,9 @@ public class UserController {
     @PatchMapping("/preferences")
     public ResponseEntity<?> patchPreferences(
             @RequestBody Map<String, String> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId
     ) {
-        return savePreferences(body, authHeader);
+        return savePreferences(body, authHeader, xUserId);
     }
 }

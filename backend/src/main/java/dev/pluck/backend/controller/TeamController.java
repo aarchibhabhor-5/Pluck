@@ -5,6 +5,7 @@ import dev.pluck.backend.repository.TeamInviteRepository;
 import dev.pluck.backend.repository.TeamRepository;
 import dev.pluck.backend.repository.UserRepository;
 import dev.pluck.backend.service.ActivityService;
+import dev.pluck.backend.service.AuthService;
 import dev.pluck.backend.service.EmailService;
 import dev.pluck.backend.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import dev.pluck.backend.model.Snippet;
+import dev.pluck.backend.repository.SnippetRepository;
 import java.util.*;
 
 @RestController
@@ -28,6 +31,8 @@ public class TeamController {
     private final PermissionService permissionService;
     private final ActivityService activityService;
     private final EmailService emailService;
+    private final AuthService authService;
+    private final SnippetRepository snippetRepository;
 
     @Autowired
     public TeamController(
@@ -36,7 +41,9 @@ public class TeamController {
             UserRepository userRepository,
             PermissionService permissionService,
             ActivityService activityService,
-            EmailService emailService
+            EmailService emailService,
+            AuthService authService,
+            SnippetRepository snippetRepository
     ) {
         this.teamRepository = teamRepository;
         this.teamInviteRepository = teamInviteRepository;
@@ -44,6 +51,8 @@ public class TeamController {
         this.permissionService = permissionService;
         this.activityService = activityService;
         this.emailService = emailService;
+        this.authService = authService;
+        this.snippetRepository = snippetRepository;
     }
 
     /**
@@ -64,32 +73,26 @@ public class TeamController {
     }
 
     /**
-     * Resolve calling user from Bearer header or fallback to default user (dev mode)
+     * Resolve calling user from Bearer header or fallback
      */
-    private User resolveCaller(String authHeader) {
+    private User resolveCaller(String authHeader, String xUserId, String xUserEmail) {
+        User u = authService.resolveCaller(authHeader, xUserId, xUserEmail);
+        if (u != null) return u;
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7).trim();
-            Optional<User> u = userRepository.findById(token);
-            if (u.isPresent()) return u.get();
+            Optional<User> byId = userRepository.findById(token);
+            if (byId.isPresent()) return byId.get();
 
             Optional<User> byEmail = userRepository.findByEmail(token.toLowerCase());
             if (byEmail.isPresent()) return byEmail.get();
         }
 
-        // Return real user in the database (skip any test users)
-        List<User> users = userRepository.findAll();
-        for (User u : users) {
-            if (!"test_dev@pluck.dev".equalsIgnoreCase(u.getEmail()) && !"alex@pluck.dev".equalsIgnoreCase(u.getEmail())) {
-                return u;
-            }
-        }
-        if (!users.isEmpty()) {
-            return users.get(0);
-        }
+        return null;
+    }
 
-        // Create default Alex Developer user if database is empty
-        User defaultUser = new User("usr_alex", "Alex Developer", "alex@pluck.dev", "A", "owner");
-        return userRepository.save(defaultUser);
+    private User resolveCaller(String authHeader) {
+        return resolveCaller(authHeader, null, null);
     }
 
     /**
@@ -101,26 +104,21 @@ public class TeamController {
             return teams.get(0);
         }
 
-        Team team = new Team("acme-core-eng", "Acme Core Eng", "acme-core-eng", caller.getId());
+        String ownerId = (caller != null && caller.getId() != null) ? caller.getId() : "usr_5f2c0b56";
+        String ownerName = (caller != null && caller.getName() != null) ? caller.getName() : "aarchibhabhor5";
+        String ownerEmail = (caller != null && caller.getEmail() != null) ? caller.getEmail() : "aarchibhabhor5@gmail.com";
+
+        Team team = new Team("acme-core-eng", "Acme Core Eng", "acme-core-eng", ownerId);
         team.setEditorsCanPublish(false);
 
         List<TeamMember> members = new ArrayList<>();
-        members.add(new TeamMember(caller.getId(), caller.getName(), caller.getEmail(), "Admin", true));
+        members.add(new TeamMember(ownerId, ownerName, ownerEmail, "Admin", true));
         team.setMembers(members);
 
         List<Map<String, Object>> collections = new ArrayList<>();
-        collections.add(Map.of("id", "col_auth", "name", "auth-middleware", "emoji", "🔐", "desc", "JWT verification, RBAC guards, and session decryptors.", "count", 8));
-        collections.add(Map.of("id", "col_aws", "name", "aws-infrastructure", "emoji", "☁️", "desc", "Boto3 client setups, DynamoDB pagination, and S3 uploaders.", "count", 12));
-        collections.add(Map.of("id", "col_prisma", "name", "prisma-extensions", "emoji", "🗄️", "desc", "Soft delete, audit logging triggers, and read-replica routers.", "count", 5));
         team.setCollections(collections);
 
         Team saved = teamRepository.save(team);
-
-        // Seed initial activity events
-        activityService.recordSnippetAction(saved.getId(), new User("usr_sarah", "Sarah Jenkins", "sarah@company.com", "S", "member"), "updated", "snip_auth", "auth-middleware (v1.3)");
-        activityService.recordSnippetAction(saved.getId(), caller, "created", "snip_rate", "redis-ratelimit");
-        activityService.record(saved.getId(), "usr_leo", "Leo Chen", "snippet.copied", "snip_s3", "s3-presigned-upload", "Leo Chen copied s3-presigned-upload via CLI", "pink", Map.of("client", "CLI"));
-
         return saved;
     }
 
@@ -128,9 +126,19 @@ public class TeamController {
      * 1. GET /api/teams — List all team workspaces caller belongs to
      */
     @GetMapping
-    public ResponseEntity<?> listTeams(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        User caller = resolveCaller(authHeader);
+    public ResponseEntity<?> listTeams(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
+    ) {
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.ok(Map.of("teams", Collections.emptyList()));
+        }
         List<Team> teams = teamRepository.findByMemberUserId(caller.getId());
+        if (teams.isEmpty() && caller.getEmail() != null) {
+            teams = teamRepository.findByMemberEmail(caller.getEmail());
+        }
         if (teams.isEmpty()) {
             Team def = getOrCreateDefaultTeam(caller);
             teams = List.of(def);
@@ -144,9 +152,14 @@ public class TeamController {
     @PostMapping
     public ResponseEntity<?> createTeam(
             @RequestBody Map<String, Object> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
         String name = (String) body.get("name");
         if (name == null || name.trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "NAME_REQUIRED", "message", "Team name is required."));
@@ -182,9 +195,11 @@ public class TeamController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getTeam(
             @PathVariable String id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
@@ -194,28 +209,27 @@ public class TeamController {
         }
 
         // PRD §2.4.6 Invariant: Cross-workspace reads return 404 (not 403) to avoid existence leaks
-        TeamMember member = permissionService.getMember(team, caller);
-        if (member == null && !caller.getId().equals(team.getOwnerUserId())) {
-            // For dev ease, add caller as Admin if team is default demo
-            if ("acme-core-eng".equals(team.getId())) {
-                member = new TeamMember(caller.getId(), caller.getName(), caller.getEmail(), "Admin", true);
-                team.getMembers().add(0, member);
-                teamRepository.save(team);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND", "message", "Workspace not found."));
-            }
+        TeamMember member = (caller != null) ? permissionService.getMember(team, caller) : null;
+        if (member == null && (caller == null || !caller.getId().equals(team.getOwnerUserId()))) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND", "message", "Workspace not found."));
         }
 
-        String role = member != null ? member.getRole() : "Viewer";
+        String role = (caller != null && caller.getId().equals(team.getOwnerUserId())) ? "Admin" : (member != null ? member.getRole() : "Viewer");
         team.setRole(role);
 
         Map<String, Object> res = new HashMap<>();
         res.put("team", team);
         res.put("role", role);
-        res.put("canManageSettings", permissionService.can(team, caller, PermissionService.Action.MANAGE_SETTINGS));
-        res.put("canManageMembers", permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS));
-        res.put("canPublish", permissionService.can(team, caller, PermissionService.Action.PUBLISH_SNIPPET));
+        res.put("canManageSettings", caller != null && permissionService.can(team, caller, PermissionService.Action.MANAGE_SETTINGS));
+        res.put("canManageMembers", caller != null && permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS));
+        res.put("canPublish", caller != null && permissionService.can(team, caller, PermissionService.Action.PUBLISH_SNIPPET));
+        res.put("canEditSnippets", caller != null && permissionService.can(team, caller, PermissionService.Action.EDIT_SNIPPET));
+        res.put("canCreateSnippets", caller != null && permissionService.can(team, caller, PermissionService.Action.CREATE_SNIPPET));
         return ResponseEntity.ok(res);
+    }
+
+    public ResponseEntity<?> getTeam(String id, String authHeader) {
+        return getTeam(id, authHeader, null, null);
     }
 
     /**
@@ -225,9 +239,14 @@ public class TeamController {
     public ResponseEntity<?> updateTeam(
             @PathVariable String id,
             @RequestBody Map<String, Object> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
@@ -268,9 +287,14 @@ public class TeamController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTeam(
             @PathVariable String id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
@@ -295,26 +319,85 @@ public class TeamController {
     @GetMapping("/{id}/members")
     public ResponseEntity<?> getMembers(
             @PathVariable String id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElseGet(() -> getOrCreateDefaultTeam(caller));
 
         List<TeamMember> members = team.getMembers();
-        List<TeamInvite> pendingInvites = new ArrayList<>();
+        if (members == null) {
+            members = new ArrayList<>();
+            team.setMembers(members);
+        }
 
-        // Pending invites are visible to Admins
-        if (permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS)) {
-            pendingInvites = teamInviteRepository.findByTeamIdAndAcceptedAtIsNull(team.getId());
+        // Auto-sync member userId & name from registered User repository
+        boolean teamMembersUpdated = false;
+        for (TeamMember m : members) {
+            if (m.getEmail() != null) {
+                Optional<User> uOpt = userRepository.findByEmail(m.getEmail().toLowerCase());
+                if (uOpt.isPresent()) {
+                    User regUser = uOpt.get();
+                    if (!regUser.getId().equals(m.getUserId())) {
+                        m.setUserId(regUser.getId());
+                        teamMembersUpdated = true;
+                    }
+                    if (regUser.getName() != null && !regUser.getName().equals(m.getName())) {
+                        m.setName(regUser.getName());
+                        teamMembersUpdated = true;
+                    }
+                }
+            }
+        }
+        if (teamMembersUpdated) {
+            teamRepository.save(team);
+        }
+
+        List<TeamInvite> pendingInvites = new ArrayList<>();
+        // Pending invites are visible ONLY to Admins
+        if (caller != null && permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS)) {
+            List<TeamInvite> allInvites = teamInviteRepository.findByTeamIdAndAcceptedAtIsNull(team.getId());
+            Set<String> memberEmails = new HashSet<>();
+            for (TeamMember m : members) {
+                if (m.getEmail() != null) {
+                    memberEmails.add(m.getEmail().trim().toLowerCase());
+                }
+            }
+            for (TeamInvite inv : allInvites) {
+                if (inv.getEmail() != null && memberEmails.contains(inv.getEmail().trim().toLowerCase())) {
+                    inv.setAcceptedAt(Instant.now().toString());
+                    teamInviteRepository.save(inv);
+                } else {
+                    pendingInvites.add(inv);
+                }
+            }
+        }
+
+        String callerRole = "Viewer";
+        if (caller != null) {
+            if (caller.getId().equals(team.getOwnerUserId())) {
+                callerRole = "Admin";
+            } else {
+                TeamMember callerMember = permissionService.getMember(team, caller);
+                if (callerMember != null && callerMember.getRole() != null) {
+                    callerRole = callerMember.getRole();
+                }
+            }
         }
 
         return ResponseEntity.ok(Map.of(
                 "members", members,
                 "pendingInvites", pendingInvites,
-                "totalMembers", members.size()
+                "totalMembers", members.size(),
+                "callerRole", callerRole
         ));
+    }
+
+    public ResponseEntity<?> getMembers(String id, String authHeader) {
+        return getMembers(id, authHeader, null, null);
     }
 
     /**
@@ -324,12 +407,18 @@ public class TeamController {
     public ResponseEntity<?> inviteMember(
             @PathVariable String id,
             @RequestBody Map<String, String> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElseGet(() -> getOrCreateDefaultTeam(caller));
+
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
 
         if (!permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "FORBIDDEN", "message", "Only Team Admins can invite new members."));
@@ -344,7 +433,7 @@ public class TeamController {
 
         // Check if user is already a member
         for (TeamMember m : team.getMembers()) {
-            if (email.equalsIgnoreCase(m.getEmail())) {
+            if (email.trim().equalsIgnoreCase(m.getEmail())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "ALREADY_MEMBER", "message", email + " is already a member of this team."));
             }
         }
@@ -356,8 +445,18 @@ public class TeamController {
         TeamInvite invite = new TeamInvite(team.getId(), email.trim(), role, tokenHash, caller.getId(), caller.getName());
         TeamInvite saved = teamInviteRepository.save(invite);
 
-        // Also add preview member to team for immediate display
-        TeamMember newMember = new TeamMember("usr_" + UUID.randomUUID().toString().substring(0, 6), email.split("@")[0], email, role, false);
+        // If an existing registered user has this email, use their real ID and name
+        String memberUserId = "usr_" + UUID.randomUUID().toString().substring(0, 6);
+        String memberName = email.split("@")[0];
+        Optional<User> existingUser = userRepository.findByEmail(email.trim().toLowerCase());
+        if (existingUser.isPresent()) {
+            memberUserId = existingUser.get().getId();
+            if (existingUser.get().getName() != null) {
+                memberName = existingUser.get().getName();
+            }
+        }
+
+        TeamMember newMember = new TeamMember(memberUserId, memberName, email.trim(), role, false);
         team.getMembers().add(newMember);
         teamRepository.save(team);
 
@@ -390,14 +489,20 @@ public class TeamController {
     public ResponseEntity<?> revokeInvite(
             @PathVariable String id,
             @PathVariable String inviteId,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
 
         if (team == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
 
         if (!permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "FORBIDDEN", "message", "Only Team Admins can revoke invites."));
@@ -418,9 +523,11 @@ public class TeamController {
     @PostMapping("/invites/accept")
     public ResponseEntity<?> acceptInvite(
             @RequestBody Map<String, String> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         String token = body.get("token");
         if (token == null || token.trim().isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "TOKEN_REQUIRED", "message", "Invite token is required."));
@@ -444,11 +551,13 @@ public class TeamController {
         }
 
         // Add user as member if not already present
-        boolean alreadyIn = team.getMembers().stream().anyMatch(m -> caller.getId().equals(m.getUserId()) || caller.getEmail().equalsIgnoreCase(m.getEmail()));
-        if (!alreadyIn) {
-            TeamMember newMember = new TeamMember(caller.getId(), caller.getName(), caller.getEmail(), invite.getRole(), false);
-            team.getMembers().add(newMember);
-            teamRepository.save(team);
+        if (caller != null) {
+            boolean alreadyIn = team.getMembers().stream().anyMatch(m -> caller.getId().equals(m.getUserId()) || caller.getEmail().equalsIgnoreCase(m.getEmail()));
+            if (!alreadyIn) {
+                TeamMember newMember = new TeamMember(caller.getId(), caller.getName(), caller.getEmail(), invite.getRole(), false);
+                team.getMembers().add(newMember);
+                teamRepository.save(team);
+            }
         }
 
         invite.setAcceptedAt(Instant.now().toString());
@@ -467,14 +576,20 @@ public class TeamController {
             @PathVariable String id,
             @PathVariable String userId,
             @RequestBody Map<String, String> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
 
         if (team == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
 
         if (!permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "FORBIDDEN", "message", "Only Team Admins can change member roles."));
@@ -516,14 +631,20 @@ public class TeamController {
     public ResponseEntity<?> removeMember(
             @PathVariable String id,
             @PathVariable String userId,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
 
         if (team == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
 
         boolean isSelfLeave = userId.equals(caller.getId());
         if (!isSelfLeave && !permissionService.can(team, caller, PermissionService.Action.MANAGE_MEMBERS)) {
@@ -533,6 +654,10 @@ public class TeamController {
         TeamMember target = permissionService.getMember(team, userId);
         if (target == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "MEMBER_NOT_FOUND"));
+        }
+
+        if (target.isOwner()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "CANNOT_REMOVE_OWNER", "message", "The workspace owner cannot be removed."));
         }
 
         // PRD Invariant: Last Admin cannot leave or be removed (§2.4.6)
@@ -557,15 +682,81 @@ public class TeamController {
     @GetMapping("/{id}/activity")
     public ResponseEntity<?> getActivity(
             @PathVariable String id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User resolvedCaller = authService.resolveCaller(authHeader, xUserId, xUserEmail);
+        if (resolvedCaller == null) {
+            resolvedCaller = resolveCaller(authHeader, xUserId, xUserEmail);
+        }
+        final User caller = resolvedCaller;
+
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElseGet(() -> getOrCreateDefaultTeam(caller));
 
         List<ActivityEvent> events = activityService.getTeamActivity(team.getId());
-        return ResponseEntity.ok(Map.of("activity", events));
+
+        final User activeCaller = caller;
+        boolean isMember = (activeCaller != null) && (
+                activeCaller.getId().equals(team.getOwnerUserId()) ||
+                (team.getMembers() != null && team.getMembers().stream().anyMatch(m ->
+                        activeCaller.getId().equals(m.getUserId()) ||
+                        (activeCaller.getEmail() != null && activeCaller.getEmail().equalsIgnoreCase(m.getEmail()))
+                ))
+        );
+
+        List<ActivityEvent> filtered = events.stream().filter(ev -> {
+            // Exclude test bot artifacts
+            if ("usr_da3b7c0e".equals(ev.getActorId()) || (ev.getActorName() != null && ev.getActorName().contains("test_dev"))) {
+                return false;
+            }
+            if ("usr_leo".equals(ev.getActorId()) || "usr_sarah".equals(ev.getActorId())) {
+                return false;
+            }
+
+            // 1. Changes made by the logged-in user themselves
+            if (activeCaller != null && (
+                    activeCaller.getId().equals(ev.getActorId()) ||
+                    (activeCaller.getName() != null && activeCaller.getName().equalsIgnoreCase(ev.getActorName())) ||
+                    (activeCaller.getEmail() != null && activeCaller.getEmail().equalsIgnoreCase(ev.getActorName()))
+            )) {
+                return true;
+            }
+
+            // 2. Snippet-related events
+            if (ev.getSnippetId() != null) {
+                Optional<Snippet> snipOpt = snippetRepository.findById(ev.getSnippetId())
+                        .or(() -> snippetRepository.findBySlug(ev.getSnippetId()));
+                if (snipOpt.isPresent()) {
+                    Snippet s = snipOpt.get();
+                    if ("public".equalsIgnoreCase(s.getVisibility())) {
+                        return true;
+                    }
+                    if ("team".equalsIgnoreCase(s.getVisibility()) && isMember) {
+                        return true;
+                    }
+                    // Private snippet belonging to another user must NEVER be visible
+                    return false;
+                }
+            }
+
+            // 3. Workspace-level actions for teams the user belongs to (members, collections, policies)
+            if (isMember && team.getId().equals(ev.getTeamId())) {
+                if (ev.getSnippetId() == null) {
+                    return true;
+                }
+            }
+
+            return false;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(Map.of("activity", filtered));
+    }
+
+    public ResponseEntity<?> getActivity(String id, String authHeader, String xUserId) {
+        return getActivity(id, authHeader, xUserId, null);
     }
 
     /**
@@ -574,17 +765,54 @@ public class TeamController {
     @GetMapping("/{id}/collections")
     public ResponseEntity<?> getCollections(
             @PathVariable String id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElseGet(() -> getOrCreateDefaultTeam(caller));
 
         List<Map<String, Object>> collections = team.getCollections();
         if (collections == null) collections = new ArrayList<>();
+        else collections = new ArrayList<>(collections);
 
-        return ResponseEntity.ok(Map.of("success", true, "collections", collections));
+        // Auto-purge hardcoded legacy mock data
+        boolean changed = collections.removeIf(c -> 
+            "col_auth".equals(c.get("id")) || 
+            "col_aws".equals(c.get("id")) || 
+            "col_prisma".equals(c.get("id")) ||
+            "auth-middleware".equals(c.get("name")) ||
+            "aws-infrastructure".equals(c.get("name")) ||
+            "prisma-extensions".equals(c.get("name"))
+        );
+        if (changed) {
+            team.setCollections(collections);
+            teamRepository.save(team);
+        }
+
+        // Dynamically compute real snippet count for each collection
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> c : collections) {
+            Map<String, Object> copy = new HashMap<>(c);
+            String colId = (String) c.get("id");
+            String colName = (String) c.get("name");
+            long cnt = 0;
+            if (colId != null) {
+                cnt = snippetRepository.countByTeamIdAndFolderId(team.getId(), colId);
+            }
+            if (cnt == 0 && colName != null) {
+                cnt = snippetRepository.countByTeamIdAndFolderNameIgnoreCase(team.getId(), colName);
+            }
+            if (cnt == 0 && colName != null) {
+                cnt = snippetRepository.countByTeamIdAndFolderId(team.getId(), colName);
+            }
+            copy.put("count", cnt);
+            result.add(copy);
+        }
+
+        return ResponseEntity.ok(Map.of("success", true, "collections", result));
     }
 
     /**
@@ -594,9 +822,14 @@ public class TeamController {
     public ResponseEntity<?> createCollection(
             @PathVariable String id,
             @RequestBody Map<String, Object> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElseGet(() -> getOrCreateDefaultTeam(caller));
@@ -653,9 +886,14 @@ public class TeamController {
             @PathVariable String id,
             @PathVariable String colId,
             @RequestBody Map<String, Object> body,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);
@@ -701,9 +939,14 @@ public class TeamController {
     public ResponseEntity<?> deleteCollection(
             @PathVariable String id,
             @PathVariable String colId,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail
     ) {
-        User caller = resolveCaller(authHeader);
+        User caller = resolveCaller(authHeader, xUserId, xUserEmail);
+        if (caller == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required."));
+        }
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
                 .orElse(null);

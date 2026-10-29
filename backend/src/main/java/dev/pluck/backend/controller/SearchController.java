@@ -1,7 +1,9 @@
 package dev.pluck.backend.controller;
 
 import dev.pluck.backend.model.Snippet;
+import dev.pluck.backend.model.User;
 import dev.pluck.backend.repository.SnippetRepository;
+import dev.pluck.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,28 +15,39 @@ import java.util.*;
 public class SearchController {
 
     private final SnippetRepository snippetRepository;
+    private final AuthService authService;
 
     @Autowired
-    public SearchController(SnippetRepository snippetRepository) {
+    public SearchController(SnippetRepository snippetRepository, AuthService authService) {
         this.snippetRepository = snippetRepository;
+        this.authService = authService;
     }
 
     // Support both GET (legacy) and POST (PRD §2.6.2)
     @GetMapping
-    public ResponseEntity<Map<String, Object>> searchGet(@RequestParam(required = false, defaultValue = "") String q) {
-        return performSearch(q, null, null);
+    public ResponseEntity<Map<String, Object>> searchGet(
+            @RequestParam(required = false, defaultValue = "") String q,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
+        User caller = authService.resolveCaller(authHeader, xUserId);
+        return performSearch(q, null, null, caller);
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> searchPost(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> searchPost(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
         String query = (String) body.getOrDefault("query", "");
         String language = (String) body.getOrDefault("language", null);
         String pkg = (String) body.getOrDefault("package", null);
-        return performSearch(query, language, pkg);
+        User caller = authService.resolveCaller(authHeader, xUserId);
+        return performSearch(query, language, pkg, caller);
     }
 
-    private ResponseEntity<Map<String, Object>> performSearch(String q, String langFilter, String pkgFilter) {
+    private ResponseEntity<Map<String, Object>> performSearch(String q, String langFilter, String pkgFilter, User caller) {
         List<Snippet> all = snippetRepository.findAll();
+        all = all.stream().filter(s -> s.getUpdatedAt() != null && authService.canAccessSnippet(s, caller)).toList();
         long startTime = System.currentTimeMillis();
         String query = q != null ? q.toLowerCase().trim() : "";
 

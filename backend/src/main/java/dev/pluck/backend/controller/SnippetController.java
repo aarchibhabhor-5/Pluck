@@ -1,7 +1,15 @@
 package dev.pluck.backend.controller;
 
 import dev.pluck.backend.model.Snippet;
+import dev.pluck.backend.model.User;
+import dev.pluck.backend.model.Team;
 import dev.pluck.backend.repository.SnippetRepository;
+import dev.pluck.backend.repository.TeamRepository;
+import dev.pluck.backend.repository.UserRepository;
+import dev.pluck.backend.service.ActivityService;
+import dev.pluck.backend.service.AuthService;
+import dev.pluck.backend.service.PermissionService;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,22 +25,114 @@ import java.util.regex.Pattern;
 public class SnippetController {
 
     private final SnippetRepository snippetRepository;
+    private final AuthService authService;
+    private final TeamRepository teamRepository;
+    private final UserRepository userRepository;
+    private final PermissionService permissionService;
+    private final ActivityService activityService;
 
     @Autowired
-    public SnippetController(SnippetRepository snippetRepository) {
+    public SnippetController(
+            SnippetRepository snippetRepository,
+            AuthService authService,
+            TeamRepository teamRepository,
+            UserRepository userRepository,
+            PermissionService permissionService,
+            ActivityService activityService
+    ) {
         this.snippetRepository = snippetRepository;
+        this.authService = authService;
+        this.teamRepository = teamRepository;
+        this.userRepository = userRepository;
+        this.permissionService = permissionService;
+        this.activityService = activityService;
+    }
+
+    private String resolveTeamIdForUser(User user) {
+        if (user != null) {
+            if (user.getId() != null) {
+                List<Team> teams = teamRepository.findByMemberUserId(user.getId());
+                if (!teams.isEmpty()) {
+                    return teams.get(0).getId();
+                }
+            }
+            if (user.getEmail() != null) {
+                List<Team> teams = teamRepository.findByMemberEmail(user.getEmail());
+                if (!teams.isEmpty()) {
+                    return teams.get(0).getId();
+                }
+            }
+        }
+        return "acme-core-eng";
+    }
+
+    private Team resolveTeam(String teamId, User user) {
+        if (teamId != null && !teamId.trim().isEmpty()) {
+            Optional<Team> t = teamRepository.findByIdAndDeletedAtIsNull(teamId.trim())
+                    .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(teamId.trim()));
+            if (t.isPresent()) return t.get();
+        }
+        String resolvedId = resolveTeamIdForUser(user);
+        if (resolvedId != null) {
+            Optional<Team> t = teamRepository.findByIdAndDeletedAtIsNull(resolvedId)
+                    .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(resolvedId));
+            if (t.isPresent()) return t.get();
+        }
+        return teamRepository.findById("acme-core-eng").orElse(null);
+    }
+
+    @PostConstruct
+    public void backfillLegacySnippets() {
+        try {
+            List<Snippet> all = snippetRepository.findAll();
+            Optional<User> primaryUser = userRepository.findById("usr_5f2c0b56")
+                    .or(() -> userRepository.findByEmail("aarchibhabhor5@gmail.com"));
+            String defaultAuthorId = primaryUser.isPresent() ? primaryUser.get().getId() : "usr_5f2c0b56";
+
+            boolean changed = false;
+            for (Snippet s : all) {
+                boolean snippetChanged = false;
+                if (s.getAuthorId() == null || s.getAuthorId().trim().isEmpty()) {
+                    s.setAuthorId(defaultAuthorId);
+                    snippetChanged = true;
+                }
+                if ("team".equalsIgnoreCase(s.getVisibility()) && (s.getTeamId() == null || s.getTeamId().trim().isEmpty())) {
+                    s.setTeamId("acme-core-eng");
+                    snippetChanged = true;
+                }
+                if (snippetChanged) {
+                    snippetRepository.save(s);
+                    changed = true;
+                }
+            }
+            if (changed) {
+                System.out.println("[Pluck] Backfilled legacy snippets with authorId and teamId.");
+            }
+        } catch (Exception e) {
+            System.err.println("[Pluck] Note during legacy backfill: " + e.getMessage());
+        }
     }
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllSnippets(
             @RequestParam(required = false) String folder,
             @RequestParam(required = false) String lang,
-            @RequestParam(required = false) String tag) {
+            @RequestParam(required = false) String tag,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
 
+        User caller = authService.resolveCaller(authHeader, xUserId, xUserEmail);
         List<Snippet> results = snippetRepository.findAll();
 
         // Filter out soft-deleted snippets
         results = results.stream().filter(s -> s.getUpdatedAt() != null).toList();
+
+        // Enforce visibility rules per user specifications:
+        // - private snippets: visible ONLY in that user's ID
+        // - team snippets: visible ONLY to members of that team
+        // - public snippets: visible to ALL
+        results = results.stream().filter(s -> authService.canAccessSnippet(s, caller)).toList();
 
         if (folder != null && !folder.equalsIgnoreCase("all")) {
             results = results.stream().filter(s -> folder.equalsIgnoreCase(s.getFolderId())).toList();
@@ -81,7 +181,11 @@ public class SnippetController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getSnippetById(@PathVariable String id) {
+    public ResponseEntity<?> getSnippetById(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
         Optional<Snippet> snippet = snippetRepository.findById(id);
         if (snippet.isEmpty()) {
             snippet = snippetRepository.findBySlug(id);
@@ -92,11 +196,26 @@ public class SnippetController {
             err.put("message", "Snippet '" + id + "' does not exist.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
         }
-        return ResponseEntity.ok(snippet.get());
+
+        Snippet s = snippet.get();
+        User caller = authService.resolveCaller(authHeader, xUserId, xUserEmail);
+        if (!authService.canAccessSnippet(s, caller)) {
+            Map<String, String> err = new HashMap<>();
+            err.put("error", "FORBIDDEN");
+            err.put("message", "You do not have permission to view this snippet.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(err);
+        }
+
+        return ResponseEntity.ok(s);
     }
 
     @PostMapping
-    public ResponseEntity<?> createSnippet(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> createSnippet(
+            @RequestBody Map<String, Object> payload,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
+        User caller = authService.resolveCaller(authHeader, xUserId, xUserEmail);
         String title = (String) payload.getOrDefault("title", "Untitled Snippet");
         String code = (String) payload.getOrDefault("code", "");
         String language = (String) payload.getOrDefault("language", "typescript");
@@ -117,6 +236,20 @@ public class SnippetController {
             err.put("error", "VALIDATION_FAILED");
             err.put("message", "Code exceeds maximum length of 100,000 characters.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+        }
+
+        // Permission check for creating team snippet (PRD §2.4.6)
+        if ("team".equalsIgnoreCase(visibility)) {
+            if (caller == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required to create snippets in a team workspace."));
+            }
+            String rawTeamId = payload.containsKey("teamId") && payload.get("teamId") != null ? String.valueOf(payload.get("teamId")).trim() : null;
+            Team team = resolveTeam(rawTeamId, caller);
+            if (team != null && !permissionService.can(team, caller, PermissionService.Action.CREATE_SNIPPET)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "FORBIDDEN", "message", "You do not have permission to create snippets in this team workspace. Viewers have read-only access."));
+            }
         }
 
         String slug = title.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
@@ -141,6 +274,24 @@ public class SnippetController {
         snippet.setFolderId(folderId);
         snippet.setFolderName(folderId);
         snippet.setVisibility(visibility);
+
+        if (caller != null) {
+            snippet.setAuthorId(caller.getId());
+        }
+
+        if (payload.containsKey("teamId") && payload.get("teamId") != null && !String.valueOf(payload.get("teamId")).trim().isEmpty()) {
+            snippet.setTeamId(String.valueOf(payload.get("teamId")).trim());
+        } else if ("team".equalsIgnoreCase(visibility) && caller != null) {
+            List<Team> teams = teamRepository.findByMemberUserId(caller.getId());
+            if (!teams.isEmpty()) {
+                snippet.setTeamId(teams.get(0).getId());
+            } else if (caller.getEmail() != null) {
+                List<Team> teamsByEmail = teamRepository.findByMemberEmail(caller.getEmail());
+                if (!teamsByEmail.isEmpty()) {
+                    snippet.setTeamId(teamsByEmail.get(0).getId());
+                }
+            }
+        }
 
         if (payload.containsKey("tags") && payload.get("tags") instanceof List) {
             snippet.setTags((List<String>) payload.get("tags"));
@@ -173,6 +324,17 @@ public class SnippetController {
 
         Snippet saved = snippetRepository.save(snippet);
 
+        // Audit logging (PRD §2.3.8, §2.6.2)
+        String teamId = saved.getTeamId();
+        if (teamId == null || teamId.trim().isEmpty()) {
+            teamId = resolveTeamIdForUser(caller);
+            if ("team".equalsIgnoreCase(saved.getVisibility())) {
+                saved.setTeamId(teamId);
+                saved = snippetRepository.save(saved);
+            }
+        }
+        activityService.recordSnippetAction(teamId, caller, "created", saved.getId(), saved.getTitle());
+
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("snippet", saved);
@@ -181,7 +343,12 @@ public class SnippetController {
     }
 
     @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
-    public ResponseEntity<?> updateSnippet(@PathVariable String id, @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> updateSnippet(
+            @PathVariable String id,
+            @RequestBody Map<String, Object> payload,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
         Optional<Snippet> opt = snippetRepository.findById(id);
         if (opt.isEmpty()) {
             opt = snippetRepository.findBySlug(id);
@@ -193,6 +360,25 @@ public class SnippetController {
         }
 
         Snippet snippet = opt.get();
+        User caller = authService.resolveCaller(authHeader, xUserId, xUserEmail);
+
+        String vis = snippet.getVisibility() != null ? snippet.getVisibility().trim().toLowerCase() : "private";
+        if ("private".equalsIgnoreCase(vis) || "unlisted".equalsIgnoreCase(vis)) {
+            if (caller == null || !caller.getId().equals(snippet.getAuthorId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "FORBIDDEN", "message", "You cannot edit another user's private snippet."));
+            }
+        } else if ("team".equalsIgnoreCase(vis)) {
+            if (caller == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required to edit team snippets."));
+            }
+            Team team = resolveTeam(snippet.getTeamId(), caller);
+            if (team != null && !permissionService.can(team, caller, PermissionService.Action.EDIT_SNIPPET)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "FORBIDDEN", "message", "You do not have permission to edit this team snippet. Viewers have read-only access."));
+            }
+        }
 
         // Optimistic concurrency check (PRD §2.3.5, §2.6.1)
         if (payload.containsKey("baseVersion")) {
@@ -242,9 +428,37 @@ public class SnippetController {
         if (payload.containsKey("folderId")) {
             String fId = (String) payload.get("folderId");
             snippet.setFolderId(fId);
-            snippet.setFolderName(fId);
+            snippet.setFolderName(payload.containsKey("folderName") ? String.valueOf(payload.get("folderName")) : fId);
+        } else if (payload.containsKey("folderName")) {
+            String fName = String.valueOf(payload.get("folderName"));
+            snippet.setFolderName(fName);
+            snippet.setFolderId(fName);
         }
-        if (payload.containsKey("visibility")) snippet.setVisibility((String) payload.get("visibility"));
+        if (payload.containsKey("teamId")) {
+            snippet.setTeamId(String.valueOf(payload.get("teamId")));
+        }
+        if (payload.containsKey("visibility")) {
+            String newVis = ((String) payload.get("visibility")).trim().toLowerCase();
+            if ("public".equals(newVis) && "team".equalsIgnoreCase(vis)) {
+                Team team = resolveTeam(snippet.getTeamId(), caller);
+                if (team != null && !permissionService.can(team, caller, PermissionService.Action.PUBLISH_SNIPPET)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("error", "FORBIDDEN", "message", "Publishing team snippets requires Admin permission or editorsCanPublish policy."));
+                }
+            }
+            snippet.setVisibility(newVis);
+            if ("team".equalsIgnoreCase(newVis) && (snippet.getTeamId() == null || snippet.getTeamId().trim().isEmpty()) && caller != null) {
+                List<Team> teams = teamRepository.findByMemberUserId(caller.getId());
+                if (!teams.isEmpty()) {
+                    snippet.setTeamId(teams.get(0).getId());
+                } else if (caller.getEmail() != null) {
+                    List<Team> teamsByEmail = teamRepository.findByMemberEmail(caller.getEmail());
+                    if (!teamsByEmail.isEmpty()) {
+                        snippet.setTeamId(teamsByEmail.get(0).getId());
+                    }
+                }
+            }
+        }
         if (payload.containsKey("tags") && payload.get("tags") instanceof List) {
             snippet.setTags((List<String>) payload.get("tags"));
         }
@@ -259,6 +473,22 @@ public class SnippetController {
         snippet.setUpdatedAt(Instant.now().toString());
 
         Snippet updated = snippetRepository.save(snippet);
+
+        // Audit logging (PRD §2.3.8, §2.6.2)
+        String teamId = updated.getTeamId();
+        if (teamId == null || teamId.trim().isEmpty()) {
+            teamId = resolveTeamIdForUser(caller);
+            if ("team".equalsIgnoreCase(updated.getVisibility())) {
+                updated.setTeamId(teamId);
+                updated = snippetRepository.save(updated);
+            }
+        }
+        User actor = caller;
+        if (actor == null && updated.getAuthorId() != null) {
+            actor = userRepository.findById(updated.getAuthorId()).orElse(null);
+        }
+        activityService.recordSnippetAction(teamId, actor, "updated", updated.getId(), updated.getTitle());
+
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
         res.put("snippet", updated);
@@ -266,7 +496,11 @@ public class SnippetController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteSnippet(@PathVariable String id) {
+    public ResponseEntity<?> deleteSnippet(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId,
+            @RequestHeader(value = "X-User-Email", required = false) String xUserEmail) {
         Optional<Snippet> opt = snippetRepository.findById(id);
         if (opt.isEmpty()) {
             opt = snippetRepository.findBySlug(id);
@@ -277,6 +511,42 @@ public class SnippetController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
         }
 
+        Snippet snippet = opt.get();
+        User caller = authService.resolveCaller(authHeader, xUserId, xUserEmail);
+
+        String vis = snippet.getVisibility() != null ? snippet.getVisibility().trim().toLowerCase() : "private";
+        if ("private".equalsIgnoreCase(vis) || "unlisted".equalsIgnoreCase(vis)) {
+            if (caller == null || !caller.getId().equals(snippet.getAuthorId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "FORBIDDEN", "message", "You cannot delete another user's private snippet."));
+            }
+        } else if ("team".equalsIgnoreCase(vis)) {
+            if (caller == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "UNAUTHORIZED", "message", "Authentication required to delete team snippets."));
+            }
+            Team team = resolveTeam(snippet.getTeamId(), caller);
+            boolean isAuthor = caller.getId() != null && caller.getId().equals(snippet.getAuthorId());
+            PermissionService.Action reqAction = isAuthor
+                    ? PermissionService.Action.DELETE_OWN_SNIPPET
+                    : PermissionService.Action.DELETE_ANY_SNIPPET;
+            if (team != null && !permissionService.can(team, caller, reqAction)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "FORBIDDEN", "message", "You do not have permission to delete this team snippet. Viewers have read-only access."));
+            }
+        }
+
+        // Audit logging before deletion (PRD §2.3.8, §2.6.2)
+        String teamId = snippet.getTeamId();
+        if (teamId == null || teamId.trim().isEmpty()) {
+            teamId = resolveTeamIdForUser(caller);
+        }
+        User actor = caller;
+        if (actor == null && snippet.getAuthorId() != null) {
+            actor = userRepository.findById(snippet.getAuthorId()).orElse(null);
+        }
+        activityService.recordSnippetAction(teamId, actor, "deleted", snippet.getId(), snippet.getTitle());
+
         snippetRepository.delete(opt.get());
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
@@ -286,7 +556,10 @@ public class SnippetController {
 
     // POST /snippets/:id/fork (PRD §2.6.2)
     @PostMapping("/{id}/fork")
-    public ResponseEntity<?> forkSnippet(@PathVariable String id) {
+    public ResponseEntity<?> forkSnippet(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
         Optional<Snippet> opt = snippetRepository.findById(id);
         if (opt.isEmpty()) opt = snippetRepository.findBySlug(id);
         if (opt.isEmpty()) {
@@ -296,6 +569,12 @@ public class SnippetController {
         }
 
         Snippet source = opt.get();
+        User caller = authService.resolveCaller(authHeader, xUserId);
+        if (!authService.canAccessSnippet(source, caller)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "FORBIDDEN", "message", "You do not have access to fork this snippet."));
+        }
+
         source.setForkCount(source.getForkCount() + 1);
         snippetRepository.save(source);
 
@@ -310,6 +589,9 @@ public class SnippetController {
         forked.setFolderId(source.getFolderId());
         forked.setFolderName(source.getFolderName());
         forked.setVisibility("private");
+        if (caller != null) {
+            forked.setAuthorId(caller.getId());
+        }
         forked.setTags(new ArrayList<>(source.getTags()));
         forked.setDependencies(new ArrayList<>(source.getDependencies()));
         forked.setEnvSchema(new ArrayList<>(source.getEnvSchema()));
@@ -328,7 +610,10 @@ public class SnippetController {
 
     // POST /snippets/:id/events/copy (PRD §2.3.4, §2.6.2)
     @PostMapping("/{id}/events/copy")
-    public ResponseEntity<?> recordCopyEvent(@PathVariable String id) {
+    public ResponseEntity<?> recordCopyEvent(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String xUserId) {
         Optional<Snippet> opt = snippetRepository.findById(id);
         if (opt.isEmpty()) opt = snippetRepository.findBySlug(id);
         if (opt.isEmpty()) {
@@ -338,6 +623,17 @@ public class SnippetController {
         Snippet s = opt.get();
         s.setCopyCount(s.getCopyCount() + 1);
         snippetRepository.save(s);
+
+        if ("team".equalsIgnoreCase(s.getVisibility()) || (s.getTeamId() != null && !s.getTeamId().trim().isEmpty())) {
+            User caller = authService.resolveCaller(authHeader, xUserId);
+            String teamId = s.getTeamId() != null ? s.getTeamId() : resolveTeamIdForUser(caller);
+            String actorName = caller != null ? caller.getName() : "Developer";
+            String actorId = caller != null ? caller.getId() : null;
+            String displayTitle = (s.getTitle() != null && !s.getTitle().trim().isEmpty()) ? s.getTitle().trim() : s.getId();
+            activityService.record(teamId, actorId, actorName, "snippet.copied", s.getId(), s.getTitle(),
+                    actorName + " copied snippet '" + displayTitle + "' via Web",
+                    "pink", Map.of("client", "Web"));
+        }
 
         return ResponseEntity.ok(Map.of("success", true, "copyCount", s.getCopyCount()));
     }

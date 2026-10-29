@@ -930,7 +930,9 @@
 
   <script src="app-script.js"></script>
   <script>
-    let activeFolder = 'all';
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialFolderParam = urlParams.get('folder');
+    let activeFolder = initialFolderParam || 'all';
     let activeLanguages = new Set();
     let activeTags = new Set();
     let userSnippets = [];
@@ -994,14 +996,27 @@
       let serverSnippets = null;
       try {
         const token = localStorage.getItem('pluck_token');
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (cachedUser && cachedUser.id) headers['X-User-Id'] = cachedUser.id;
+        if (cachedUser && cachedUser.email) headers['X-User-Email'] = cachedUser.email;
 
         const res = await fetch('/api/snippets', { headers });
         if (res.ok) {
           const data = await res.json();
           serverSnippets = data.snippets || [];
         }
+
+        // Fetch team permissions to know caller's role for team snippets
+        try {
+          const tRes = await fetch('/api/teams/acme-core-eng', { headers });
+          if (tRes.ok) {
+            const tData = await tRes.json();
+            window.__pluckTeamRole = tData.role || 'Viewer';
+            window.__pluckCanEditSnippets = tData.canEditSnippets !== false;
+          }
+        } catch (e) {}
       } catch (err) {
         console.warn('Backend unavailable, reading local vault:', err);
       }
@@ -1065,7 +1080,9 @@
       const filtered = allList.filter(s => {
         const folder = s.folderId || 'hooks';
         const lang = (s.language || 'typescript').toLowerCase();
-        const matchFolder = (activeFolder === 'all' || folder === activeFolder);
+        const matchFolder = (activeFolder === 'all' ||
+                             folder.toLowerCase() === activeFolder.toLowerCase() ||
+                             (s.folderName && s.folderName.toLowerCase() === activeFolder.toLowerCase()));
         const matchLang = (activeLanguages.size === 0 || activeLanguages.has(lang));
         let matchTags = true;
         if (activeTags.size > 0) {
@@ -1110,6 +1127,9 @@
           depsHtml = `<span class="dep-chip" style="opacity: 0.6;">zero-dep</span>`;
         }
 
+        const isTeamSnippet = (s.visibility === 'team');
+        const isViewerOnTeam = isTeamSnippet && (window.__pluckCanEditSnippets === false || (window.__pluckTeamRole && window.__pluckTeamRole.toLowerCase() === 'viewer'));
+
         card.innerHTML = `
           <div class="snippet-card-header">
             <div class="snippet-card-title-group">
@@ -1121,7 +1141,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <span title="${escapeHtml(s.visibility || 'private')}" style="font-size: 12px;">${visIcon}</span>
-              <button class="btn-icon-pixel" title="Delete Snippet" onclick="deleteUserSnippet('${escapeHtml(s.id)}', event)" style="font-size: 10px; padding: 2px 6px; color: #ef4444; border-color: rgba(239,68,68,0.4);">✕</button>
+              ${isViewerOnTeam ? '' : `<button class="btn-icon-pixel" title="Delete Snippet" onclick="deleteUserSnippet('${escapeHtml(s.id)}', event)" style="font-size: 10px; padding: 2px 6px; color: #ef4444; border-color: rgba(239,68,68,0.4);">✕</button>`}
             </div>
           </div>
           <div class="snippet-card-preview" onclick="window.location.href='snippet.html?id=${encodeURIComponent(s.id)}'" style="cursor: pointer;">
@@ -1133,7 +1153,11 @@
             </div>
             <div class="snippet-meta-right" style="display: flex; align-items: center; gap: 6px;">
               <span class="snippet-updated">${timeAgo(s.updatedAt || s.createdAt)}</span>
-              <a href="studio.html?id=${encodeURIComponent(s.id || s.slug)}" class="btn-copy-card" style="text-decoration: none; padding: 3px 8px; font-size: 10px; color: var(--cyan); border-color: rgba(6,182,212,0.4);" onclick="event.stopPropagation(); try { sessionStorage.setItem('pluck_active_snippet', JSON.stringify(s)); } catch(e){}" title="Edit Snippet in Studio">✎ Edit</a>
+              ${isViewerOnTeam ? `
+                <a href="studio.html?id=${encodeURIComponent(s.id || s.slug)}" class="btn-copy-card" style="text-decoration: none; padding: 3px 8px; font-size: 10px; color: var(--cyan); border-color: rgba(6,182,212,0.4);" onclick="event.stopPropagation();" title="View Snippet in Studio">🔍 View</a>
+              ` : `
+                <a href="studio.html?id=${encodeURIComponent(s.id || s.slug)}" class="btn-copy-card" style="text-decoration: none; padding: 3px 8px; font-size: 10px; color: var(--cyan); border-color: rgba(6,182,212,0.4);" onclick="event.stopPropagation(); try { sessionStorage.setItem('pluck_active_snippet', JSON.stringify(s)); } catch(e){}" title="Edit Snippet in Studio">✎ Edit</a>
+              `}
               <button class="btn-copy-card" onclick="copySnippetCard('${escapeHtml(s.id || s.slug)}', event)">Copy</button>
             </div>
           </div>
@@ -1273,8 +1297,11 @@
 
       try {
         const token = localStorage.getItem('pluck_token');
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (cachedUser && cachedUser.id) headers['X-User-Id'] = cachedUser.id;
+        if (cachedUser && cachedUser.email) headers['X-User-Email'] = cachedUser.email;
 
         const res = await fetch(`/api/snippets/${encodeURIComponent(id)}`, {
           method: 'DELETE',
@@ -1283,10 +1310,13 @@
 
         if (!res.ok && res.status !== 404) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || 'Server returned error deleting snippet');
+          showToast(errData.message || 'Permission denied: Cannot delete snippet', 'error');
+          return;
         }
       } catch (err) {
         console.warn('Backend delete error:', err);
+        showToast('Network error deleting snippet', 'error');
+        return;
       }
 
       // Purge from memory and local storage
@@ -1506,6 +1536,8 @@
       }
       localStorage.removeItem('pluck_user');
       localStorage.removeItem('pluck_token');
+      localStorage.removeItem('pluck_user_snippets');
+      sessionStorage.removeItem('pluck_active_snippet');
       document.cookie = 'pluck_session=; max-age=0; path=/;';
       fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
       window.location.href = 'auth.html';

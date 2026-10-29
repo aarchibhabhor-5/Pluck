@@ -73,7 +73,11 @@ public class ActivityService {
     public void recordSnippetAction(String teamId, User actor, String action, String snippetId, String title) {
         String actorName = actor != null ? actor.getName() : "Developer";
         String icon = "cyan";
-        String text = actorName + " " + action + " snippet " + (title != null ? title : snippetId);
+        String displayTitle = (title != null && !title.trim().isEmpty()) ? title.trim() : snippetId;
+        if (!displayTitle.startsWith("'") && !displayTitle.startsWith("\"")) {
+            displayTitle = "'" + displayTitle + "'";
+        }
+        String text = actorName + " " + action + " snippet " + displayTitle;
         if ("created".equalsIgnoreCase(action)) icon = "green";
         else if ("deleted".equalsIgnoreCase(action)) icon = "pink";
         else if ("updated".equalsIgnoreCase(action)) icon = "purple";

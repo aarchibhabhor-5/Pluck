@@ -2516,8 +2516,11 @@
       }
 
       const token = localStorage.getItem('pluck_token');
+      const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (cachedUser && cachedUser.id) headers['X-User-Id'] = cachedUser.id;
+      if (cachedUser && cachedUser.email) headers['X-User-Email'] = cachedUser.email;
 
       let savedSnippet = null;
       try {
@@ -2535,10 +2538,18 @@
           savedSnippet = json.snippet;
         } else {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || (isEditing ? 'Failed to update snippet' : 'Failed to save snippet'));
+          const errMsg = errData.message || (isEditing ? 'Failed to update snippet' : 'Failed to save snippet');
+          showToast(errMsg, 'error');
+          btn.disabled = false;
+          btn.textContent = isEditing ? 'Update Snippet' : 'Save Snippet';
+          return;
         }
       } catch (err) {
-        console.warn('Backend request failed, updating locally:', err);
+        console.warn('Backend request failed:', err);
+        showToast('Network error: ' + (err.message || 'Cannot reach server'), 'error');
+        btn.disabled = false;
+        btn.textContent = isEditing ? 'Update Snippet' : 'Save Snippet';
+        return;
       }
 
       if (!savedSnippet) {
@@ -2603,6 +2614,14 @@
       if (isEditModeLoaded) return;
       const urlParams = new URLSearchParams(window.location.search);
       const editId = urlParams.get('id');
+      const folderParam = urlParams.get('folder');
+      const visParam = urlParams.get('visibility');
+      if (folderParam) {
+        selectFolder(folderParam, true);
+      }
+      if (visParam) {
+        selectVisibility(visParam);
+      }
       if (!editId) return;
 
       let s = null;
@@ -2610,8 +2629,10 @@
       // 1. Authoritative MongoDB backend fetch
       try {
         const token = localStorage.getItem('pluck_token');
+        const cachedUser = JSON.parse(localStorage.getItem('pluck_user') || 'null');
         const headers = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (cachedUser && cachedUser.id) headers['X-User-Id'] = cachedUser.id;
         const res = await fetch(`${API_BASE}/snippets/${encodeURIComponent(editId)}`, { headers });
         if (res.ok) {
           const data = await res.json();
@@ -2722,6 +2743,42 @@
               isLoadingSnippet = false;
             }
           }, 50);
+        }
+
+        // Check team permissions if this is a team snippet
+        if (s.visibility === 'team') {
+          const authHeaders = { 'Content-Type': 'application/json' };
+          const tok = localStorage.getItem('pluck_token');
+          const cu = JSON.parse(localStorage.getItem('pluck_user') || 'null');
+          if (tok) authHeaders['Authorization'] = `Bearer ${tok}`;
+          if (cu && cu.id) authHeaders['X-User-Id'] = cu.id;
+          if (cu && cu.email) authHeaders['X-User-Email'] = cu.email;
+
+          const teamId = s.teamId || 'acme-core-eng';
+          fetch(`${API_BASE}/teams/${encodeURIComponent(teamId)}`, { headers: authHeaders })
+            .then(r => r.json())
+            .then(teamData => {
+              const role = teamData.role ? teamData.role.toLowerCase() : '';
+              if (teamData.canEditSnippets === false || role === 'viewer') {
+                if (editorInstance) {
+                  editorInstance.updateOptions({ readOnly: true });
+                }
+                const saveBtn = document.getElementById('btn-save');
+                if (saveBtn) {
+                  saveBtn.disabled = true;
+                  saveBtn.textContent = 'View Only (Read-Only)';
+                  saveBtn.style.opacity = '0.5';
+                  saveBtn.style.cursor = 'not-allowed';
+                  saveBtn.title = 'You have Viewer permissions in this team workspace. Snippet is read-only.';
+                }
+                const titleEl = document.getElementById('snippet-title');
+                if (titleEl) titleEl.disabled = true;
+                const descEl = document.getElementById('snippet-desc');
+                if (descEl) descEl.disabled = true;
+                showToast('View-Only Mode: You have Viewer permissions for this team snippet.', 'warning');
+              }
+            })
+            .catch(() => {});
         }
 
         showToast(`Editing snippet: "${s.title}"`, 'info');
