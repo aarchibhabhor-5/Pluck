@@ -75,54 +75,11 @@ public class TeamController {
      * Resolve calling user from Bearer header or fallback
      */
     private User resolveCaller(String authHeader, String xUserId, String xUserEmail) {
-        User u = authService.resolveCaller(authHeader, xUserId, xUserEmail);
-        if (u != null)
-            return u;
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
-            Optional<User> byId = userRepository.findById(token);
-            if (byId.isPresent())
-                return byId.get();
-
-            Optional<User> byEmail = userRepository.findByEmail(token.toLowerCase());
-            if (byEmail.isPresent())
-                return byEmail.get();
-        }
-
-        return null;
+        return authService.resolveCaller(authHeader, xUserId, xUserEmail);
     }
 
     private User resolveCaller(String authHeader) {
         return resolveCaller(authHeader, null, null);
-    }
-
-    /**
-     * Initialize the seed / demo team workspace per PRD §2.5 ("Acme Core Eng")
-     */
-    private Team getOrCreateDefaultTeam(User caller) {
-        List<Team> teams = teamRepository.findByDeletedAtIsNull();
-        if (!teams.isEmpty()) {
-            return teams.get(0);
-        }
-
-        String ownerId = (caller != null && caller.getId() != null) ? caller.getId() : "usr_5f2c0b56";
-        String ownerName = (caller != null && caller.getName() != null) ? caller.getName() : "aarchibhabhor5";
-        String ownerEmail = (caller != null && caller.getEmail() != null) ? caller.getEmail()
-                : "aarchibhabhor5@gmail.com";
-
-        Team team = new Team("acme-core-eng", "Acme Core Eng", "acme-core-eng", ownerId);
-        team.setEditorsCanPublish(false);
-
-        List<TeamMember> members = new ArrayList<>();
-        members.add(new TeamMember(ownerId, ownerName, ownerEmail, "Admin", true));
-        team.setMembers(members);
-
-        List<Map<String, Object>> collections = new ArrayList<>();
-        team.setCollections(collections);
-
-        Team saved = teamRepository.save(team);
-        return saved;
     }
 
     /**
@@ -140,10 +97,6 @@ public class TeamController {
         List<Team> teams = teamRepository.findByMemberUserId(caller.getId());
         if (teams.isEmpty() && caller.getEmail() != null) {
             teams = teamRepository.findByMemberEmail(caller.getEmail());
-        }
-        if (teams.isEmpty()) {
-            Team def = getOrCreateDefaultTeam(caller);
-            teams = List.of(def);
         }
         return ResponseEntity.ok(Map.of("teams", teams));
     }
@@ -171,6 +124,9 @@ public class TeamController {
         String slug = (String) body.get("slug");
         if (slug == null || slug.trim().isEmpty()) {
             slug = name.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+        }
+        if (slug.isEmpty()) {
+            slug = "team-" + UUID.randomUUID().toString().substring(0, 6);
         }
 
         // Slug uniqueness check (PRD §2.5.1)
@@ -208,7 +164,8 @@ public class TeamController {
                 .orElse(null);
 
         if (team == null) {
-            team = getOrCreateDefaultTeam(caller);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "WORKSPACE_NOT_FOUND", "message", "Workspace not found."));
         }
 
         // PRD §2.4.6 Invariant: Cross-workspace reads return 404 (not 403) to avoid
@@ -340,7 +297,10 @@ public class TeamController {
         User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
-                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+                .orElse(null);
+        if (team == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+        }
 
         boolean isOwner = (caller != null && caller.getId().equals(team.getOwnerUserId()));
         TeamMember callerMember = (caller != null) ? permissionService.getMember(team, caller) : null;
@@ -403,7 +363,9 @@ public class TeamController {
             if (caller.getId().equals(team.getOwnerUserId())) {
                 callerRole = "Admin";
             } else {
-                TeamMember callerMember = permissionService.getMember(team, caller);
+                if (callerMember == null) {
+                    callerMember = permissionService.getMember(team, caller);
+                }
                 if (callerMember != null && callerMember.getRole() != null) {
                     callerRole = callerMember.getRole();
                 }
@@ -434,7 +396,10 @@ public class TeamController {
         User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
-                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+                .orElse(null);
+        if (team == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+        }
 
         if (caller == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -751,7 +716,10 @@ public class TeamController {
 
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
-                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+                .orElse(null);
+        if (team == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+        }
 
         List<ActivityEvent> events = activityService.getTeamActivity(team.getId());
 
@@ -825,7 +793,10 @@ public class TeamController {
         User caller = resolveCaller(authHeader, xUserId, xUserEmail);
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
-                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+                .orElse(null);
+        if (team == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+        }
 
         List<Map<String, Object>> collections = team.getCollections();
         if (collections == null)
@@ -885,7 +856,10 @@ public class TeamController {
         }
         Team team = teamRepository.findByIdAndDeletedAtIsNull(id)
                 .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(id))
-                .orElseGet(() -> getOrCreateDefaultTeam(caller));
+                .orElse(null);
+        if (team == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "WORKSPACE_NOT_FOUND"));
+        }
 
         if (!permissionService.can(team, caller, PermissionService.Action.CREATE_SNIPPET)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)

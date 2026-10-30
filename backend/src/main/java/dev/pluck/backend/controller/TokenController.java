@@ -23,8 +23,15 @@ public class TokenController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getTokens() {
-        List<Token> tokens = tokenRepository.findAll();
+    public ResponseEntity<?> getTokens(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        String callerUserId = AuthController.resolveUserId(authHeader);
+        if (callerUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "error", "UNAUTHENTICATED",
+                    "message", "You must be signed in to view personal access tokens."
+            ));
+        }
+        List<Token> tokens = tokenRepository.findByUserId(callerUserId);
         Map<String, Object> res = new HashMap<>();
         res.put("tokens", tokens);
         return ResponseEntity.ok(res);
@@ -43,18 +50,17 @@ public class TokenController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
         }
 
+        String callerUserId = AuthController.resolveUserId(authHeader);
+        if (callerUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "error", "UNAUTHENTICATED",
+                    "message", "You must be signed in to generate personal access tokens."
+            ));
+        }
+
         String rawHex = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         String fullToken = "pluck_pat_" + rawHex;
         String prefix = "pluck_pat_" + rawHex.substring(0, 4) + "...";
-
-        String callerUserId = AuthController.resolveUserId(authHeader);
-        if (callerUserId == null) {
-            callerUserId = userRepository.findAll().stream()
-                    .filter(u -> !"test_dev@pluck.dev".equalsIgnoreCase(u.getEmail()))
-                    .findFirst()
-                    .map(dev.pluck.backend.model.User::getId)
-                    .orElse("usr_alex");
-        }
 
         Token token = new Token();
         token.setId("tok_" + rawHex.substring(0, 8));

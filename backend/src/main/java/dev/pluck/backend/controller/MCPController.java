@@ -176,9 +176,6 @@ public class MCPController {
         if (token.getUserId() != null) {
             user = userRepository.findById(token.getUserId()).orElse(null);
         }
-        if (user == null) {
-            user = userRepository.findAll().stream().findFirst().orElse(null);
-        }
 
         List<Snippet> snippets = snippetRepository.findAll();
         List<Team> teams = teamRepository.findByDeletedAtIsNull();

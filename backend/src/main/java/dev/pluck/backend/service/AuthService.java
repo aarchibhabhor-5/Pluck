@@ -48,52 +48,34 @@ public class AuthService {
     }
 
     /**
-     * Resolves caller from Authorization header, X-User-Id header, or X-User-Email header.
-     * Returns null if anonymous / unauthenticated.
+     * Resolves caller strictly from authenticated session or PAT token.
+     * Returns null if anonymous or unauthenticated.
      */
     public User resolveCaller(String authHeader, String xUserId, String xUserEmail) {
-        // 1. Session token in Authorization header
-        if (authHeader != null && authHeader.trim().startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
+        if (authHeader == null || !authHeader.trim().startsWith("Bearer ")) {
+            return null;
+        }
 
-            String userId = AuthController.resolveUserId(authHeader);
-            if (userId != null) {
-                Optional<User> u = userRepository.findById(userId);
+        String token = authHeader.substring(7).trim();
+        if (token.isEmpty()) return null;
+
+        // 1. Session token
+        String userId = AuthController.resolveTokenUserId(token);
+        if (userId != null) {
+            Optional<User> u = userRepository.findById(userId);
+            if (u.isPresent()) return u.get();
+        }
+
+        // 2. PAT token check
+        if (token.startsWith("pluck_pat_")) {
+            String rawHex = token.length() >= 18 ? token.substring(10) : "";
+            String patHash = rawHex.length() >= 8 ? "hash_" + rawHex.substring(0, 8) : "";
+            String prefix = rawHex.length() >= 4 ? "pluck_pat_" + rawHex.substring(0, 4) + "..." : "";
+            Optional<Token> tok = tokenRepository.findByTokenHash(patHash).or(() -> tokenRepository.findByPrefix(prefix));
+            if (tok.isPresent()) {
+                Optional<User> u = userRepository.findById(tok.get().getUserId());
                 if (u.isPresent()) return u.get();
             }
-
-            // PAT token check
-            if (token.startsWith("pluck_pat_")) {
-                String rawHex = token.length() >= 18 ? token.substring(10) : "";
-                String patHash = rawHex.length() >= 8 ? "hash_" + rawHex.substring(0, 8) : "";
-                String prefix = rawHex.length() >= 4 ? "pluck_pat_" + rawHex.substring(0, 4) + "..." : "";
-                Optional<Token> tok = tokenRepository.findByTokenHash(patHash).or(() -> tokenRepository.findByPrefix(prefix));
-                if (tok.isPresent()) {
-                    Optional<User> u = userRepository.findById(tok.get().getUserId());
-                    if (u.isPresent()) return u.get();
-                }
-            }
-
-            // Direct user ID or email in Bearer
-            Optional<User> byId = userRepository.findById(token);
-            if (byId.isPresent()) return byId.get();
-
-            Optional<User> byEmail = userRepository.findByEmail(token.toLowerCase());
-            if (byEmail.isPresent()) return byEmail.get();
-        }
-
-        // 2. X-User-Id header
-        if (xUserId != null && !xUserId.trim().isEmpty()) {
-            Optional<User> u = userRepository.findById(xUserId.trim());
-            if (u.isPresent()) return u.get();
-            Optional<User> byEmail = userRepository.findByEmail(xUserId.trim().toLowerCase());
-            if (byEmail.isPresent()) return byEmail.get();
-        }
-
-        // 3. X-User-Email header
-        if (xUserEmail != null && !xUserEmail.trim().isEmpty()) {
-            Optional<User> byEmail = userRepository.findByEmail(xUserEmail.trim().toLowerCase());
-            if (byEmail.isPresent()) return byEmail.get();
         }
 
         return null;

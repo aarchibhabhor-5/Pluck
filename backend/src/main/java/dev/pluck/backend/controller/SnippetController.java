@@ -63,7 +63,7 @@ public class SnippetController {
                 }
             }
         }
-        return "acme-core-eng";
+        return null;
     }
 
     private Team resolveTeam(String teamId, User user) {
@@ -78,7 +78,7 @@ public class SnippetController {
                     .or(() -> teamRepository.findBySlugAndDeletedAtIsNull(resolvedId));
             if (t.isPresent()) return t.get();
         }
-        return teamRepository.findById("acme-core-eng").orElse(null);
+        return null;
     }
 
     @PostConstruct
@@ -97,8 +97,11 @@ public class SnippetController {
                     snippetChanged = true;
                 }
                 if ("team".equalsIgnoreCase(s.getVisibility()) && (s.getTeamId() == null || s.getTeamId().trim().isEmpty())) {
-                    s.setTeamId("acme-core-eng");
-                    snippetChanged = true;
+                    String userTeam = resolveTeamIdForUser(primaryUser.orElse(null));
+                    if (userTeam != null) {
+                        s.setTeamId(userTeam);
+                        snippetChanged = true;
+                    }
                 }
                 if (snippetChanged) {
                     snippetRepository.save(s);

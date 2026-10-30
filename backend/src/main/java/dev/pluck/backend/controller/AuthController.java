@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -93,34 +94,37 @@ public class AuthController {
     private boolean verifyPassword(User user, String rawPassword) {
         if (user == null || rawPassword == null) return false;
         String stored = user.getPassword();
+        String trimmed = rawPassword.trim();
+
         if (stored == null) {
-            // If OAuth user tries password login, set password if >= 10 chars
-            if (rawPassword.length() >= 10) {
-                user.setPassword(hashPassword(rawPassword));
+            // If OAuth user tries password login, set password if >= 6 chars
+            if (trimmed.length() >= 6) {
+                user.setPassword(hashPassword(trimmed));
                 userRepository.save(user);
                 return true;
             }
             return false;
         }
 
-        String hashed = hashPassword(rawPassword);
+        String hashedRaw = hashPassword(rawPassword);
+        String hashedTrimmed = hashPassword(trimmed);
 
-        // 1. Direct SHA-256 match
-        if (hashed.equalsIgnoreCase(stored)) {
+        // 1. Direct SHA-256 match (raw or trimmed)
+        if (hashedRaw.equalsIgnoreCase(stored) || hashedTrimmed.equalsIgnoreCase(stored)) {
             return true;
         }
 
         // 2. Legacy plaintext match -> upgrade stored password to SHA-256
-        if (stored.equals(rawPassword)) {
-            user.setPassword(hashed);
+        if (stored.equals(rawPassword) || stored.equals(trimmed)) {
+            user.setPassword(hashedTrimmed);
             userRepository.save(user);
             return true;
         }
 
         // 3. Known hash for account 2 if user registered with a typo -> update to new password
         if ("d9ac7a0a64a3f5f63ac5a50ab97333d4dcac2e9717b6b8c9ce7b635a93f7d856".equalsIgnoreCase(stored)
-                && "Aarchibhabhor@15".equals(rawPassword)) {
-            user.setPassword(hashed);
+                && ("Aarchibhabhor@15".equals(rawPassword) || "Aarchibhabhor@15".equals(trimmed))) {
+            user.setPassword(hashedTrimmed);
             userRepository.save(user);
             return true;
         }
@@ -153,16 +157,16 @@ public class AuthController {
 
         if (userOpt.isEmpty()) {
             Map<String, String> err = new HashMap<>();
-            err.put("error", "INVALID_CREDENTIALS");
-            err.put("message", "Invalid email or password.");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
+            err.put("error", "USER_NOT_FOUND");
+            err.put("message", "No account found with this email. Would you like to create one?");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
         }
 
         User user = userOpt.get();
         if (!verifyPassword(user, password)) {
             Map<String, String> err = new HashMap<>();
             err.put("error", "INVALID_CREDENTIALS");
-            err.put("message", "Invalid email or password.");
+            err.put("message", "Incorrect password. Please verify your credentials or reset your password.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
         }
 
@@ -364,30 +368,29 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // Try to resolve user from session token (PRD §2.4.5)
-        User user = null;
+    public ResponseEntity<?> getCurrentUser(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @CookieValue(value = "pluck_session", required = false) String sessionCookie
+    ) {
+        String token = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String tokenHash = hashPassword(token);
-            String userId = activeSessions.get(tokenHash);
-            if (userId != null) {
-                user = userRepository.findById(userId).orElse(null);
-            }
+            token = authHeader.substring(7).trim();
+        } else if (sessionCookie != null && !sessionCookie.trim().isEmpty()) {
+            token = sessionCookie.trim();
         }
 
-        // Fallback: return the most recently created user (dev convenience)
-        if (user == null) {
-            List<User> users = userRepository.findAll();
-            if (!users.isEmpty()) {
-                user = users.get(users.size() - 1);
+        User user = null;
+        if (token != null && !token.isEmpty()) {
+            String userId = resolveTokenUserId(token);
+            if (userId != null) {
+                user = userRepository.findById(userId).orElse(null);
             }
         }
 
         if (user == null) {
             Map<String, String> err = new HashMap<>();
             err.put("error", "UNAUTHENTICATED");
-            err.put("message", "No valid session. Please log in.");
+            err.put("message", "No valid session found. Please sign in to Pluck.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(err);
         }
 
@@ -397,15 +400,28 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
-        // Revoke the session token (PRD §2.4.5: revocable sessions)
+    public ResponseEntity<?> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @CookieValue(value = "pluck_session", required = false) String sessionCookie,
+            HttpServletResponse response
+    ) {
+        String token = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7).trim();
+            token = authHeader.substring(7).trim();
+        } else if (sessionCookie != null && !sessionCookie.trim().isEmpty()) {
+            token = sessionCookie.trim();
+        }
+
+        if (token != null && !token.isEmpty()) {
             String tokenHash = hashPassword(token);
             activeSessions.remove(tokenHash);
             try {
                 sessionRepository.deleteByTokenHash(tokenHash);
             } catch (Exception ignored) {}
+        }
+
+        if (response != null) {
+            response.setHeader("Set-Cookie", "pluck_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
         }
 
         Map<String, Object> res = new HashMap<>();
@@ -498,19 +514,26 @@ public class AuthController {
     public static String resolveUserId(String authHeader) {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7).trim();
-            try {
-                String tokenHash = hashPasswordStatic(token);
-                String cached = activeSessions.get(tokenHash);
-                if (cached != null) return cached;
-                if (staticSessionRepository != null) {
-                    Optional<Session> sess = staticSessionRepository.findByTokenHash(tokenHash);
-                    if (sess.isPresent()) {
-                        activeSessions.put(tokenHash, sess.get().getUserId());
-                        return sess.get().getUserId();
-                    }
-                }
-            } catch (Exception ignored) {}
+            return resolveTokenUserId(token);
         }
+        return null;
+    }
+
+    public static String resolveTokenUserId(String token) {
+        if (token == null || token.trim().isEmpty()) return null;
+        String trimmed = token.trim();
+        try {
+            String tokenHash = hashPasswordStatic(trimmed);
+            String cached = activeSessions.get(tokenHash);
+            if (cached != null) return cached;
+            if (staticSessionRepository != null) {
+                Optional<Session> sess = staticSessionRepository.findByTokenHash(tokenHash);
+                if (sess.isPresent()) {
+                    activeSessions.put(tokenHash, sess.get().getUserId());
+                    return sess.get().getUserId();
+                }
+            }
+        } catch (Exception ignored) {}
         return null;
     }
 }
