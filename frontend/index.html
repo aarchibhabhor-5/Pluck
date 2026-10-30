@@ -16,9 +16,39 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Press+Start+2P&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=patrol2" />
+  <link rel="stylesheet" href="style.css?v=pluck_dialog_v3" />
   <link rel="stylesheet" href="magic-bento.css" />
   <link rel="stylesheet" href="border-glow.css?v=patrol2" />
+  <script>
+    // Enforce instant sign-out whenever index.html is reached for any reason
+    function purgePluckSessionOnLanding() {
+      const token = localStorage.getItem('pluck_token');
+      const user = localStorage.getItem('pluck_user');
+      const hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+
+      if (token || user || hasCookie) {
+        try {
+          const headers = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = 'Bearer ' + token;
+          fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
+        } catch (e) {}
+
+        try {
+          localStorage.removeItem('pluck_user');
+          localStorage.removeItem('pluck_token');
+          localStorage.removeItem('pluck_user_snippets');
+          localStorage.removeItem('pluck_active_snippet');
+          sessionStorage.removeItem('pluck_active_snippet');
+          sessionStorage.clear();
+          document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+          document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        } catch (e) {}
+      }
+    }
+    purgePluckSessionOnLanding();
+    window.addEventListener('pageshow', purgePluckSessionOnLanding);
+  </script>
 </head>
 
 <body>
@@ -28,7 +58,7 @@
 
   <!-- ░░░ NAVBAR ░░░ -->
   <nav class="navbar" id="navbar">
-    <a href="index.html" class="nav-logo" id="nav-logo-link" aria-label="Pluck home">
+    <a href="javascript:void(0)" class="nav-logo" id="nav-logo-link" onclick="autoSignOutOnLogo(event)" aria-label="Pluck home" title="Click logo to sign out">
       <!-- Pixel Pluck Octopus Logo -->
       <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="28" height="28" />
       <span class="logo-wordmark">Pluck</span>
@@ -37,11 +67,11 @@
       <a href="#features" class="nav-link">Features</a>
       <a href="#how-it-works" class="nav-link">How It Works</a>
       <a href="#plans" class="nav-link">Plans</a>
-      <a href="app.html" class="nav-link">Vault Demo</a>
+      <a href="auth.html?next=app.html" class="nav-link">Vault Demo</a>
     </nav>
     <div class="nav-ctas">
       <a href="auth.html" class="btn-outline-pixel" id="nav-docs-btn">Sign In</a>
-      <a href="app.html" class="btn-solid-pixel" id="nav-try-btn">Launch Vault</a>
+      <a href="auth.html?next=app.html" class="btn-solid-pixel" id="nav-try-btn">Launch Vault</a>
     </div>
   </nav>
 
@@ -92,10 +122,8 @@
         </div>
       </div>
 
-      <!-- Detection overlay card -->
-      <div class="detect-card pixel-border-box" id="detect-card"
-        onclick="window.location.href='snippet.html?id=use-debounce'" style="cursor: pointer;"
-        title="Click to view full snippet">
+      <!-- Detection overlay card (Visual Showcase Only) -->
+      <div class="detect-card pixel-border-box" id="detect-card" style="cursor: default;" aria-hidden="true">
         <div class="detect-card-emoji">⚡</div>
         <p class="detect-card-title">Pluck detected this <span class="underline-cyan">automatically.</span></p>
         <div class="detect-tags">
@@ -112,12 +140,12 @@
       drop it straight into your <span class="underline-cyan">browser</span>, <span
         class="underline-yellow">terminal</span>, or <span class="underline-pink">AI assistant</span>.</p>
 
-    <!-- Interactive Hero Navigation CTAs -->
+    <!-- Interactive Hero Navigation CTAs (Sign-in Protected) -->
     <div
       style="display: flex; gap: 14px; justify-content: center; margin-top: 24px; flex-wrap: wrap; position: relative; z-index: 10;">
-      <a href="app.html" class="btn-solid-pixel">▶ Launch Vault</a>
-      <a href="studio.html" class="btn-outline-pixel">✎ New Snippet</a>
-      <a href="snippet.html?id=use-debounce" class="btn-outline-pixel">⚡ View Demo Snippet</a>
+      <a href="auth.html?next=app.html" class="btn-solid-pixel">▶ Launch Vault</a>
+      <a href="auth.html?next=studio.html" class="btn-outline-pixel">✎ New Snippet</a>
+      <a href="auth.html?next=snippet.html%3Fid%3Duse-debounce" class="btn-outline-pixel">⚡ View Demo Snippet</a>
     </div>
   </section>
 
@@ -174,10 +202,12 @@
 
       <!-- Central Mascot (Authentic Jules Octopus) -->
       <div class="mascot-center" id="mascot-center">
-        <div class="mascot-frame">
+        <div class="mascot-frame" id="mascot-frame">
           <img src="squid.png" alt="Pluck Octopus Mascot" class="mascot-octopus-img" id="mascot-octopus" width="410"
             height="410" />
+          <!-- Eye pupil dot tracking -->
           <span class="mascot-pupil" id="mascot-pupil"></span>
+          <!-- Cybernetic circuit energy sparks -->
           <canvas id="mascot-energy-canvas" width="410" height="410" aria-hidden="true"></canvas>
         </div>
       </div>
@@ -213,16 +243,16 @@
   <section class="steps-section" id="how-it-works">
 
     <!-- ░░░ HOW IT WORKS SECTION HEADER & VIDEO EXPLAINER ░░░ -->
-    <div style="text-align: center; max-width: 820px; margin: 0 auto 36px;">
+    <div class="section-header" style="text-align: center; max-width: 820px; margin: 0 auto 36px;">
       <div
-        style="font-family: var(--pixel); font-size: 9px; display: inline-block; padding: 6px 12px; margin-bottom: 12px; color: var(--cyan); border: 1px solid var(--cyan); background: rgba(6,182,212,0.1);">
+        style="font-family: var(--pixel); font-size: 11px; display: inline-block; padding: 7px 14px; margin-bottom: 14px; color: var(--cyan); border: 1px solid var(--cyan); background: rgba(6,182,212,0.12);">
         ● STEP-BY-STEP VIDEO GUIDE
       </div>
       <h2
-        style="font-family: var(--pixel); font-size: 18px; color: var(--white); line-height: 1.6; margin-bottom: 12px;">
+        style="font-family: var(--pixel); font-size: 21px; color: var(--white); line-height: 1.6; margin-bottom: 14px;">
         How To Use Pluck
       </h2>
-      <p style="font-family: var(--mono); font-size: 13px; color: #ddd6fe; line-height: 1.7;">
+      <p style="font-family: var(--mono); font-size: 15px; color: #f5f3ff; line-height: 1.8;">
         New to Pluck? Watch this step-by-step product walkthrough to learn how to search by intent with ⌘K, auto-redact
         secrets in Studio, customize runtime variables, and connect your AI coding assistants.
       </p>
@@ -238,28 +268,30 @@
             <span class="w-dot w-dot-yellow"></span>
             <span class="w-dot w-dot-green"></span>
             <span
-              style="font-family: var(--mono); font-size: 11px; color: var(--purple-light); margin-left: 6px;">pluck_walkthrough_guide.mp4</span>
+              style="font-family: var(--mono); font-size: 12.5px; color: var(--purple-light); margin-left: 6px;">pluck_walkthrough_guide.mp4</span>
           </div>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="dep-chip" style="color: #ef4444; border-color: #ef4444; font-size: 9px;">● REC</span>
-            <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan); font-size: 9px;">1080p
+            <span class="dep-chip" style="color: #ef4444; border-color: #ef4444; font-size: 10px;">● REC</span>
+            <span class="dep-chip" style="color: var(--cyan); border-color: var(--cyan); font-size: 10px;">1080p
               RETRO</span>
           </div>
         </div>
 
         <!-- Video Screen Viewport -->
         <div class="walkthrough-screen" id="walkthrough-screen">
-          <img src="pluck-walkthrough.webp" alt="Pluck Step-by-Step Walkthrough" class="walkthrough-media"
-            id="walkthrough-media-element" />
+          <video id="walkthrough-video-element" class="walkthrough-media" playsinline autoplay muted loop preload="auto" poster="pluck-walkthrough.webp">
+            <source src="pluck-walkthrough.mp4" type="video/mp4">
+            <img src="pluck-walkthrough.webp" alt="Pluck Step-by-Step Walkthrough" class="walkthrough-media" id="walkthrough-media-element" />
+          </video>
         </div>
 
         <!-- Custom Controls Bar -->
         <div class="walkthrough-controls">
           <button class="btn-solid-pixel" id="btn-video-play" onclick="toggleWalkthroughPlay()"
-            style="font-size: 10px; padding: 4px 10px;">
+            style="font-size: 11px; padding: 5px 12px;">
             ⏸ Pause
           </button>
-          <button class="btn-outline-pixel" onclick="restartWalkthrough()" style="font-size: 10px; padding: 4px 8px;"
+          <button class="btn-outline-pixel" onclick="restartWalkthrough()" style="font-size: 11px; padding: 5px 10px;"
             title="Replay from start">
             ↺ Replay
           </button>
@@ -269,14 +301,14 @@
             <div class="walkthrough-progress-fill" id="walkthrough-progress-fill"></div>
           </div>
 
-          <span id="walkthrough-time" style="color: var(--cyan); font-size: 11px; min-width: 80px;">00:35 / 02:10</span>
+          <span id="walkthrough-time" style="color: var(--cyan); font-size: 12px; min-width: 80px;">00:00 / 00:56</span>
 
           <button class="btn-outline-pixel" id="btn-speed" onclick="toggleSpeed()"
-            style="font-size: 10px; padding: 4px 8px;">
+            style="font-size: 11px; padding: 5px 10px;">
             1.0x
           </button>
           <button class="btn-icon-pixel" onclick="toggleFullscreen()" title="Fullscreen"
-            style="font-size: 12px; padding: 2px 6px;">
+            style="font-size: 13px; padding: 3px 8px;">
             ⛶
           </button>
         </div>
@@ -286,11 +318,11 @@
       <div class="walkthrough-chapters-bar">
         <button class="chapter-btn active" id="chap-btn-1" onclick="selectChapter(1)">
           <div class="chapter-num">STEP 01</div>
-          <div class="chapter-title">Vault &amp; ⌘K Search</div>
+          <div class="chapter-title">Vault &amp; List View</div>
         </button>
         <button class="chapter-btn" id="chap-btn-2" onclick="selectChapter(2)">
           <div class="chapter-num">STEP 02</div>
-          <div class="chapter-title">Studio &amp; Secret Redact</div>
+          <div class="chapter-title">⌘K Intent Search</div>
         </button>
         <button class="chapter-btn" id="chap-btn-3" onclick="selectChapter(3)">
           <div class="chapter-num">STEP 03</div>
@@ -298,7 +330,19 @@
         </button>
         <button class="chapter-btn" id="chap-btn-4" onclick="selectChapter(4)">
           <div class="chapter-num">STEP 04</div>
-          <div class="chapter-title">Profile &amp; Settings</div>
+          <div class="chapter-title">1-Click Code Sharing</div>
+        </button>
+        <button class="chapter-btn" id="chap-btn-5" onclick="selectChapter(5)">
+          <div class="chapter-num">STEP 05</div>
+          <div class="chapter-title">Studio &amp; Secret Redact</div>
+        </button>
+        <button class="chapter-btn" id="chap-btn-6" onclick="selectChapter(6)">
+          <div class="chapter-num">STEP 06</div>
+          <div class="chapter-title">Team Workspaces</div>
+        </button>
+        <button class="chapter-btn" id="chap-btn-7" onclick="selectChapter(7)">
+          <div class="chapter-num">STEP 07</div>
+          <div class="chapter-title">Cyber Dialog &amp; SignOut</div>
         </button>
       </div>
 
@@ -308,21 +352,18 @@
         <div style="flex: 1; min-width: 280px;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
             <span id="guide-step-badge" class="dep-chip"
-              style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">STEP 1 OF 4</span>
+              style="color: var(--yellow); border-color: var(--yellow); font-size: 10.5px;">STEP 1 OF 7</span>
             <h3 id="guide-step-title"
-              style="font-family: var(--mono); font-size: 15px; color: var(--white); font-weight: 700;">Discover &amp;
+              style="font-family: var(--mono); font-size: 17px; color: var(--white); font-weight: 700;">Discover &amp;
               Search by Intent</h3>
           </div>
-          <p id="guide-step-desc" style="font-size: 12px; color: #ddd6fe; line-height: 1.6;">
-            Open your vault at <code style="color: var(--cyan);">/app</code> and press <code
-              style="color: var(--yellow);">⌘K</code> (or Ctrl+K). Describe in natural language what you need (e.g.
-            <em>"debounce input react"</em> or <em>"s3 upload python"</em>) — Pluck's hybrid vector engine matches code
-            by semantic meaning, not just exact titles.
+          <p id="guide-step-desc" style="font-size: 14px; color: #f5f3ff; line-height: 1.7;">
+            Open your vault at <code style="color: var(--cyan);">/app</code> and organize code by collections, languages, and detected package imports. Lock snippets privately or publish them with live AST verification.
           </p>
         </div>
         <div style="flex-shrink: 0;">
-          <a id="guide-step-link" href="app.html" class="btn-solid-pixel"
-            style="font-size: 11px; padding: 10px 18px; display: inline-block;">
+          <a id="guide-step-link" href="auth.html?next=app.html" class="btn-solid-pixel"
+            style="font-size: 12.5px; padding: 10px 18px; display: inline-block;">
             Try Step 1 in Vault →
           </a>
         </div>
@@ -338,12 +379,11 @@
           it directly.</p>
       </div>
       <div class="step-mockup">
-        <div class="pixel-border-box mockup-box" id="mockup-step1" onclick="window.location.href='studio.html'"
-          style="cursor: pointer;" title="Open Snippet Studio">
+        <div class="pixel-border-box mockup-box" id="mockup-step1" style="cursor: default;" aria-hidden="true">
           <div class="mockup-row">
-            <select class="mockup-select">
-              <option>my-snippets / hooks</option>
-            </select>
+            <div class="mockup-select" style="pointer-events: none; user-select: none;">
+              my-snippets / hooks <span style="font-size: 10px; margin-left: 6px; color: var(--purple-light);">▾</span>
+            </div>
             <span class="mockup-branch">main</span>
           </div>
           <div class="mockup-prompt-area">
@@ -363,7 +403,7 @@
           the latest embedding model. It then builds a plan showing exactly what was indexed.</p>
       </div>
       <div class="step-mockup">
-        <div class="step-chat-container" id="step-chat">
+        <div class="step-chat-container" id="step-chat" style="cursor: default;" aria-hidden="true">
           <div class="chat-ai-bubble pixel-border-box">
             <div class="chat-avatar chat-avatar-ai" aria-hidden="true">
               <img src="squid.png" alt="Pluck" class="chat-mascot-img" width="28" height="28" />
@@ -372,8 +412,7 @@
               <p><strong>Here is my plan:</strong></p>
               <p>I will embed useDebounce and index it with react ^18 as a dependency. No secrets found. Ready to save.
               </p>
-              <div class="chat-action-pill" onclick="window.location.href='snippet.html?id=use-debounce'"
-                style="cursor: pointer;" title="View Snippet Details">Save &amp; Index Snippet <span
+              <div class="chat-action-pill" style="cursor: default;" aria-hidden="true">Save &amp; Index Snippet <span
                   class="pill-arrow">▾</span></div>
             </div>
           </div>
@@ -397,9 +436,7 @@
           library always battle-tested and up to date.</p>
       </div>
       <div class="step-mockup">
-        <div class="pixel-border-box mockup-box mockup-diff" id="mockup-diff"
-          onclick="window.location.href='snippet.html?id=use-debounce'" style="cursor: pointer;"
-          title="Inspect Live Diffs">
+        <div class="pixel-border-box mockup-box mockup-diff" id="mockup-diff" style="cursor: default;" aria-hidden="true">
           <div class="diff-line diff-context"><span class="diff-ln">9</span>&nbsp;&nbsp;<span
               class="diff-code">"dependencies": {</span></div>
           <div class="diff-line diff-del"><span class="diff-ln">10</span> - <span class="diff-code">"react":
@@ -423,9 +460,7 @@
         <p>Drop it anywhere. Copy with correct package dependencies in the web app, run in-browser sandboxed tests, and share secure preview cards with your team.</p>
       </div>
       <div class="step-mockup">
-        <div class="pixel-border-box mockup-box mockup-deploy" id="mockup-deploy"
-          onclick="window.location.href='share.html?id=use-debounce'" style="cursor: pointer;"
-          title="Open Public Share View">
+        <div class="pixel-border-box mockup-box mockup-deploy" id="mockup-deploy" style="cursor: default;" aria-hidden="true">
           <div class="deploy-row">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="#c084fc" stroke-width="2" />
@@ -494,9 +529,9 @@
     </div>
 
     <div class="plans-ctas">
-      <a href="auth.html?mode=signup" class="btn-solid-pixel" id="plans-try-btn">Try Pluck Free</a>
-      <a href="app.html" class="btn-outline-pixel" id="plans-docs-btn">Explore Vault</a>
-      <a href="team.html" class="btn-outline-pixel">Team Workspace</a>
+      <a href="auth.html" class="btn-solid-pixel" id="plans-try-btn">Try Pluck Free</a>
+      <a href="auth.html?next=app.html" class="btn-outline-pixel" id="plans-docs-btn">Explore Vault</a>
+      <a href="auth.html?next=team.html" class="btn-outline-pixel">Team Workspace</a>
     </div>
 
     <!-- Retro pixel signal decoration -->
@@ -513,15 +548,26 @@
         </svg>
         Pluck Labs
       </a>
-      <a href="app.html" class="footer-link">Vault</a>
-      <a href="studio.html" class="footer-link">Studio</a>
-      <a href="settings.html" class="footer-link">Settings</a>
-      <a href="team.html" class="footer-link">Teams</a>
-      <a href="https://github.com/aarchibhabhor-5/Pluck" target="_blank" rel="noreferrer" class="footer-link">GitHub</a>
+      <div class="footer-socials">
+        <a href="https://www.linkedin.com/in/aarchi-bhabhor-4998aa33a" target="_blank" rel="noopener noreferrer" class="footer-btn-3d footer-btn-linkedin" aria-label="LinkedIn Profile">
+          <svg class="footer-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+          <span>LinkedIn</span>
+          <span class="footer-btn-tooltip">view developer's linkedin?</span>
+        </a>
+        <a href="https://github.com/aarchibhabhor-5/Pluck" target="_blank" rel="noopener noreferrer" class="footer-btn-3d footer-btn-github" aria-label="GitHub Repository">
+          <svg class="footer-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span>GitHub</span>
+          <span class="footer-btn-tooltip">view developer's github?</span>
+        </a>
+      </div>
     </div>
   </footer>
 
-  <script src="script.js?v=patrol3"></script>
+  <script src="script.js?v=pluck_dialog_v3"></script>
   <script src="magic-bento.js"></script>
   <script src="border-glow.js?v=patrol2"></script>
 </body>

@@ -146,6 +146,14 @@ function showToast(message, type = 'info') {
         <span style="font-size: 10px; color: var(--muted);">↵ Open</span>
       `;
       el.addEventListener('click', () => {
+        if (item.path === 'index.html') {
+          try {
+            localStorage.removeItem('pluck_user');
+            localStorage.removeItem('pluck_token');
+            localStorage.removeItem('pluck_user_snippets');
+            sessionStorage.clear();
+          } catch (e) {}
+        }
         window.location.href = item.path;
       });
       resultsContainer.appendChild(el);
@@ -334,4 +342,259 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
     b.el.addEventListener('mouseleave', () => { b.isHovered = false; });
   });
 })();
+
+// ── 7. Enforce Authentication (Block Pluck usage without signing in) ──
+(function enforceAuthRouteGuard() {
+  function verify() {
+    const publicPages = ['index.html', 'auth.html', 'google-signin.html', 'share.html'];
+    const currentPage = window.location.pathname.split('/').pop().toLowerCase() || 'index.html';
+
+    // Do not guard public landing, auth, or shared link pages
+    if (publicPages.includes(currentPage) || !currentPage.endsWith('.html')) return;
+
+    const token = localStorage.getItem('pluck_token');
+    const user = localStorage.getItem('pluck_user');
+    const hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+
+    if (!token || !user || !hasCookie) {
+      document.documentElement.style.display = 'none';
+      try {
+        localStorage.removeItem('pluck_user');
+        localStorage.removeItem('pluck_token');
+        localStorage.removeItem('pluck_user_snippets');
+        sessionStorage.clear();
+      } catch (e) {}
+      const currentDest = window.location.pathname.split('/').pop() + window.location.search;
+      window.location.replace(`auth.html?next=${encodeURIComponent(currentDest)}`);
+    }
+  }
+
+  verify();
+  window.addEventListener('pageshow', verify);
+})();
+
+// ── 8. Universal Logo Click Sign-Out (PRD A 2.4.5) ───────────
+function autoSignOutOnLogo(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  const isAuthed = !!(
+    localStorage.getItem('pluck_token') ||
+    localStorage.getItem('pluck_user') ||
+    (document.cookie && document.cookie.includes('pluck_session='))
+  );
+
+  const currentPage = window.location.pathname.split('/').pop().toLowerCase() || 'index.html';
+  const isLandingPage = (currentPage === 'index.html' || currentPage === '' || currentPage === '/');
+
+  // If already on the landing page AND not authenticated, do not navigate away
+  if (isLandingPage && !isAuthed) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  const token = localStorage.getItem('pluck_token');
+
+  // 1. Immediately revoke session on server
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
+  } catch (err) {}
+
+  // 2. Clear all local storage & session state
+  try {
+    localStorage.removeItem('pluck_user');
+    localStorage.removeItem('pluck_token');
+    localStorage.removeItem('pluck_user_snippets');
+    localStorage.removeItem('pluck_active_snippet');
+    localStorage.removeItem('pluck_auth_pending');
+    sessionStorage.removeItem('pluck_active_snippet');
+    sessionStorage.clear();
+    document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+    document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+  } catch (err) {}
+
+  // 3. Immediately redirect to auth page with signed_out notification parameter
+  window.location.href = 'auth.html?status=signed_out';
+}
+window.autoSignOutOnLogo = autoSignOutOnLogo;
+
+// Universal delegated capture-phase click listener for logo elements & links navigating to index.html
+document.addEventListener('click', (e) => {
+  const logoEl = e.target.closest('.nav-logo, #nav-logo-link, .nav-logo-squid, .logo-wordmark, [data-action="logo-signout"]');
+  if (logoEl) {
+    autoSignOutOnLogo(e);
+    return;
+  }
+
+  // Any link targeting index.html or root immediately purges user session
+  const linkEl = e.target.closest('a[href]');
+  if (linkEl) {
+    const href = (linkEl.getAttribute('href') || '').trim();
+    if (href === 'index.html' || href === '/' || href.endsWith('/index.html')) {
+      const token = localStorage.getItem('pluck_token');
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
+      } catch (err) {}
+      try {
+        localStorage.removeItem('pluck_user');
+        localStorage.removeItem('pluck_token');
+        localStorage.removeItem('pluck_user_snippets');
+        localStorage.removeItem('pluck_active_snippet');
+        sessionStorage.clear();
+        document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      } catch (err) {}
+    }
+  }
+}, true);
+
+// ── 9. Pluck Custom Dialog & Modal Engine (Replaces "localhost:4000 says") ──
+(function initPluckDialogEngine(global) {
+  let activeResolve = null;
+
+  function ensureDialogElements() {
+    let overlay = document.getElementById('pluck-dialog-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'pluck-dialog-overlay';
+      overlay.className = 'pluck-dialog-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.innerHTML = `
+        <div class="pluck-dialog-box" id="pluck-dialog-box">
+          <div class="pluck-dialog-header">
+            <div class="pluck-dialog-brand">
+              <img src="squid.png" alt="Pluck" class="pluck-dialog-squid" width="24" height="24" />
+              <span class="pluck-dialog-title" id="pluck-dialog-title">Pluck says:</span>
+            </div>
+            <button type="button" class="pluck-dialog-close" id="pluck-dialog-x" aria-label="Close dialog">✕</button>
+          </div>
+          <div class="pluck-dialog-body" id="pluck-dialog-msg"></div>
+          <div class="pluck-dialog-footer" id="pluck-dialog-footer">
+            <button type="button" class="btn-pluck-dialog-cancel" id="pluck-dialog-cancel">Cancel</button>
+            <button type="button" class="btn-pluck-dialog-confirm" id="pluck-dialog-ok">OK</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      function closeDialog(result) {
+        overlay.classList.remove('open');
+        window.removeEventListener('keydown', handleKey);
+        if (activeResolve) {
+          const r = activeResolve;
+          activeResolve = null;
+          r(result);
+        }
+      }
+
+      function handleKey(e) {
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDialog(false);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDialog(true);
+        }
+      }
+
+      const closeX = document.getElementById('pluck-dialog-x');
+      const cancelBtn = document.getElementById('pluck-dialog-cancel');
+      const okBtn = document.getElementById('pluck-dialog-ok');
+
+      closeX.addEventListener('click', () => closeDialog(false));
+      cancelBtn.addEventListener('click', () => closeDialog(false));
+      okBtn.addEventListener('click', () => closeDialog(true));
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeDialog(false);
+      });
+
+      overlay._close = closeDialog;
+      overlay._handleKey = handleKey;
+    }
+    return overlay;
+  }
+
+  function pluckConfirm(message, options = {}) {
+    return new Promise((resolve) => {
+      const overlay = ensureDialogElements();
+      activeResolve = resolve;
+
+      const titleEl = document.getElementById('pluck-dialog-title');
+      const msgEl = document.getElementById('pluck-dialog-msg');
+      const cancelBtn = document.getElementById('pluck-dialog-cancel');
+      const okBtn = document.getElementById('pluck-dialog-ok');
+
+      titleEl.textContent = options.title || 'Pluck says:';
+      msgEl.textContent = message || '';
+
+      cancelBtn.style.display = 'inline-flex';
+      cancelBtn.textContent = options.cancelText || 'Cancel';
+
+      okBtn.textContent = options.confirmText || 'OK';
+
+      if (options.danger) {
+        okBtn.className = 'btn-pluck-dialog-confirm danger';
+      } else {
+        okBtn.className = 'btn-pluck-dialog-confirm';
+      }
+
+      window.addEventListener('keydown', overlay._handleKey);
+      overlay.classList.add('open');
+      setTimeout(() => {
+        if (options.focusCancel) {
+          cancelBtn.focus();
+        } else {
+          okBtn.focus();
+        }
+      }, 60);
+    });
+  }
+
+  function pluckAlert(message, options = {}) {
+    return new Promise((resolve) => {
+      const overlay = ensureDialogElements();
+      activeResolve = resolve;
+
+      const titleEl = document.getElementById('pluck-dialog-title');
+      const msgEl = document.getElementById('pluck-dialog-msg');
+      const cancelBtn = document.getElementById('pluck-dialog-cancel');
+      const okBtn = document.getElementById('pluck-dialog-ok');
+
+      titleEl.textContent = options.title || 'Pluck says:';
+      msgEl.textContent = message || '';
+
+      cancelBtn.style.display = 'none';
+
+      okBtn.textContent = options.confirmText || 'OK';
+      okBtn.className = 'btn-pluck-dialog-confirm';
+
+      window.addEventListener('keydown', overlay._handleKey);
+      overlay.classList.add('open');
+      setTimeout(() => okBtn.focus(), 60);
+    });
+  }
+
+  global.pluckConfirm = pluckConfirm;
+  global.pluckAlert = pluckAlert;
+
+  // Intercept native window.alert so all popups display "Pluck says:"
+  global.alert = function (msg) {
+    return pluckAlert(msg);
+  };
+})(window);
+
+
+
 

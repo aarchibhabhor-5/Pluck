@@ -2,6 +2,55 @@
 <html lang="en">
 
 <head>
+  <script>
+    (function enforcePageAuth() {
+      function purgeAndRedirect() {
+        document.documentElement.style.display = 'none';
+        try {
+          localStorage.removeItem('pluck_user');
+          localStorage.removeItem('pluck_token');
+          localStorage.removeItem('pluck_user_snippets');
+          localStorage.removeItem('pluck_active_snippet');
+          localStorage.removeItem('pluck_auth_pending');
+          sessionStorage.clear();
+          document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        } catch(e) {}
+        var current = window.location.pathname.split('/').pop() + window.location.search;
+        window.location.replace('auth.html?next=' + encodeURIComponent(current));
+      }
+
+      function check() {
+        var token = localStorage.getItem('pluck_token');
+        var user = localStorage.getItem('pluck_user');
+        var hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+        if (!token || !user || !hasCookie) {
+          purgeAndRedirect();
+          return false;
+        }
+        return true;
+      }
+
+      if (!check()) return;
+
+      window.addEventListener('pageshow', function(e) {
+        if (!check()) return;
+      });
+
+      try {
+        var tok = localStorage.getItem('pluck_token');
+        var h = { 'Accept': 'application/json' };
+        if (tok) h['Authorization'] = 'Bearer ' + tok;
+        fetch('/api/auth/me', { headers: h, credentials: 'same-origin' })
+          .then(function(res) {
+            if (!res.ok) {
+              purgeAndRedirect();
+            }
+          })
+          .catch(function() {});
+      } catch(e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Snippet Studio — Pluck</title>
@@ -1017,6 +1066,10 @@
     <!-- ░░░ STUDIO HEADER ░░░ -->
     <header class="studio-header">
       <div style="display: flex; align-items: center; gap: 16px;">
+        <a href="javascript:void(0)" class="nav-logo" onclick="autoSignOutOnLogo(event)" title="Click logo to sign out" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+          <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="22" height="22" />
+          <span class="logo-wordmark" style="font-size: 13px;">Pluck</span>
+        </a>
         <a href="app.html" title="Back to Vault" class="btn-vault-back">← Vault</a>
         <input type="text" id="snippet-title" class="studio-title-input" value="" placeholder="Enter snippet title..." />
         <span class="dep-chip" id="save-status-pill">● Ready</span>
@@ -1255,7 +1308,7 @@
     </div>
   </div>
 
-  <script src="app-script.js"></script>
+  <script src="app-script.js?v=pluck_dialog_v3"></script>
   <script src="animated-list.js"></script>
   <script src="dock.js"></script>
   <script>
@@ -2464,9 +2517,9 @@
       }
     }
 
-    function checkVisibilityGating(val) {
+    async function checkVisibilityGating(val) {
       if (val === 'public' && activeSecretMatch) {
-        alert('Gating Violation: Snippets with active secrets cannot be published to Public scope.');
+        await pluckAlert('Gating Violation: Snippets with active secrets cannot be published to Public scope.');
         document.getElementById('select-visibility').value = 'private';
       }
     }
@@ -2754,31 +2807,33 @@
           if (cu && cu.id) authHeaders['X-User-Id'] = cu.id;
           if (cu && cu.email) authHeaders['X-User-Email'] = cu.email;
 
-          const teamId = s.teamId || 'acme-core-eng';
-          fetch(`${API_BASE}/teams/${encodeURIComponent(teamId)}`, { headers: authHeaders })
-            .then(r => r.json())
-            .then(teamData => {
-              const role = teamData.role ? teamData.role.toLowerCase() : '';
-              if (teamData.canEditSnippets === false || role === 'viewer') {
-                if (editorInstance) {
-                  editorInstance.updateOptions({ readOnly: true });
+          const teamId = s.teamId || localStorage.getItem('pluck_active_team_id') || '';
+          if (teamId) {
+            fetch(`${API_BASE}/teams/${encodeURIComponent(teamId)}`, { headers: authHeaders })
+              .then(r => r.json())
+              .then(teamData => {
+                const role = teamData.role ? teamData.role.toLowerCase() : '';
+                if (teamData.canEditSnippets === false || role === 'viewer') {
+                  if (editorInstance) {
+                    editorInstance.updateOptions({ readOnly: true });
+                  }
+                  const saveBtn = document.getElementById('btn-save');
+                  if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'View Only (Read-Only)';
+                    saveBtn.style.opacity = '0.5';
+                    saveBtn.style.cursor = 'not-allowed';
+                    saveBtn.title = 'You have Viewer permissions in this team workspace. Snippet is read-only.';
+                  }
+                  const titleEl = document.getElementById('snippet-title');
+                  if (titleEl) titleEl.disabled = true;
+                  const descEl = document.getElementById('snippet-desc');
+                  if (descEl) descEl.disabled = true;
+                  showToast('View-Only Mode: You have Viewer permissions for this team snippet.', 'warning');
                 }
-                const saveBtn = document.getElementById('btn-save');
-                if (saveBtn) {
-                  saveBtn.disabled = true;
-                  saveBtn.textContent = 'View Only (Read-Only)';
-                  saveBtn.style.opacity = '0.5';
-                  saveBtn.style.cursor = 'not-allowed';
-                  saveBtn.title = 'You have Viewer permissions in this team workspace. Snippet is read-only.';
-                }
-                const titleEl = document.getElementById('snippet-title');
-                if (titleEl) titleEl.disabled = true;
-                const descEl = document.getElementById('snippet-desc');
-                if (descEl) descEl.disabled = true;
-                showToast('View-Only Mode: You have Viewer permissions for this team snippet.', 'warning');
-              }
-            })
-            .catch(() => {});
+              })
+              .catch(() => {});
+          }
         }
 
         showToast(`Editing snippet: "${s.title}"`, 'info');
@@ -2821,3 +2876,4 @@
 </body>
 
 </html>
+

@@ -2,6 +2,55 @@
 <html lang="en">
 
 <head>
+  <script>
+    (function enforcePageAuth() {
+      function purgeAndRedirect() {
+        document.documentElement.style.display = 'none';
+        try {
+          localStorage.removeItem('pluck_user');
+          localStorage.removeItem('pluck_token');
+          localStorage.removeItem('pluck_user_snippets');
+          localStorage.removeItem('pluck_active_snippet');
+          localStorage.removeItem('pluck_auth_pending');
+          sessionStorage.clear();
+          document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        } catch(e) {}
+        var current = window.location.pathname.split('/').pop() + window.location.search;
+        window.location.replace('auth.html?next=' + encodeURIComponent(current));
+      }
+
+      function check() {
+        var token = localStorage.getItem('pluck_token');
+        var user = localStorage.getItem('pluck_user');
+        var hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+        if (!token || !user || !hasCookie) {
+          purgeAndRedirect();
+          return false;
+        }
+        return true;
+      }
+
+      if (!check()) return;
+
+      window.addEventListener('pageshow', function(e) {
+        if (!check()) return;
+      });
+
+      try {
+        var tok = localStorage.getItem('pluck_token');
+        var h = { 'Accept': 'application/json' };
+        if (tok) h['Authorization'] = 'Bearer ' + tok;
+        fetch('/api/auth/me', { headers: h, credentials: 'same-origin' })
+          .then(function(res) {
+            if (!res.ok) {
+              purgeAndRedirect();
+            }
+          })
+          .catch(function() {});
+      } catch(e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings — Pluck</title>
@@ -312,7 +361,7 @@
     <!-- Mini Sidebar -->
     <aside class="app-sidebar" style="width: 240px;">
       <div class="app-sidebar-header">
-        <a href="app.html" class="nav-logo" title="Back to Vault">
+        <a href="javascript:void(0)" class="nav-logo" onclick="autoSignOutOnLogo(event)" title="Click logo to sign out">
           <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="24" height="24" />
           <span class="logo-wordmark" style="font-size: 12px;">Pluck</span>
         </a>
@@ -460,7 +509,7 @@
     </main>
   </div>
 
-  <script src="app-script.js"></script>
+  <script src="app-script.js?v=pluck_dialog_v3"></script>
   <script>
     // Auth header helper with user identity context
     function getAuthHeaders() {

@@ -2,9 +2,58 @@
 <html lang="en">
 
 <head>
+  <script>
+    (function enforcePageAuth() {
+      function purgeAndRedirect() {
+        document.documentElement.style.display = 'none';
+        try {
+          localStorage.removeItem('pluck_user');
+          localStorage.removeItem('pluck_token');
+          localStorage.removeItem('pluck_user_snippets');
+          localStorage.removeItem('pluck_active_snippet');
+          localStorage.removeItem('pluck_auth_pending');
+          sessionStorage.clear();
+          document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        } catch(e) {}
+        var current = window.location.pathname.split('/').pop() + window.location.search;
+        window.location.replace('auth.html?next=' + encodeURIComponent(current));
+      }
+
+      function check() {
+        var token = localStorage.getItem('pluck_token');
+        var user = localStorage.getItem('pluck_user');
+        var hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+        if (!token || !user || !hasCookie) {
+          purgeAndRedirect();
+          return false;
+        }
+        return true;
+      }
+
+      if (!check()) return;
+
+      window.addEventListener('pageshow', function(e) {
+        if (!check()) return;
+      });
+
+      try {
+        var tok = localStorage.getItem('pluck_token');
+        var h = { 'Accept': 'application/json' };
+        if (tok) h['Authorization'] = 'Bearer ' + tok;
+        fetch('/api/auth/me', { headers: h, credentials: 'same-origin' })
+          .then(function(res) {
+            if (!res.ok) {
+              purgeAndRedirect();
+            }
+          })
+          .catch(function() {});
+      } catch(e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Workspace — Acme Core Eng | Pluck</title>
+  <title>Team Workspace | Pluck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -180,16 +229,55 @@
     <!-- Mini Sidebar -->
     <aside class="app-sidebar" style="width: 240px;">
       <div class="app-sidebar-header">
-        <a href="app.html" class="nav-logo" title="Back to Vault">
+        <a href="javascript:void(0)" class="nav-logo" onclick="autoSignOutOnLogo(event)" title="Click logo to sign out">
           <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="24" height="24" />
           <span class="logo-wordmark" style="font-size: 12px;">Pluck</span>
         </a>
       </div>
       <div class="app-sidebar-content">
-        <a href="app.html" class="folder-item">
+        <!-- Interactive Team / Workspace Switcher in Sidebar -->
+        <div style="padding: 4px 0 12px; position: relative;">
+          <div class="ws-switcher pixel-border-box" id="team-sidebar-ws-btn" onclick="toggleSidebarTeamDropdown(event)"
+            style="cursor: pointer; padding: 8px 10px; background: rgba(18, 18, 20, 0.7); border: 1px solid rgba(139, 92, 246, 0.35); display: flex; align-items: center; justify-content: space-between; border-radius: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+              <div id="sidebar-ws-icon" style="width: 20px; height: 20px; background: var(--pink); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 700; flex-shrink: 0; border-radius: 2px;">T</div>
+              <div style="overflow: hidden;">
+                <div id="sidebar-ws-name" style="font-size: 11px; font-weight: 700; color: #fff; font-family: var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Team Workspace</div>
+                <div style="font-size: 9px; color: var(--muted);" id="sidebar-ws-sub">Switch workspace...</div>
+              </div>
+            </div>
+            <span style="font-size: 9px; color: var(--purple-light);">▾</span>
+          </div>
+
+          <!-- Sidebar Switcher Dropdown Popover -->
+          <div id="team-sidebar-ws-dropdown" class="pixel-border-box"
+            style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #141416; border: 1px solid rgba(139, 92, 246, 0.35); z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.9); padding: 6px; border-radius: 4px;">
+            <div style="padding: 4px 8px 6px; font-size: 10px; color: var(--muted); text-transform: uppercase;">Switch Workspace</div>
+            <a href="app.html"
+              style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; cursor: pointer; text-decoration: none; color: #ddd6fe; margin-bottom: 4px; border-radius: 3px; transition: background 0.15s;"
+              onmouseover="this.style.background='rgba(124,58,237,0.2)'"
+              onmouseout="this.style.background='transparent'">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="width: 18px; height: 18px; background: var(--purple); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 2px;">P</span>
+                <span style="font-size: 11px; font-weight: 700; color: #fff;">Personal Vault</span>
+              </div>
+              <span style="font-size: 10px; color: var(--muted);">←</span>
+            </a>
+            <div id="team-sidebar-ws-list" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 4px; margin-top: 4px;"></div>
+            <div onclick="openCreateTeamModal(); closeTeamDropdowns();"
+              style="border-top: 1px solid var(--purple-dim); padding: 7px 10px; font-size: 11px; color: var(--cyan); cursor: pointer; display: flex; align-items: center; gap: 6px; margin-top: 4px; border-radius: 3px; transition: background 0.15s;"
+              onmouseover="this.style.background='rgba(56,189,248,0.1)'"
+              onmouseout="this.style.background='transparent'">
+              <span style="font-weight: 700;">+</span> <span>Create New Team</span>
+            </div>
+          </div>
+        </div>
+
+        <a href="app.html" class="folder-item" style="margin-bottom: 10px;">
           <span>← Back to Personal Vault</span>
         </a>
-        <div style="margin-top: 14px;">
+
+        <div style="margin-top: 10px;">
           <div class="nav-section-title">Team Tabs</div>
           <div class="folder-tree">
             <a href="#" class="folder-item active" id="tab-nav-collections"
@@ -200,6 +288,11 @@
             <a href="#" class="folder-item" id="tab-nav-settings" onclick="switchTeamTab('settings', event)">⚙️ Team
               Settings</a>
           </div>
+          <div style="margin-top: 16px; border-top: 1px solid rgba(139, 92, 246, 0.25); padding-top: 12px;">
+            <button class="btn-outline-pixel" onclick="openCreateTeamModal()" style="width: 100%; font-size: 11px; padding: 8px 10px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;">
+              <span style="color: var(--cyan); font-weight: 700;">+</span> <span>Create New Team</span>
+            </button>
+          </div>
         </div>
       </div>
     </aside>
@@ -207,11 +300,45 @@
     <!-- Main View -->
     <main class="app-main">
       <header class="app-topbar">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <h2 style="font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--white);">Acme Core Eng
-          </h2>
-          <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">Team
-            Admin</span>
+        <div style="display: flex; align-items: center; gap: 12px; position: relative;">
+          <!-- Interactive Team Switcher Trigger in Topbar -->
+          <div class="team-topbar-switcher" style="position: relative;">
+            <button id="team-topbar-trigger" onclick="toggleTopbarTeamDropdown(event)"
+              style="display: flex; align-items: center; gap: 8px; background: rgba(18, 18, 20, 0.6); border: 1px solid rgba(139, 92, 246, 0.35); padding: 6px 12px; border-radius: 4px; cursor: pointer; color: #fff; font-family: var(--mono); transition: all 0.15s;"
+              onmouseover="this.style.borderColor='var(--cyan)'; this.style.background='rgba(56,189,248,0.08)';"
+              onmouseout="this.style.borderColor='rgba(139, 92, 246, 0.35)'; this.style.background='rgba(18, 18, 20, 0.6)';">
+              <span id="topbar-team-icon" style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 2px;">T</span>
+              <h2 id="team-workspace-title" style="font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--white); margin: 0;">Team Workspace</h2>
+              <span style="font-size: 9px; color: var(--muted); margin-left: 2px;">▾</span>
+            </button>
+
+            <!-- Topbar Team Switcher Popover -->
+            <div id="team-topbar-dropdown" class="pixel-border-box"
+              style="display: none; position: absolute; top: calc(100% + 6px); left: 0; min-width: 270px; background: #141416; border: 1px solid rgba(139, 92, 246, 0.35); z-index: 1000; box-shadow: 0 12px 30px rgba(0,0,0,0.9); padding: 8px; border-radius: 4px;">
+              <div style="padding: 4px 8px 6px; font-size: 10px; color: var(--muted); text-transform: uppercase; font-family: var(--mono); letter-spacing: 0.5px;">Switch Team / Workspace</div>
+              <a href="app.html"
+                style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; text-decoration: none; color: #cbd5e1; border-radius: 3px; margin-bottom: 4px; transition: background 0.15s;"
+                onmouseover="this.style.background='rgba(124,58,237,0.2)'"
+                onmouseout="this.style.background='transparent'">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="width: 18px; height: 18px; background: var(--purple); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; border-radius: 2px;">P</span>
+                  <span style="font-size: 11px; font-weight: 600;">Personal Vault</span>
+                </div>
+                <span style="font-size: 10px; color: var(--muted);">←</span>
+              </a>
+              <div id="team-topbar-ws-list" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 4px; margin-top: 4px;">
+                <!-- Populated dynamically with teams -->
+              </div>
+              <div onclick="openCreateTeamModal(); closeTeamDropdowns();"
+                style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer; display: flex; align-items: center; gap: 6px; margin-top: 4px; border-radius: 3px; transition: background 0.15s;"
+                onmouseover="this.style.background='rgba(56,189,248,0.1)'"
+                onmouseout="this.style.background='transparent'">
+                <span style="font-weight: 700;">+</span> <span>Create New Team</span>
+              </div>
+            </div>
+          </div>
+
+          <span class="dep-chip" style="color: var(--yellow); border-color: var(--yellow); font-size: 9px;">Team Admin</span>
         </div>
         <div class="topbar-actions">
         </div>
@@ -304,15 +431,28 @@
               <button class="btn-solid-pixel" onclick="saveTeamPolicies()">Save Policies</button>
             </div>
           </div>
+
+          <!-- Danger Zone: Delete Team Workspace -->
+          <div id="team-danger-zone" class="pixel-border-box"
+            style="margin-top: 14px; padding: 20px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.35); box-shadow: 0 8px 24px rgba(0,0,0,0.7); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <div style="font-weight: 700; color: #ef4444; font-size: 13px; font-family: var(--mono);">Danger Zone</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Permanently delete this team workspace and all team-shared collections.</div>
+            </div>
+            <button class="btn-outline-danger" onclick="deleteCurrentTeam()" style="padding: 8px 16px; font-size: 11px; border-color: #ef4444; color: #ef4444; background: transparent; cursor: pointer;">
+              Delete Workspace
+            </button>
+          </div>
         </div>
 
       </div>
     </main>
   </div>
 
-  <script src="app-script.js"></script>
+  <script src="app-script.js?v=pluck_dialog_v3"></script>
   <script>
-    const currentTeamId = 'acme-core-eng';
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentTeamId = urlParams.get('id') || urlParams.get('teamId') || localStorage.getItem('pluck_active_team_id') || '';
 
     function switchTeamTab(tab, e) {
       if (e) e.preventDefault();
@@ -329,9 +469,13 @@
     }
 
     // Read ?tab= query parameter on load
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('tab')) {
-      switchTeamTab(params.get('tab'));
+    if (urlParams.get('tab')) {
+      switchTeamTab(urlParams.get('tab'));
+    }
+
+    // Read ?action=new query parameter on load
+    if (urlParams.get('action') === 'new') {
+      setTimeout(() => openCreateTeamModal(), 200);
     }
 
     // Cross-tab real-time sync channel
@@ -382,14 +526,146 @@
         .replace(/'/g, '&#039;');
     }
 
+    let userTeamsList = [];
+
+    async function loadUserTeams() {
+      try {
+        const res = await fetch('/api/teams', { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          userTeamsList = data.teams || [];
+          renderTeamSwitchers();
+        }
+      } catch (e) {
+        console.warn('Failed to load user teams:', e);
+      }
+    }
+
+    function renderTeamSwitchers() {
+      const topbarList = document.getElementById('team-topbar-ws-list');
+      const sidebarList = document.getElementById('team-sidebar-ws-list');
+
+      const buildHtml = (teams) => {
+        if (!teams || teams.length === 0) {
+          return `<div style="padding: 8px 10px; font-size: 11px; color: var(--muted); font-style: italic;">No teams created yet</div>`;
+        }
+        return teams.map(t => {
+          const isCurrent = (t.id === currentTeamId || t.slug === currentTeamId);
+          const initial = (t.name ? t.name.charAt(0) : 'T').toUpperCase();
+          const bgStyle = isCurrent ? 'background: rgba(139,92,246,0.22); font-weight: 700;' : '';
+          const activeIndicator = isCurrent
+            ? `<span style="font-size: 10px; color: var(--green); font-weight: 700;">✓</span>`
+            : `<span style="font-size: 10px; color: var(--purple-light);">→</span>`;
+
+          return `
+            <div onclick="switchTeamWorkspace('${escapeHtml(t.id || t.slug)}')"
+              style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; cursor: pointer; border-radius: 3px; margin-bottom: 3px; ${bgStyle} transition: background 0.15s;"
+              onmouseover="if (!${isCurrent}) this.style.background='rgba(139,92,246,0.15)';"
+              onmouseout="if (!${isCurrent}) this.style.background='transparent';">
+              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                <span style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; border-radius: 2px;">${escapeHtml(initial)}</span>
+                <span style="font-size: 11px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.name)}</span>
+              </div>
+              ${activeIndicator}
+            </div>
+          `;
+        }).join('');
+      };
+
+      const html = buildHtml(userTeamsList);
+      if (topbarList) topbarList.innerHTML = html;
+      if (sidebarList) sidebarList.innerHTML = html;
+    }
+
+    function switchTeamWorkspace(targetTeamId) {
+      if (!targetTeamId) return;
+      closeTeamDropdowns();
+      if (targetTeamId === currentTeamId) return;
+      localStorage.setItem('pluck_active_team_id', targetTeamId);
+      window.location.href = `team.html?id=${encodeURIComponent(targetTeamId)}`;
+    }
+
+    function toggleTopbarTeamDropdown(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      const d = document.getElementById('team-topbar-dropdown');
+      if (!d) return;
+      const isClosed = d.style.display === 'none' || !d.style.display;
+      closeTeamDropdowns();
+      if (isClosed) {
+        d.style.display = 'block';
+        loadUserTeams();
+      }
+    }
+
+    function toggleSidebarTeamDropdown(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      const d = document.getElementById('team-sidebar-ws-dropdown');
+      if (!d) return;
+      const isClosed = d.style.display === 'none' || !d.style.display;
+      closeTeamDropdowns();
+      if (isClosed) {
+        d.style.display = 'block';
+        loadUserTeams();
+      }
+    }
+
+    function closeTeamDropdowns() {
+      const topbarD = document.getElementById('team-topbar-dropdown');
+      const sidebarD = document.getElementById('team-sidebar-ws-dropdown');
+      if (topbarD) topbarD.style.display = 'none';
+      if (sidebarD) sidebarD.style.display = 'none';
+    }
+
+    document.addEventListener('click', (e) => {
+      const topbarTrigger = document.getElementById('team-topbar-trigger');
+      const topbarD = document.getElementById('team-topbar-dropdown');
+      const sidebarTrigger = document.getElementById('team-sidebar-ws-btn');
+      const sidebarD = document.getElementById('team-sidebar-ws-dropdown');
+
+      if (topbarD && topbarTrigger && !topbarTrigger.contains(e.target) && !topbarD.contains(e.target)) {
+        topbarD.style.display = 'none';
+      }
+      if (sidebarD && sidebarTrigger && !sidebarTrigger.contains(e.target) && !sidebarD.contains(e.target)) {
+        sidebarD.style.display = 'none';
+      }
+    });
+
     let currentCallerRole = 'Viewer';
     let canManageMembers = false;
     let canManageSettings = false;
     let canEditSnippets = false;
 
     async function loadTeamData() {
+      if (!currentTeamId) {
+        try {
+          const tRes = await fetch('/api/teams', { headers: getAuthHeaders() });
+          if (tRes.ok) {
+            const tData = await tRes.json();
+            if (tData.teams && tData.teams.length > 0) {
+              currentTeamId = tData.teams[0].id || tData.teams[0].slug;
+              try { localStorage.setItem('pluck_active_team_id', currentTeamId); } catch(e) {}
+            }
+          }
+        } catch(e) {}
+      }
+
+      if (!currentTeamId) {
+        const titleEl = document.getElementById('team-workspace-title');
+        if (titleEl) titleEl.textContent = 'No Team Workspace';
+        const collGrid = document.getElementById('team-collections-grid');
+        if (collGrid) collGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 40px; text-align: center; background: #121212; border: 1px dashed rgba(139, 92, 246, 0.3);">
+            <div style="font-size: 24px; margin-bottom: 10px;">🏢</div>
+            <div style="color: #fff; font-weight: 700; margin-bottom: 6px;">No Team Workspaces Found</div>
+            <p style="font-size: 12px; color: var(--muted); margin-bottom: 16px;">You don't belong to any team workspace yet.</p>
+            <button class="btn-solid-pixel" onclick="openCreateTeamModal()">+ Create New Team</button>
+          </div>
+        `;
+        return;
+      }
+
       try {
-        const res = await fetch(`/api/teams/${currentTeamId}`, { headers: getAuthHeaders() });
+        const res = await fetch(`/api/teams/${encodeURIComponent(currentTeamId)}`, { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           const team = data.team;
@@ -397,6 +673,24 @@
           canManageMembers = !!data.canManageMembers;
           canManageSettings = !!data.canManageSettings;
           canEditSnippets = (data.canEditSnippets !== undefined) ? !!data.canEditSnippets : (currentCallerRole.toLowerCase() !== 'viewer');
+
+          // Update Workspace Title, Icons, and Browser Title
+          if (team && team.name) {
+            const titleEl = document.getElementById('team-workspace-title');
+            if (titleEl) titleEl.textContent = team.name;
+            const topbarIcon = document.getElementById('topbar-team-icon');
+            if (topbarIcon) topbarIcon.textContent = team.name.charAt(0).toUpperCase();
+            const sidebarName = document.getElementById('sidebar-ws-name');
+            if (sidebarName) sidebarName.textContent = team.name;
+            const sidebarIcon = document.getElementById('sidebar-ws-icon');
+            if (sidebarIcon) sidebarIcon.textContent = team.name.charAt(0).toUpperCase();
+
+            document.title = `Team Workspace - ${team.name} | Pluck`;
+            try {
+              localStorage.setItem('pluck_active_team_id', team.id || currentTeamId);
+            } catch(e) {}
+            loadUserTeams();
+          }
 
           // Update Topbar badge
           const topbarBadge = document.querySelector('.app-topbar .dep-chip');
@@ -725,7 +1019,12 @@
     }
 
     async function removeMember(userId, name) {
-      if (!confirm(`Remove ${name} from this team workspace?`)) return;
+      const confirmed = await pluckConfirm(`Remove ${name} from this team workspace?`, {
+        danger: true,
+        confirmText: 'Remove',
+        cancelText: 'Cancel'
+      });
+      if (!confirmed) return;
       try {
         const res = await fetch(`/api/teams/${currentTeamId}/members/${encodeURIComponent(userId)}`, {
           method: 'DELETE',
@@ -877,6 +1176,10 @@
       if (e.key === 'Escape') {
         closeRoleDropdown();
         closeInviteRoleDropdown();
+        closeCreateTeamModal();
+        closeCollectionModal();
+        closeInviteModal();
+        closeTeamDropdowns();
       }
     });
 
@@ -1037,6 +1340,37 @@
       }
     }
 
+    async function deleteCurrentTeam() {
+      const titleEl = document.getElementById('team-workspace-title');
+      const name = titleEl ? titleEl.textContent : 'this team workspace';
+      const confirmed = await pluckConfirm(`Are you sure you want to permanently delete "${name}"?\nThis action cannot be undone.`, {
+        danger: true,
+        confirmText: 'Delete Workspace',
+        cancelText: 'Cancel'
+      });
+      if (!confirmed) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/teams/${encodeURIComponent(currentTeamId)}`, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        if (res.ok) {
+          showToast(`Team "${name}" deleted successfully.`, 'success');
+          try { localStorage.removeItem('pluck_active_team_id'); } catch(e) {}
+          setTimeout(() => {
+            window.location.href = 'app.html';
+          }, 400);
+        } else {
+          const err = await res.json().catch(() => ({}));
+          showToast(err.message || 'Failed to delete workspace', 'error');
+        }
+      } catch (e) {
+        showToast('Network error deleting workspace', 'error');
+      }
+    }
+
     // ── Team Collections Subsystem ─────────────────────────────────────
     async function loadCollections() {
       const grid = document.getElementById('team-collections-grid');
@@ -1134,7 +1468,12 @@
     }
 
     async function deleteCollection(colId, name) {
-      if (!confirm(`Delete collection '${name}'? This will remove the folder grouping.`)) {
+      const confirmed = await pluckConfirm(`Delete collection '${name}'? This will remove the folder grouping.`, {
+        danger: true,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      });
+      if (!confirmed) {
         return;
       }
       try {
@@ -1476,6 +1815,7 @@
 
     // Initial load
     loadTeamData();
+    loadUserTeams();
     loadCollections();
     loadMembers();
     loadActivity();
@@ -1527,7 +1867,148 @@
         }
       }
     }, 4000);
+
+    // ── Create New Team Modal Functions ──────────────────
+    function openCreateTeamModal() {
+      const modal = document.getElementById('create-team-modal');
+      const input = document.getElementById('new-team-name-input');
+      const err = document.getElementById('create-team-error');
+      const previewRow = document.getElementById('new-team-slug-preview-row');
+      const spinner = document.getElementById('create-team-spinner');
+      const btnText = document.getElementById('create-team-btn-text');
+      const btn = document.getElementById('btn-submit-team');
+
+      if (input) input.value = '';
+      if (err) { err.textContent = ''; err.style.display = 'none'; }
+      if (previewRow) previewRow.style.display = 'none';
+      if (spinner) spinner.style.display = 'none';
+      if (btnText) btnText.textContent = 'Create Team';
+      if (btn) btn.disabled = false;
+
+      if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => { if (input) input.focus(); }, 60);
+      }
+    }
+
+    function closeCreateTeamModal() {
+      const modal = document.getElementById('create-team-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function updateTeamSlugPreview(val) {
+      const previewRow = document.getElementById('new-team-slug-preview-row');
+      const previewSpan = document.getElementById('new-team-slug-preview');
+      if (!previewRow || !previewSpan) return;
+      const slug = (val || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (slug) {
+        previewSpan.textContent = slug;
+        previewRow.style.display = 'block';
+      } else {
+        previewRow.style.display = 'none';
+      }
+    }
+
+    async function submitCreateTeam() {
+      const input = document.getElementById('new-team-name-input');
+      const name = input ? input.value.trim() : '';
+      const err = document.getElementById('create-team-error');
+      const spinner = document.getElementById('create-team-spinner');
+      const btnText = document.getElementById('create-team-btn-text');
+      const btn = document.getElementById('btn-submit-team');
+
+      if (!name) {
+        if (err) {
+          err.textContent = 'Please enter a name for the team.';
+          err.style.display = 'block';
+        }
+        if (input) input.focus();
+        return;
+      }
+
+      if (err) err.style.display = 'none';
+      if (spinner) spinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = 'Creating...';
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/teams', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || 'Failed to create team.');
+        }
+
+        const team = data.team;
+        if (team && team.id) {
+          localStorage.setItem('pluck_active_team_id', team.id);
+        }
+
+        showToast(`🎉 Team "${team ? team.name : name}" created successfully!`, 'success');
+        closeCreateTeamModal();
+
+        // Redirect to new team workspace
+        setTimeout(() => {
+          const targetId = (team && (team.id || team.slug)) || '';
+          window.location.href = `team.html?id=${encodeURIComponent(targetId)}`;
+        }, 500);
+      } catch (e) {
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Create Team';
+        if (btn) btn.disabled = false;
+        if (err) {
+          err.textContent = e.message || 'An error occurred while creating the team.';
+          err.style.display = 'block';
+        }
+        showToast(e.message || 'Error creating team', 'error');
+      }
+    }
   </script>
+
+  <!-- ░░░ CREATE TEAM WORKSPACE MODAL ░░░ -->
+  <div id="create-team-modal" onclick="if (event.target === this) closeCreateTeamModal();"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="pixel-border-box" style="background: #141417; border: 1px solid var(--purple-light); padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.85), 0 0 20px rgba(124,58,237,0.3); border-radius: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 18px;">🏢</span>
+          <h3 style="font-family: var(--mono); font-size: 15px; color: var(--white); margin: 0;">Create New Team</h3>
+        </div>
+        <button onclick="closeCreateTeamModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; line-height: 1;">✕</button>
+      </div>
+
+      <p style="font-size: 11px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
+        Create a collaborative workspace for your team with shared code snippet collections, role permissions (Admin, Editor, Viewer), and real-time audit logging.
+      </p>
+
+      <form id="create-team-form" onsubmit="event.preventDefault(); submitCreateTeam();">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 10px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono); text-transform: uppercase;">Team Name *</label>
+          <input type="text" id="new-team-name-input" placeholder="e.g. Acme Backend, Infra Core, Mobile Team" maxlength="60" required
+            oninput="updateTeamSlugPreview(this.value)"
+            style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-family: var(--mono); font-size: 12px; border-radius: 4px;" />
+        </div>
+
+        <div id="new-team-slug-preview-row" style="margin-bottom: 16px; font-size: 11px; color: var(--muted); font-family: var(--mono); display: none;">
+          Workspace URL: <span style="color: #64748b;">/team.html?id=</span><span id="new-team-slug-preview" style="color: var(--cyan); font-weight: 600;"></span>
+        </div>
+
+        <div id="create-team-error" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 8px 12px; font-size: 11px; margin-bottom: 16px; border-radius: 4px;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-outline-pixel" onclick="closeCreateTeamModal()">Cancel</button>
+          <button type="submit" class="btn-solid-pixel" id="btn-submit-team" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px;">
+            <span id="create-team-spinner" class="auth-spinner" style="display: none; width: 12px; height: 12px; margin: 0;"></span>
+            <span id="create-team-btn-text">Create Team</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Create Collection Modal -->
   <div id="collection-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">

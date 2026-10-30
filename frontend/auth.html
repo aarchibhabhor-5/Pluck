@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Authentication — Pluck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -44,6 +47,88 @@
     .password-toggle-btn:active {
       transform: scale(0.95);
     }
+    .auth-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: auth-spin 0.6s linear infinite;
+    }
+    @keyframes auth-spin {
+      to { transform: rotate(360deg); }
+    }
+    .auth-quick-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      box-sizing: border-box;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    .auth-quick-pill:hover {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: #38bdf8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.2);
+    }
+    .auth-alert-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(124, 58, 237, 0.25);
+      border: 1px solid var(--purple-light);
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-family: var(--mono);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      margin-top: 6px;
+    }
+    .auth-alert-btn:hover {
+      background: rgba(124, 58, 237, 0.5);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .modal-backdrop-anim {
+      opacity: 0;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-backdrop-anim.visible {
+      opacity: 1;
+    }
+    .modal-dialog-anim {
+      opacity: 0;
+      transform: translate(-50%, -46%) scale(0.96);
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-dialog-anim.visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    .auth-card {
+      animation: authCardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes authCardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
   </style>
 </head>
 
@@ -72,7 +157,7 @@
       <!-- OAuth Providers -->
       <div class="oauth-buttons" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
         <div id="google-gsi-btn" style="display: none; width: 100%; justify-content: center;"></div>
-        <button class="btn-oauth" id="google-custom-btn" onclick="simulateOAuth('Google')" style="width: 100%;">
+        <button type="button" class="btn-oauth" id="google-custom-btn" onclick="simulateOAuth('Google')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -87,7 +172,7 @@
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
               fill="#EA4335" />
           </svg>
-          Continue with Google
+          <span id="google-btn-text">Continue with Google</span>
         </button>
       </div>
 
@@ -103,16 +188,16 @@
 
         <div class="form-group">
           <label class="form-label" for="email">WORK OR PERSONAL EMAIL</label>
-          <input type="email" id="email" class="form-input" placeholder="developer@company.com" required />
+          <input type="email" id="email" class="form-input" placeholder="developer@company.com" required autocomplete="email" />
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <label class="form-label" for="password">PASSWORD</label>
-            <a href="#" id="forgot-link" onclick="openForgotModal(event)" style="font-size: 10px; color: var(--purple-light);">Forgot?</a>
+            <a href="#" id="forgot-link" onclick="openForgotModal(event)" style="font-size: 10px; color: var(--purple-light); text-decoration: none;">Forgot?</a>
           </div>
           <div class="password-input-wrapper">
-            <input type="password" id="password" class="form-input" placeholder="••••••••••••" required
+            <input type="password" id="password" class="form-input" placeholder="••••••••••••" required autocomplete="current-password"
               oninput="checkPasswordStrength(this.value)" style="width: 100%; padding-right: 42px; box-sizing: border-box;" />
             <button type="button" id="toggle-password-btn" class="password-toggle-btn" onclick="togglePasswordVisibility()" title="Show password" aria-label="Toggle password visibility">
               <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -134,11 +219,11 @@
         </div>
 
         <!-- Inline error alert -->
-        <div id="auth-error" style="display: none; margin-top: 14px; padding: 10px 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; font-size: 11px; line-height: 1.4;">
+        <div id="auth-error" style="display: none; margin-top: 14px; padding: 12px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-size: 11px; line-height: 1.5; border-radius: 4px;">
         </div>
 
-        <button type="submit" class="btn-solid-pixel" id="auth-submit-btn" style="width: 100%; margin-top: 20px; padding: 12px;">
-          Sign In to Vault
+        <button type="submit" class="btn-solid-pixel" id="auth-submit-btn" style="width: 100%; margin-top: 20px; padding: 12px; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>Sign In to Vault</span>
         </button>
       </form>
 
@@ -150,51 +235,110 @@
     </div>
   </div>
 
-  <!-- Google OAuth Modal (Fallback/Config) -->
-  <div id="google-modal" class="pixel-border-box" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: #0f172a; border: 2px solid #38bdf8; padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.9);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+  <!-- Modals & Dialogs Backdrop -->
+  <div id="auth-backdrop" class="modal-backdrop-anim" onclick="closeAllModals()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 9998;"></div>
+
+  <!-- 2. Forgot Password Modal -->
+  <div id="forgot-modal" class="pixel-border-box modal-dialog-anim" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #0f131f; border: 1px solid var(--purple-light); padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(124,58,237,0.25); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-        </svg>
-        <strong style="color: #fff; font-size: 14px;">Google Account Sign-In</strong>
+        <span style="font-size: 18px;">🔑</span>
+        <strong style="color: #fff; font-size: 15px;">Reset Password</strong>
       </div>
-      <button onclick="closeGoogleModal()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer;">✕</button>
+      <button onclick="closeAllModals()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
     </div>
-    <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px;">
-      Authenticate with your Google account. A corresponding user document will be created directly in your MongoDB <code style="color: var(--cyan);">users</code> collection.
+    <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5;">
+      Enter your account email below. We'll generate a secure password reset link for your account.
     </p>
-    <div class="form-group" style="margin-bottom: 10px;">
-      <label class="form-label">GOOGLE ACCOUNT EMAIL</label>
-      <input type="email" id="google-email-input" class="form-input" placeholder="developer@gmail.com" />
+
+    <div id="forgot-result-box" style="display: none; margin-bottom: 14px; padding: 12px; background: rgba(56,189,248,0.1); border: 1px solid #38bdf8; border-radius: 4px; font-size: 11px; line-height: 1.5;">
+      <div id="forgot-result-message" style="color: #bae6fd; font-weight: 700;"></div>
+      <div id="forgot-dev-link-wrap" style="margin-top: 8px; display: none;">
+        <a href="#" id="forgot-dev-link" class="auth-alert-btn" style="display: inline-block;">
+          ⚡ Click here to set new password now →
+        </a>
+      </div>
     </div>
-    <div class="form-group" style="margin-bottom: 14px;">
-      <label class="form-label">DISPLAY NAME</label>
-      <input type="text" id="google-name-input" class="form-input" placeholder="Google Developer" />
-    </div>
-    <div style="display: flex; gap: 8px;">
-      <button class="btn-solid-pixel" onclick="submitGoogleOAuth()" style="flex: 1; padding: 10px; font-size: 11px;">
-        ⚡ Sign In with Google
-      </button>
-      <button class="btn-ghost-pixel" onclick="closeGoogleModal()" style="padding: 10px 14px; font-size: 11px;">
-        Cancel
-      </button>
-    </div>
+
+    <form onsubmit="event.preventDefault(); submitForgotPassword();">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 10px;">REGISTERED EMAIL</label>
+        <input type="email" id="forgot-email-input" class="form-input" placeholder="developer@company.com" required style="width: 100%; box-sizing: border-box;" />
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="submit" class="btn-solid-pixel" id="btn-submit-forgot" style="flex: 1; padding: 11px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span id="forgot-spinner" class="auth-spinner" style="display: none;"></span>
+          <span id="forgot-btn-text">Send Reset Link</span>
+        </button>
+        <button type="button" class="btn-outline-pixel" onclick="closeAllModals()" style="padding: 11px 16px; font-size: 11px;">
+          Cancel
+        </button>
+      </div>
+    </form>
   </div>
-  <div id="google-backdrop" onclick="closeGoogleModal()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999;"></div>
+
+  <!-- 3. Set New Password Modal (for ?reset= token) -->
+  <div id="reset-modal" class="pixel-border-box modal-dialog-anim" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #0f131f; border: 1px solid #10b981; padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(16,185,129,0.25); border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 18px;">🛡️</span>
+        <strong style="color: #fff; font-size: 15px;">Create New Password</strong>
+      </div>
+      <button onclick="closeAllModals()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
+    </div>
+    <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5;">
+      Your password must be at least 10 characters long.
+    </p>
+
+    <form onsubmit="event.preventDefault(); submitResetPassword();">
+      <input type="hidden" id="reset-token-field" value="" />
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label" style="font-size: 10px;">NEW PASSWORD</label>
+        <input type="password" id="reset-password-input" class="form-input" placeholder="Min 10 characters" required minlength="10" style="width: 100%; box-sizing: border-box;" />
+      </div>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label" style="font-size: 10px;">CONFIRM NEW PASSWORD</label>
+        <input type="password" id="reset-password-confirm" class="form-input" placeholder="Repeat new password" required minlength="10" style="width: 100%; box-sizing: border-box;" />
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button type="submit" class="btn-solid-pixel" id="btn-submit-reset" style="flex: 1; padding: 11px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span id="reset-spinner" class="auth-spinner" style="display: none;"></span>
+          <span id="reset-btn-text">Save New Password</span>
+        </button>
+        <button type="button" class="btn-outline-pixel" onclick="closeAllModals()" style="padding: 11px 16px; font-size: 11px;">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="app-script.js"></script>
+  <script src="app-script.js?v=pluck_dialog_v3"></script>
   <script>
     let currentMode = 'login';
     const params = new URLSearchParams(window.location.search);
     const nextUrl = params.get('next') || 'app.html';
 
+    if (params.get('status') === 'signed_out') {
+      setTimeout(() => {
+        if (typeof showToast === 'function') {
+          showToast('Signed out of Pluck account', 'info');
+        }
+      }, 200);
+    }
+
     const EYE_OPEN_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
     const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>`;
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     function togglePasswordVisibility() {
       const pwInput = document.getElementById('password');
@@ -208,15 +352,23 @@
       eyeBtn.style.color = isPassword ? 'var(--cyan)' : 'var(--muted)';
     }
 
-    function switchAuthMode(mode) {
+    function switchAuthMode(mode, keepValues = true) {
       currentMode = mode;
       document.getElementById('tab-login').classList.toggle('active', mode === 'login');
       document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
       document.getElementById('name-group').style.display = mode === 'signup' ? 'block' : 'none';
       document.getElementById('pw-strength-container').style.display = mode === 'signup' ? 'flex' : 'none';
       document.getElementById('forgot-link').style.display = mode === 'login' ? 'inline' : 'none';
-      document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Sign In to Vault' : 'Create Pluck Account';
-      document.getElementById('auth-error').style.display = 'none';
+      
+      const submitBtn = document.getElementById('auth-submit-btn');
+      if (submitBtn) {
+        submitBtn.innerHTML = `<span>${mode === 'login' ? 'Sign In to Vault' : 'Create Pluck Account'}</span>`;
+        submitBtn.disabled = false;
+      }
+      
+      const errorEl = document.getElementById('auth-error');
+      if (errorEl) errorEl.style.display = 'none';
+
       const pwInput = document.getElementById('password');
       if (pwInput) {
         if (mode === 'signup') {
@@ -225,6 +377,32 @@
           pwInput.removeAttribute('minlength');
         }
       }
+
+      // Focus active field
+      if (mode === 'signup') {
+        const nameInput = document.getElementById('name');
+        if (nameInput && !nameInput.value) nameInput.focus();
+      } else {
+        const emailInput = document.getElementById('email');
+        if (emailInput && !emailInput.value) emailInput.focus();
+        else if (pwInput) pwInput.focus();
+      }
+    }
+
+    function switchToSignUpWithEmail(email) {
+      const emailInput = document.getElementById('email');
+      if (emailInput && email) emailInput.value = email;
+      switchAuthMode('signup');
+      const nameInput = document.getElementById('name');
+      if (nameInput) nameInput.focus();
+    }
+
+    function switchToLoginWithEmail(email) {
+      const emailInput = document.getElementById('email');
+      if (emailInput && email) emailInput.value = email;
+      switchAuthMode('login');
+      const pwInput = document.getElementById('password');
+      if (pwInput) pwInput.focus();
     }
 
     function checkPasswordStrength(val) {
@@ -242,7 +420,7 @@
         txt.textContent = 'Too short (min 10 chars)';
       } else if (val.length < 10) {
         b1.className = 'pw-bar active-weak';
-        txt.textContent = 'Weak password';
+        txt.textContent = 'Weak password (need ≥10 characters)';
       } else if (val.length < 14 || !/[0-9!@#$%^&*]/.test(val)) {
         b1.className = 'pw-bar active-medium';
         b2.className = 'pw-bar active-medium';
@@ -265,12 +443,17 @@
       const errorEl = document.getElementById('auth-error');
       errorEl.style.display = 'none';
 
+      if (!email || !password) {
+        showAuthError('Please provide both an email and password.');
+        return;
+      }
+
       const isSignup = currentMode === 'signup';
       const endpoint = isSignup ? '/api/auth/register' : '/api/auth/login';
       const payload = isSignup ? { email, password, name } : { email, password };
 
-      btn.textContent = isSignup ? 'Creating account in MongoDB...' : 'Authenticating...';
       btn.disabled = true;
+      btn.innerHTML = `<span class="auth-spinner"></span> <span>${isSignup ? 'Creating account...' : 'Authenticating...'}</span>`;
 
       try {
         const res = await fetch(endpoint, {
@@ -279,35 +462,98 @@
           body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          throw new Error(data.message || data.error || 'Authentication failed');
+          btn.disabled = false;
+          btn.innerHTML = `<span>${isSignup ? 'Create Pluck Account' : 'Sign In to Vault'}</span>`;
+
+          // Smart interactive guidance
+          if (data.error === 'USER_NOT_FOUND') {
+            errorEl.innerHTML = `
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-weight: 700;">⚠️ No account found with this email</div>
+                <div style="color: #cbd5e1;">There is no existing account for <strong>${escapeHtml(email)}</strong>.</div>
+                <button type="button" class="auth-alert-btn" onclick="switchToSignUpWithEmail('${escapeHtml(email)}')">
+                  ✨ Create account for this email →
+                </button>
+              </div>
+            `;
+            errorEl.style.display = 'block';
+            return;
+          }
+
+          if (data.error === 'EMAIL_TAKEN') {
+            errorEl.innerHTML = `
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-weight: 700;">⚠️ Account already exists</div>
+                <div style="color: #cbd5e1;">An account is already registered for <strong>${escapeHtml(email)}</strong>.</div>
+                <button type="button" class="auth-alert-btn" onclick="switchToLoginWithEmail('${escapeHtml(email)}')">
+                  🔑 Sign in to this account →
+                </button>
+              </div>
+            `;
+            errorEl.style.display = 'block';
+            return;
+          }
+
+          if (data.error === 'INVALID_CREDENTIALS') {
+            errorEl.innerHTML = `
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="font-weight: 700;">⚠️ Incorrect password</div>
+                <div style="color: #cbd5e1;">The password you entered does not match our records.</div>
+                <a href="#" onclick="openForgotModal(event, '${escapeHtml(email)}')" class="auth-alert-btn" style="align-self: flex-start;">
+                  🔑 Forgot password? Reset here →
+                </a>
+              </div>
+            `;
+            errorEl.style.display = 'block';
+            return;
+          }
+
+          showAuthError(data.message || data.error || 'Authentication failed. Please try again.');
+          return;
         }
 
         // Store user and token in localStorage & cookie
         if (data.user) {
           localStorage.setItem('pluck_user', JSON.stringify(data.user));
+          if (data.user.email) {
+            localStorage.setItem('pluck_last_email', data.user.email);
+            if (data.user.name) localStorage.setItem('pluck_last_name', data.user.name);
+          }
         }
         if (data.token) {
           localStorage.setItem('pluck_token', data.token);
           document.cookie = `pluck_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
         }
-        // Clear cached snippets from any previous account
+
+        // Clear cached snippets from previous accounts
         localStorage.removeItem('pluck_user_snippets');
         sessionStorage.removeItem('pluck_active_snippet');
 
-        showToast(data.message || (isSignup ? 'Account created in MongoDB!' : 'Welcome back!'), 'success');
+        btn.innerHTML = `<span>✓ ${isSignup ? 'Account Created!' : 'Authenticated!'}</span>`;
+        btn.style.background = '#10b981';
+        btn.style.color = '#fff';
+
+        showToast(data.message || (isSignup ? 'Account created in MongoDB!' : 'Welcome back to Pluck!'), 'success');
         setTimeout(() => {
           window.location.href = nextUrl;
-        }, 600);
+        }, 500);
       } catch (err) {
-        errorEl.textContent = err.message;
-        errorEl.style.display = 'block';
-        showToast(err.message, 'error');
-        btn.textContent = isSignup ? 'Create Pluck Account' : 'Sign In to Vault';
         btn.disabled = false;
+        btn.innerHTML = `<span>${isSignup ? 'Create Pluck Account' : 'Sign In to Vault'}</span>`;
+        showAuthError(err.message || 'Network error connecting to backend.');
       }
+    }
+
+    function showAuthError(msg) {
+      const errorEl = document.getElementById('auth-error');
+      if (errorEl) {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      }
+      showToast(msg, 'error');
     }
 
     // ── Google OAuth Integration ───────────────────────────
@@ -328,7 +574,7 @@
       }
 
       if (!activeGoogleClientId) {
-        activeGoogleClientId = localStorage.getItem('pluck_google_client_id');
+        activeGoogleClientId = localStorage.getItem('pluck_google_client_id') || '47687512907-8lb19snrvc57n11g9rn5fg5v0c7uvkju.apps.googleusercontent.com';
       }
 
       initGoogleIdentityServices();
@@ -344,9 +590,8 @@
             cancel_on_tap_outside: true
           });
 
-          // Render official Google Sign-In button
+          // Render official Google Sign-In button if element exists
           const btnTarget = document.getElementById('google-gsi-btn');
-          const customBtn = document.getElementById('google-custom-btn');
           if (btnTarget) {
             google.accounts.id.renderButton(btnTarget, {
               theme: 'filled_black',
@@ -357,18 +602,16 @@
               logo_alignment: 'left',
               width: 340
             });
-            btnTarget.style.display = 'flex';
-            if (customBtn) customBtn.style.display = 'none';
           }
 
-          // Also trigger One-Tap if allowed
+          // Trigger One-Tap prompt
           google.accounts.id.prompt((notification) => {
             if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              console.log('Google One-Tap notice:', notification.getNotDisplayedReason());
+              console.log('Google One-Tap note:', notification.getNotDisplayedReason());
             }
           });
         } catch (err) {
-          console.warn('Failed to initialize Google Identity Services:', err);
+          console.warn('Google Identity initialization notice:', err);
         }
       }
     }
@@ -377,96 +620,94 @@
     loadGoogleConfig();
     window.addEventListener('load', () => {
       setTimeout(initGoogleIdentityServices, 300);
+      prefillLastUser();
+    });
+
+    function prefillLastUser() {
+      const lastEmail = localStorage.getItem('pluck_last_email');
+      const emailField = document.getElementById('email');
+      if (lastEmail && emailField && !emailField.value) {
+        emailField.value = lastEmail;
+      }
+    }
+
+    function openGoogleSignIn() {
+      const width = 500;
+      const height = 620;
+      const left = window.screenX + Math.max(0, (window.outerWidth - width) / 2);
+      const top = window.screenY + Math.max(0, (window.outerHeight - height) / 2.5);
+
+      const popup = window.open(
+        'google-signin.html?redirect=' + encodeURIComponent(nextUrl),
+        'GoogleSignIn',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no`
+      );
+
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        window.location.href = 'google-signin.html?redirect=' + encodeURIComponent(nextUrl);
+      }
+    }
+
+    // Message receiver from official Google Sign-In popup
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'PLUCK_GOOGLE_AUTH_SUCCESS') {
+        const user = event.data.user;
+        const token = event.data.token;
+        if (user) {
+          localStorage.setItem('pluck_user', JSON.stringify(user));
+          if (user.email) localStorage.setItem('pluck_last_email', user.email);
+          if (user.name) localStorage.setItem('pluck_last_name', user.name);
+        }
+        if (token) {
+          localStorage.setItem('pluck_token', token);
+          document.cookie = `pluck_session=${token}; path=/; max-age=604800; SameSite=Lax`;
+        }
+        const name = user ? (user.name || user.email) : 'Developer';
+        showToast(`Welcome, ${name}! Signed in with Google.`, 'success');
+        setTimeout(() => {
+          window.location.href = nextUrl;
+        }, 350);
+      }
     });
 
     function simulateOAuth(provider) {
-      if (window.google && window.google.accounts && activeGoogleClientId) {
-        // Trigger official Google Identity prompt
-        try {
-          google.accounts.id.initialize({
-            client_id: activeGoogleClientId,
-            callback: handleGoogleJwtResponse,
-            auto_select: false
-          });
-          google.accounts.id.prompt((notification) => {
-            // If browser blocks one-tap popup or user has disabled 3rd party cookies, show modal fallback
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              openGoogleModal();
-            }
-          });
-          return;
-        } catch (e) {
-          console.warn('Google prompt exception:', e);
-        }
-      }
-
-      // Open interactive Google Sign-In Dialog fallback
-      openGoogleModal();
-    }
-
-    function openGoogleModal() {
-      document.getElementById('google-modal').style.display = 'block';
-      document.getElementById('google-backdrop').style.display = 'block';
-      const emailField = document.getElementById('email').value.trim();
-      if (emailField) {
-        document.getElementById('google-email-input').value = emailField;
-      }
-    }
-
-    function closeGoogleModal() {
-      document.getElementById('google-modal').style.display = 'none';
-      document.getElementById('google-backdrop').style.display = 'none';
-    }
-
-    async function submitGoogleOAuth() {
-      const email = document.getElementById('google-email-input').value.trim();
-      const name = document.getElementById('google-name-input').value.trim();
-
-      if (!email || !email.includes('@')) {
-        showToast('Please enter a valid Google email address.', 'error');
+      if (provider === 'Google') {
+        openGoogleSignIn();
         return;
       }
+      showToast(`Connecting to ${provider}...`, 'info');
+    }
 
-      closeGoogleModal();
-      showToast('Authenticating with Google OAuth...', 'info');
-
-      try {
-        const res = await fetch('/api/auth/oauth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            provider: 'Google',
-            email: email,
-            name: name || email.split('@')[0],
-            avatar: String.valueOf ? String.valueOf(email[0]).toUpperCase() : email[0].toUpperCase()
-          })
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.message || 'Google authentication failed');
-        }
-
-        if (data.user) {
-          localStorage.setItem('pluck_user', JSON.stringify(data.user));
-        }
-        if (data.token) {
-          localStorage.setItem('pluck_token', data.token);
-          document.cookie = `pluck_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
-        }
-
-        showToast(`Signed in as ${data.user.name} via Google OAuth!`, 'success');
-        setTimeout(() => {
-          window.location.href = nextUrl;
-        }, 600);
-      } catch (err) {
-        showToast(err.message, 'error');
+    function showModalWithFade(modal) {
+      const backdrop = document.getElementById('auth-backdrop');
+      if (backdrop) {
+        backdrop.style.display = 'block';
+        requestAnimationFrame(() => backdrop.classList.add('visible'));
       }
+      if (modal) {
+        modal.style.display = 'block';
+        requestAnimationFrame(() => modal.classList.add('visible'));
+      }
+    }
+
+    function closeAllModals() {
+      const modalIds = ['forgot-modal', 'reset-modal', 'auth-backdrop'];
+      modalIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.remove('visible');
+          setTimeout(() => {
+            if (!el.classList.contains('visible')) {
+              el.style.display = 'none';
+            }
+          }, 240);
+        }
+      });
     }
 
     async function handleGoogleJwtResponse(response) {
       try {
-        showToast('Verifying Google token with Pluck backend...', 'info');
+        showToast('Authenticating with Google...', 'info');
         let email = null;
         let name = null;
         let avatar = null;
@@ -494,16 +735,22 @@
             credential: response.credential,
             email: email,
             name: name,
-            avatar: avatar
+            avatar: avatar || (email ? email.charAt(0).toUpperCase() : 'G')
           })
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data.message || 'Google OAuth verification failed on server');
         }
 
-        if (data.user) localStorage.setItem('pluck_user', JSON.stringify(data.user));
+        if (data.user) {
+          localStorage.setItem('pluck_user', JSON.stringify(data.user));
+          if (data.user.email) {
+            localStorage.setItem('pluck_last_email', data.user.email);
+            if (data.user.name) localStorage.setItem('pluck_last_name', data.user.name);
+          }
+        }
         if (data.token) {
           localStorage.setItem('pluck_token', data.token);
           document.cookie = `pluck_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
@@ -512,58 +759,174 @@
         sessionStorage.removeItem('pluck_active_snippet');
 
         showToast(`Welcome, ${data.user.name}! (Signed in with Google)`, 'success');
-        setTimeout(() => { window.location.href = nextUrl; }, 600);
+        setTimeout(() => { window.location.href = nextUrl; }, 500);
       } catch (e) {
         showToast(e.message || 'Failed to authenticate with Google', 'error');
       }
     }
 
-    async function openForgotModal(e) {
-      e.preventDefault();
-      const email = prompt('Enter your registered email to receive a password reset link:');
-      if (!email || !email.includes('@')) return;
-      showToast('Dispatching reset instructions...', 'info');
+    function openForgotModal(e, prefillEmail) {
+      if (e) e.preventDefault();
+      closeAllModals();
+      const modal = document.getElementById('forgot-modal');
+      const resultBox = document.getElementById('forgot-result-box');
+      if (resultBox) resultBox.style.display = 'none';
+
+      const emailInput = document.getElementById('forgot-email-input');
+      const currentEmail = prefillEmail || document.getElementById('email')?.value.trim() || localStorage.getItem('pluck_last_email') || '';
+      if (emailInput) {
+        emailInput.value = currentEmail;
+        setTimeout(() => emailInput.focus(), 60);
+      }
+
+      showModalWithFade(modal);
+    }
+
+    async function submitForgotPassword() {
+      const email = document.getElementById('forgot-email-input')?.value.trim();
+      if (!email || !email.includes('@')) {
+        showToast('Please enter a valid registered email address', 'error');
+        return;
+      }
+
+      const spinner = document.getElementById('forgot-spinner');
+      const btnText = document.getElementById('forgot-btn-text');
+      const btn = document.getElementById('btn-submit-forgot');
+      const resultBox = document.getElementById('forgot-result-box');
+      const resultMsg = document.getElementById('forgot-result-message');
+      const devWrap = document.getElementById('forgot-dev-link-wrap');
+      const devLink = document.getElementById('forgot-dev-link');
+
+      if (spinner) spinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = 'Generating link...';
+      if (btn) btn.disabled = true;
+
       try {
         const res = await fetch('/api/auth/forgot-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim() })
+          body: JSON.stringify({ email: email })
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Send Reset Link';
+        if (btn) btn.disabled = false;
+
         if (res.ok) {
-          showToast(data.message || `Password reset link dispatched to ${email}`, 'success');
+          if (resultBox && resultMsg) {
+            resultBox.style.display = 'block';
+            resultMsg.textContent = data.message || `Password reset instructions prepared for ${email}`;
+            if (data.resetUrl) {
+              if (devWrap && devLink) {
+                devWrap.style.display = 'block';
+                devLink.href = data.resetUrl;
+                devLink.onclick = (ev) => {
+                  ev.preventDefault();
+                  const tokenMatch = data.resetUrl.match(/reset=([^&]+)/);
+                  if (tokenMatch) openResetModal(tokenMatch[1]);
+                };
+              }
+            } else if (devWrap) {
+              devWrap.style.display = 'none';
+            }
+          }
+          showToast(`Password reset link generated for ${email}`, 'success');
         } else {
-          showToast(data.message || 'Error sending reset email', 'error');
+          showToast(data.message || data.error || 'Could not dispatch reset email', 'error');
         }
       } catch (err) {
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Send Reset Link';
+        if (btn) btn.disabled = false;
         showToast('Network error requesting password reset', 'error');
       }
     }
 
+    function openResetModal(token) {
+      closeAllModals();
+      const modal = document.getElementById('reset-modal');
+      const tokenField = document.getElementById('reset-token-field');
+      const pwInput = document.getElementById('reset-password-input');
+      const pwConfirm = document.getElementById('reset-password-confirm');
+
+      if (tokenField) tokenField.value = token;
+      if (pwInput) pwInput.value = '';
+      if (pwConfirm) pwConfirm.value = '';
+
+      showModalWithFade(modal);
+      if (pwInput) setTimeout(() => pwInput.focus(), 60);
+    }
+
+    async function submitResetPassword() {
+      const token = document.getElementById('reset-token-field')?.value.trim();
+      const newPassword = document.getElementById('reset-password-input')?.value;
+      const confirmPassword = document.getElementById('reset-password-confirm')?.value;
+
+      if (!token) {
+        showToast('Missing reset token. Please request a new link.', 'error');
+        return;
+      }
+      if (!newPassword || newPassword.length < 10) {
+        showToast('Password must be at least 10 characters long.', 'error');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showToast('Passwords do not match. Please re-type.', 'error');
+        return;
+      }
+
+      const spinner = document.getElementById('reset-spinner');
+      const btnText = document.getElementById('reset-btn-text');
+      const btn = document.getElementById('btn-submit-reset');
+
+      if (spinner) spinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = 'Saving...';
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, newPassword })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Save New Password';
+        if (btn) btn.disabled = false;
+
+        if (res.ok) {
+          closeAllModals();
+          showToast(data.message || 'Password reset successfully! Please sign in with your new password.', 'success');
+          switchAuthMode('login');
+          const pwInput = document.getElementById('password');
+          if (pwInput) {
+            pwInput.value = newPassword;
+            pwInput.focus();
+          }
+        } else {
+          showToast(data.message || data.error || 'Failed to reset password', 'error');
+        }
+      } catch (err) {
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Save New Password';
+        if (btn) btn.disabled = false;
+        showToast('Network error resetting password', 'error');
+      }
+    }
+
+    // Keyboard navigation: Escape key closes any active modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAllModals();
+      }
+    });
+
     // Check if URL has ?reset=pluck_reset_...
     const resetToken = params.get('reset');
     if (resetToken) {
-      setTimeout(async () => {
-        const newPassword = prompt('Enter your new password (must be at least 10 characters):');
-        if (newPassword) {
-          try {
-            const res = await fetch('/api/auth/reset-password', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token: resetToken, newPassword })
-            });
-            const data = await res.json();
-            if (res.ok) {
-              showToast(data.message || 'Password reset successfully! Please sign in.', 'success');
-              switchAuthMode('login');
-            } else {
-              showToast(data.message || 'Failed to reset password', 'error');
-            }
-          } catch (e) {
-            showToast('Error resetting password', 'error');
-          }
-        }
-      }, 300);
+      setTimeout(() => openResetModal(resetToken), 200);
     }
 
     // Read query parameter ?mode=signup
@@ -571,8 +934,225 @@
       switchAuthMode('signup');
     }
   </script>
-  <script src="cursor-grid.js"></script>
-  <script src="border-glow.js"></script>
+
+  <!-- Interactive Terminal Cursor Grid Background Engine -->
+  <!-- Strict Hover-Only: Zero click reaction, zero shockwaves/pulses, no startup burst -->
+  <script>
+  (function initCursorGrid() {
+    'use strict';
+    if (window.__pluckCursorGridInitialized) return;
+    window.__pluckCursorGridInitialized = true;
+
+    const FALLOFF_CURVES = {
+      linear: t => t,
+      smooth: t => t * t * (3 - 2 * t),
+      sharp: t => t * t * t
+    };
+
+    function hexToRgb(hex) {
+      const h = hex.replace('#', '');
+      const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+      const num = parseInt(v.slice(0, 6), 16);
+      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    const CONFIG = {
+      cellSize: 64,
+      color: '#00F2FE',       // Electric Cyan
+      radius: 160,
+      falloff: 'smooth',
+      holdTime: 350,
+      fadeDuration: 750,
+      lineWidth: 1.2,
+      maxOpacity: 0.95,
+      fillOpacity: 0.08,      // Subtle glowing fill
+      gridOpacity: 0.04,      // Faint ambient lattice
+      cellRadius: 4
+    };
+
+    function mount() {
+      let canvas = document.getElementById('cursor-grid-canvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.id = 'cursor-grid-canvas';
+        canvas.className = 'cursor-grid-canvas';
+        document.body.prepend(canvas);
+      }
+
+      const ctx = canvas.getContext('2d');
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      let cols = 0;
+      let rows = 0;
+      let offX = 0;
+      let offY = 0;
+      let alphas = new Float32Array(0);
+      let touched = new Float64Array(0);
+      let w = 0;
+      let h = 0;
+      let raf = 0;
+      let running = false;
+      let lastFrame = performance.now();
+
+      function rebuild() {
+        w = window.innerWidth;
+        h = window.innerHeight;
+        canvas.width = Math.max(1, Math.round(w * dpr));
+        canvas.height = Math.max(1, Math.round(h * dpr));
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        cols = Math.ceil(w / CONFIG.cellSize) + 1;
+        rows = Math.ceil(h / CONFIG.cellSize) + 1;
+        offX = (w - cols * CONFIG.cellSize) / 2;
+        offY = (h - rows * CONFIG.cellSize) / 2;
+
+        alphas = new Float32Array(cols * rows);
+        touched = new Float64Array(cols * rows);
+
+        wake();
+      }
+
+      function cellCenter(i) {
+        const cx = offX + (i % cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
+        const cy = offY + Math.floor(i / cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
+        return [cx, cy];
+      }
+
+      function energize(x, y) {
+        const r = Math.max(CONFIG.radius, 1);
+        const ease = FALLOFF_CURVES[CONFIG.falloff] ?? FALLOFF_CURVES.linear;
+        const now = performance.now();
+
+        const minCol = Math.max(0, Math.floor((x - r - offX) / CONFIG.cellSize));
+        const maxCol = Math.min(cols - 1, Math.floor((x + r - offX) / CONFIG.cellSize));
+        const minRow = Math.max(0, Math.floor((y - r - offY) / CONFIG.cellSize));
+        const maxRow = Math.min(rows - 1, Math.floor((y + r - offY) / CONFIG.cellSize));
+
+        for (let cRow = minRow; cRow <= maxRow; cRow++) {
+          for (let cCol = minCol; cCol <= maxCol; cCol++) {
+            const i = cRow * cols + cCol;
+            const [cx, cy] = cellCenter(i);
+            const dist = Math.hypot(cx - x, cy - y);
+            if (dist > r) continue;
+
+            const level = ease(1 - dist / r) * CONFIG.maxOpacity;
+            if (level > alphas[i]) {
+              alphas[i] = level;
+              touched[i] = now;
+            } else if (level > 0) {
+              touched[i] = now;
+            }
+          }
+        }
+      }
+
+      function draw(now) {
+        const dt = Math.min(now - lastFrame, 50);
+        lastFrame = now;
+        ctx.clearRect(0, 0, w, h);
+        const [cr, cg, cb] = hexToRgb(CONFIG.color);
+
+        // 1. Ambient faint static lattice
+        if (CONFIG.gridOpacity > 0) {
+          ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + CONFIG.gridOpacity + ')';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let cCol = 0; cCol <= cols; cCol++) {
+            const x = Math.round(offX + cCol * CONFIG.cellSize) + 0.5;
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+          }
+          for (let cRow = 0; cRow <= rows; cRow++) {
+            const y = Math.round(offY + cRow * CONFIG.cellSize) + 0.5;
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+          }
+          ctx.stroke();
+        }
+
+        let anyVisible = false;
+        const fadeStep = dt / Math.max(CONFIG.fadeDuration, 16);
+        const half = CONFIG.cellSize / 2;
+
+        // 2. Lit cells rendering (hover proximity only)
+        for (let i = 0; i < alphas.length; i++) {
+          let a = alphas[i];
+          if (a <= 0) continue;
+
+          if (now - touched[i] > CONFIG.holdTime) {
+            a = Math.max(0, a - fadeStep);
+            alphas[i] = a;
+            if (a <= 0) continue;
+          }
+          anyVisible = true;
+
+          const [cx, cy] = cellCenter(i);
+          const gradient = ctx.createRadialGradient(cx, cy, half * 0.1, cx, cy, CONFIG.cellSize);
+          gradient.addColorStop(0, 'rgba(' + cr + ',' + cg + ',' + cb + ',' + a + ')');
+          gradient.addColorStop(1, 'rgba(' + cr + ',' + cg + ',' + cb + ',0)');
+
+          const x = cx - half + 0.5;
+          const y = cy - half + 0.5;
+          const s = CONFIG.cellSize - 1;
+
+          ctx.beginPath();
+          if (CONFIG.cellRadius > 0) {
+            ctx.roundRect(x, y, s, s, CONFIG.cellRadius);
+          } else {
+            ctx.rect(x, y, s, s);
+          }
+
+          if (CONFIG.fillOpacity > 0) {
+            ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (a * CONFIG.fillOpacity) + ')';
+            ctx.fill();
+          }
+
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = CONFIG.lineWidth;
+          ctx.stroke();
+        }
+
+        if (anyVisible) {
+          raf = requestAnimationFrame(draw);
+        } else {
+          running = false;
+          if (CONFIG.gridOpacity <= 0) ctx.clearRect(0, 0, w, h);
+        }
+      }
+
+      function wake() {
+        if (running) return;
+        running = true;
+        lastFrame = performance.now();
+        raf = requestAnimationFrame(draw);
+      }
+
+      // ONLY pointermove illuminates cells. Clicks do nothing.
+      window.addEventListener('pointermove', (e) => {
+        energize(e.clientX, e.clientY);
+        wake();
+      }, { passive: true });
+
+      window.addEventListener('resize', rebuild, { passive: true });
+      rebuild();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', mount);
+    } else {
+      mount();
+    }
+
+    window.PluckCursorGrid = {
+      init: mount,
+      config: CONFIG
+    };
+  })();
+  </script>
+  <script src="border-glow.js?v=20261030"></script>
 </body>
 
 </html>
+

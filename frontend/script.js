@@ -1,4 +1,36 @@
 'use strict';
+
+// ── 0. Immediate Session Purge on Landing Page ───────────
+(function enforceLandingSignOut() {
+  function purge() {
+    const token = localStorage.getItem('pluck_token');
+    const user = localStorage.getItem('pluck_user');
+    const hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+
+    if (token || user || hasCookie) {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
+      } catch (e) {}
+
+      try {
+        localStorage.removeItem('pluck_user');
+        localStorage.removeItem('pluck_token');
+        localStorage.removeItem('pluck_user_snippets');
+        localStorage.removeItem('pluck_active_snippet');
+        sessionStorage.removeItem('pluck_active_snippet');
+        sessionStorage.clear();
+        document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      } catch (e) {}
+    }
+  }
+  purge();
+  window.addEventListener('pageshow', purge);
+})();
+
 /* ==========================================================
    PLUCK — script.js
    Jules-exact animations adapted for Pluck:
@@ -486,15 +518,23 @@
 (function initMascot() {
   const pupil = document.getElementById('mascot-pupil');
   const energyCanvas = document.getElementById('mascot-energy-canvas');
-  const featuresSection = document.getElementById('features');
+  const mascotCenter = document.getElementById('mascot-center') || document.getElementById('mascot-frame');
 
-  if (pupil && featuresSection) {
+  if (pupil) {
     let currentX = 0, currentY = 0;
     let targetX = 0, targetY = 0;
+    let currentRot = 0;
+    let targetRot = 0;
+    let hoveredCard = null;
 
-    // Track mouse over the features section
-    featuresSection.addEventListener('mousemove', (e) => {
+    // Track mouse everywhere across the screen when mascot is in view
+    window.addEventListener('mousemove', (e) => {
+      if (hoveredCard) return; // Snapped to card
+
       const rect = pupil.getBoundingClientRect();
+      // Skip calculations if mascot section is scrolled far off-screen
+      if (rect.bottom < -120 || rect.top > window.innerHeight + 120) return;
+
       const eyeCenterX = rect.left + rect.width / 2;
       const eyeCenterY = rect.top + rect.height / 2;
 
@@ -503,108 +543,421 @@
       const dist = Math.hypot(dx, dy);
 
       if (dist > 0) {
-        const maxOffset = 5.5;
-        const factor = Math.min(dist / 320, 1);
-        targetX = (dx / dist) * maxOffset * factor;
-        targetY = (dy / dist) * maxOffset * factor;
+        const angle = Math.atan2(dy, dx);
+        const maxOffset = 8.0; // Visibly distinct tracking within socket
+        const factor = Math.min(dist / 380, 1);
+        targetX = Math.cos(angle) * maxOffset * factor;
+        targetY = Math.sin(angle) * maxOffset * factor;
+        // Pupil rotates dynamically to point in the direction of cursor
+        targetRot = (angle * 180 / Math.PI);
       }
-    });
+    }, { passive: true });
 
-    featuresSection.addEventListener('mouseleave', () => {
+    // When cursor leaves the window or document, gently return to center
+    document.addEventListener('mouseleave', () => {
       targetX = 0;
       targetY = 0;
+      targetRot = 0;
     });
 
-    // Specific card hover snaps
+    // Specific card hover snaps with aligned gaze rotation
     const cardTargets = {
-      'feat-search': { x: -5, y: -4 },
-      'feat-deps': { x: -5, y: 3 },
-      'feat-secret': { x: 5, y: -4 },
-      'feat-mcp': { x: 5, y: 3 }
+      'feat-search': { x: -7.5, y: -5.5, rot: -135 },
+      'feat-deps':   { x: -7.5, y: 5.0,  rot: 145 },
+      'feat-secret': { x: 7.5,  y: -5.5, rot: -45 },
+      'feat-team':   { x: 7.5,  y: 5.0,  rot: 35 }
     };
 
     Object.entries(cardTargets).forEach(([id, offset]) => {
       const card = document.getElementById(id);
       if (card) {
         card.addEventListener('mouseenter', () => {
+          hoveredCard = id;
           targetX = offset.x;
           targetY = offset.y;
+          targetRot = offset.rot;
+        });
+        card.addEventListener('mouseleave', () => {
+          if (hoveredCard === id) {
+            hoveredCard = null;
+          }
         });
       }
     });
 
+    // Extra sensitive tracking & rotation when hovering directly on mascot
+    if (mascotCenter) {
+      mascotCenter.addEventListener('mousemove', (e) => {
+        const rect = pupil.getBoundingClientRect();
+        const eyeCenterX = rect.left + rect.width / 2;
+        const eyeCenterY = rect.top + rect.height / 2;
+        const dx = e.clientX - eyeCenterX;
+        const dy = e.clientY - eyeCenterY;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0) {
+          const angle = Math.atan2(dy, dx);
+          targetX = Math.cos(angle) * 8.5;
+          targetY = Math.sin(angle) * 8.5;
+          targetRot = (angle * 180 / Math.PI);
+        }
+      });
+    }
+
     function updatePupil() {
-      currentX += (targetX - currentX) * 0.2;
-      currentY += (targetY - currentY) * 0.2;
-      pupil.style.transform = `translate(calc(-50% + ${currentX.toFixed(2)}px), calc(-50% + ${currentY.toFixed(2)}px))`;
+      // Smooth lerp for position
+      currentX += (targetX - currentX) * 0.18;
+      currentY += (targetY - currentY) * 0.18;
+
+      // Shortest-arc interpolation for rotation
+      let diffRot = (targetRot - currentRot) % 360;
+      if (diffRot > 180) diffRot -= 360;
+      if (diffRot < -180) diffRot += 360;
+      currentRot += diffRot * 0.18;
+
+      // Force inline style with !important so CSS animations never override it
+      pupil.style.setProperty(
+        'transform',
+        `translate(calc(-50% + ${currentX.toFixed(2)}px), calc(-50% + ${currentY.toFixed(2)}px)) rotate(${currentRot.toFixed(1)}deg)`,
+        'important'
+      );
       requestAnimationFrame(updatePupil);
     }
     updatePupil();
   }
 
-  // Micro electrical impulses on the cybernetic brain/gear/pipes
+  // Micro electrical impulses distributed evenly across the entire mechanical half
   if (energyCanvas) {
     const ctx = energyCanvas.getContext('2d');
     const W = 410, H = 410;
     energyCanvas.width = W;
     energyCanvas.height = H;
 
-    // Proportional coordinates for 410x410 octopus (scale ~1.464)
-    const sparks = Array.from({ length: 12 }, () => ({
-      x: 215 + Math.random() * 95,
-      y: 60 + Math.random() * 260,
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: (Math.random() - 0.5) * 1.5,
-      color: Math.random() > 0.5 ? '#06b6d4' : '#f59e0b',
-      life: Math.random() * 30,
-      maxLife: 30 + Math.random() * 40,
-      size: 2.5 + Math.random() * 2.5
-    }));
+    const mascotImg = document.getElementById('mascot-octopus');
 
-    let gearAngle = 0;
+    // 5 balanced zones ensuring uniform particle distribution throughout the entire mechanical half:
+    // Zone 0: Upper Brain & Cortex (Y: 20 to 110)
+    // Zone 1: Mid Circuit traces & microchips (Y: 110 to 175)
+    // Zone 2: Gear core & central power bus (Y: 175 to 240)
+    // Zone 3: Lower Trunk & middle descending tentacle (Y: 240 to 375, X < 305)
+    // Zone 4: Right sweeping & curling mechanical tentacle (X >= 295, Y >= 210)
+    const zones = [[], [], [], [], []];
+    const interiorBitmap = new Uint8Array(W * H);
 
-    function drawSparks() {
-      ctx.clearRect(0, 0, W, H);
+    function initEnergyField() {
+      if (!mascotImg) return;
 
-      // Rotating subtle aura around the pink gear at (249, 196)
-      gearAngle += 0.025;
-      ctx.save();
-      ctx.translate(249, 196);
-      ctx.rotate(gearAngle);
-      ctx.strokeStyle = 'rgba(236, 72, 153, 0.4)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-18, -18, 36, 36);
-      ctx.restore();
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = W;
+      tempCanvas.height = H;
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(mascotImg, 0, 0, W, H);
 
-      // Cybernetic spark nodes
-      sparks.forEach(s => {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.life++;
+      let imgData = null;
+      try {
+        imgData = tempCtx.getImageData(0, 0, W, H).data;
+      } catch (e) {
+        imgData = null;
+      }
 
-        // Keep inside right half of octopus
-        if (s.x < 208) { s.x = 208; s.vx *= -1; }
-        if (s.x > 320) { s.x = 320; s.vx *= -1; }
-        if (s.y < 50) { s.y = 50; s.vy *= -1; }
-        if (s.y > 350) { s.y = 350; s.vy *= -1; }
+      function checkRawPixel(x, y) {
+        if (!imgData) return false;
+        if (x < 208 || x > 376 || y < 20 || y > 378) return false;
+        const idx = (y * W + x) * 4;
+        const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2], a = imgData[idx + 3];
+        if (a < 60) return false;
+        // Dark outer boundary
+        if (r < 22 && g < 18 && b < 26) return false;
+        // Solid purple outer skin of octopus body
+        if (r > 85 && r < 180 && g > 25 && g < 100 && b > 175) return false;
+        // Dark violet contour band
+        if (r > 38 && r < 85 && g > 12 && g < 45 && b > 80 && b < 165) return false;
+        // Eye pupil socket
+        if (x < 218 && r > 230 && g > 230 && b > 230) return false;
+        return true;
+      }
 
-        if (s.life > s.maxLife) {
-          s.x = 215 + Math.random() * 95;
-          s.y = 60 + Math.random() * 260;
-          s.life = 0;
+      // Populate safe interior coordinates with 3px buffer from skin/border
+      if (imgData) {
+        for (let y = 20; y <= 378; y++) {
+          for (let x = 208; x <= 376; x++) {
+            if (!checkRawPixel(x, y)) continue;
+
+            let safe = true;
+            for (let d = -3; d <= 3; d += 3) {
+              if (!checkRawPixel(x + d, y) || !checkRawPixel(x, y + d)) {
+                safe = false;
+                break;
+              }
+            }
+            if (!safe) continue;
+
+            interiorBitmap[y * W + x] = 1;
+
+            if (y < 112) {
+              zones[0].push({ x, y }); // Zone 0: Brain
+            } else if (y < 178 && x < 305) {
+              zones[1].push({ x, y }); // Zone 1: Mid circuits
+            } else if (y < 240 && x < 305) {
+              zones[2].push({ x, y }); // Zone 2: Gear core
+            } else if (x < 305) {
+              zones[3].push({ x, y }); // Zone 3: Lower trunk & center tentacle
+            } else {
+              zones[4].push({ x, y }); // Zone 4: Right curling tentacle
+            }
+          }
+        }
+      }
+
+      // Fallback pre-calculated seeds if image data unavailable
+      const fallbackSeeds = [
+        [{ x: 238, y: 55 }, { x: 255, y: 75 }, { x: 228, y: 92 }],
+        [{ x: 225, y: 135 }, { x: 248, y: 150 }, { x: 235, y: 165 }],
+        [{ x: 245, y: 195 }, { x: 235, y: 215 }, { x: 255, y: 225 }],
+        [{ x: 232, y: 260 }, { x: 242, y: 295 }, { x: 230, y: 340 }],
+        [{ x: 338, y: 265 }, { x: 350, y: 275 }, { x: 320, y: 305 }]
+      ];
+      for (let z = 0; z < 5; z++) {
+        if (zones[z].length === 0) {
+          zones[z] = fallbackSeeds[z];
+          fallbackSeeds[z].forEach(p => { interiorBitmap[p.y * W + p.x] = 1; });
+        }
+      }
+
+      startSparksEngine();
+    }
+
+    function isInside(x, y) {
+      const ix = Math.round(x);
+      const iy = Math.round(y);
+      if (ix < 0 || ix >= W || iy < 0 || iy >= H) return false;
+      return interiorBitmap[iy * W + ix] === 1;
+    }
+
+    function getRandomZonePos(zoneIdx) {
+      const pts = zones[zoneIdx % 5];
+      if (pts && pts.length > 0) {
+        const pt = pts[Math.floor(Math.random() * pts.length)];
+        return { x: pt.x, y: pt.y };
+      }
+      return { x: 245, y: 190 };
+    }
+
+    // 35 total particles evenly balanced: exactly 7 particles in each of the 5 zones
+    const BASE_PARTICLES_PER_ZONE = 7;
+    const TOTAL_BASE = BASE_PARTICLES_PER_ZONE * 5;
+    let sparks = [];
+
+    const sparkPalette = [
+      '#00f0ff', // electric cyan
+      '#38bdf8', // sky cyan
+      '#fbbf24', // golden circuit amber
+      '#f59e0b', // warm amber
+      '#ec4899', // neon pink
+      '#f43f5e', // deep pink
+      '#a855f7'  // quantum purple
+    ];
+
+    function createSpark(zoneIdx, isBurst = false) {
+      const pos = getRandomZonePos(zoneIdx);
+      return {
+        zone: zoneIdx % 5,
+        x: pos.x,
+        y: pos.y,
+        vx: (Math.random() - 0.5) * (isBurst ? 1.2 : 0.6),
+        vy: (Math.random() - 0.5) * (isBurst ? 1.2 : 0.6),
+        color: sparkPalette[Math.floor(Math.random() * sparkPalette.length)],
+        life: isBurst ? 0 : Math.floor(Math.random() * 45),
+        maxLife: isBurst ? 35 + Math.floor(Math.random() * 25) : 55 + Math.floor(Math.random() * 55),
+        size: 2.2 + Math.random() * 1.6
+      };
+    }
+
+    function startSparksEngine() {
+      sparks = [];
+      for (let z = 0; z < 5; z++) {
+        for (let k = 0; k < BASE_PARTICLES_PER_ZONE; k++) {
+          sparks.push(createSpark(z, false));
+        }
+      }
+
+      function drawSparks() {
+        ctx.clearRect(0, 0, W, H);
+
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          const s = sparks[i];
+
+          // Burst cleanup
+          if (sparks.length > TOTAL_BASE && s.life >= s.maxLife) {
+            sparks.splice(i, 1);
+            continue;
+          }
+
+          const nextX = s.x + s.vx;
+          const nextY = s.y + s.vy;
+
+          if (isInside(nextX, s.y)) {
+            s.x = nextX;
+          } else {
+            s.vx *= -1;
+          }
+
+          if (isInside(s.x, nextY)) {
+            s.y = nextY;
+          } else {
+            s.vy *= -1;
+          }
+
+          s.life++;
+
+          // Respawn in assigned zone to guarantee continuous uniform coverage across all sections
+          if (!isInside(s.x, s.y) || s.life > s.maxLife) {
+            const fresh = createSpark(s.zone, false);
+            s.x = fresh.x;
+            s.y = fresh.y;
+            s.vx = fresh.vx;
+            s.vy = fresh.vy;
+            s.color = fresh.color;
+            s.life = 0;
+            s.maxLife = fresh.maxLife;
+            s.size = fresh.size;
+          }
+
+          const progress = s.life / s.maxLife;
+          const alpha = Math.sin(progress * Math.PI) * 0.95;
+
+          ctx.shadowColor = s.color;
+          ctx.shadowBlur = 4;
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = Math.max(0.3, Math.min(1, alpha));
+          ctx.fillRect(Math.round(s.x), Math.round(s.y), Math.round(s.size), Math.round(s.size));
+          ctx.shadowBlur = 0;
         }
 
-        const alpha = Math.sin((s.life / s.maxLife) * Math.PI) * 0.9;
-        ctx.fillStyle = s.color;
-        ctx.globalAlpha = Math.max(0, alpha);
-        ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
-      });
-      ctx.globalAlpha = 1;
-
-      requestAnimationFrame(drawSparks);
+        ctx.globalAlpha = 1.0;
+        requestAnimationFrame(drawSparks);
+      }
+      drawSparks();
     }
-    drawSparks();
+
+    // Initialize when image is available
+    if (mascotImg && mascotImg.complete && mascotImg.naturalWidth > 0) {
+      initEnergyField();
+    } else if (mascotImg) {
+      mascotImg.addEventListener('load', initEnergyField, { once: true });
+    } else {
+      setTimeout(initEnergyField, 200);
+    }
+
+    // Surge sparks along internal mechanic circuits/tentacles when unfolding (evenly in all zones)
+    window.triggerMascotTentacleBurst = function() {
+      for (let z = 0; z < 5; z++) {
+        for (let b = 0; b < 3; b++) {
+          sparks.push(createSpark(z, true));
+        }
+      }
+    };
   }
+})();
+
+/* ── 5.1 Scroll-Based Characters, Octopus & Feature Cards Zoom Sequence ────── */
+(function initMascotScrollSequence() {
+  const charsSection = document.getElementById('pixel-chars-section');
+  const section = document.getElementById('features');
+  const mascotFrame = document.getElementById('mascot-frame');
+  const cards = document.querySelectorAll('.feat-card');
+  if (!section || !mascotFrame || cards.length === 0) return;
+
+  // Prepare initial hidden state for both sections (in-place scale 0.7)
+  section.classList.add('scroll-anim-prep');
+  if (charsSection) {
+    charsSection.classList.add('chars-anim-prep');
+  }
+
+  let animState = 'none'; // 'none' | 'running' | 'completed'
+  let timeouts = [];
+
+  function clearAnimationTimeouts() {
+    timeouts.forEach(t => clearTimeout(t));
+    timeouts = [];
+  }
+
+  function startAnimation() {
+    if (animState === 'running' || animState === 'completed') return;
+    animState = 'running';
+    clearAnimationTimeouts();
+
+    // Stage 1: First, these 4 character components zoom out & appear on their respective places!
+    if (charsSection) {
+      charsSection.classList.remove('chars-anim-prep', 'chars-anim-completed');
+      charsSection.classList.add('chars-anim-in');
+    }
+
+    // Stage 2: Then, the octopus appears with zoom in animation at center (at 750ms)
+    timeouts.push(setTimeout(() => {
+      section.classList.remove('scroll-anim-prep', 'state-unfold-tentacles', 'state-cards-in', 'state-completed');
+      section.classList.add('state-zoom-in');
+    }, 750));
+
+    // Stage 2b: Octopus unfolds its presence / tentacles (at 1300ms)
+    timeouts.push(setTimeout(() => {
+      section.classList.add('state-unfold-tentacles');
+
+      if (typeof window.triggerMascotTentacleBurst === 'function') {
+        window.triggerMascotTentacleBurst();
+      }
+    }, 1300));
+
+    // Stage 3: Then, those 4 feature cards around the octopus smoothly zoom in on their respective places (at 1800ms)
+    timeouts.push(setTimeout(() => {
+      section.classList.add('state-cards-in');
+    }, 1800));
+
+    // Stage 4: Settle into completed state with idle floating, bobbing & full interactivity (at 3300ms)
+    timeouts.push(setTimeout(() => {
+      section.classList.add('state-completed');
+      if (charsSection) {
+        charsSection.classList.add('chars-anim-completed');
+      }
+      animState = 'completed';
+    }, 3300));
+  }
+
+  function resetAnimation() {
+    if (animState === 'none') return;
+    clearAnimationTimeouts();
+    section.classList.remove('state-zoom-in', 'state-unfold-tentacles', 'state-cards-in', 'state-completed');
+    section.classList.add('scroll-anim-prep');
+    if (charsSection) {
+      charsSection.classList.remove('chars-anim-in', 'chars-anim-completed');
+      charsSection.classList.add('chars-anim-prep');
+    }
+    animState = 'none';
+  }
+
+  function checkScroll() {
+    const triggerEl = charsSection || section;
+    const rect = triggerEl.getBoundingClientRect();
+    const sectionRect = section.getBoundingClientRect();
+    const windowH = window.innerHeight || document.documentElement.clientHeight;
+
+    // Trigger when user scrolls down and characters/features enter view
+    if (rect.top <= windowH * 0.78 && sectionRect.bottom >= windowH * 0.15) {
+      if (animState === 'none') {
+        startAnimation();
+      }
+    } else if (rect.top > windowH * 0.95 || sectionRect.bottom < -100) {
+      // User scrolled back up above characters or far below features -> reset so it replays smoothly
+      if (animState !== 'none') {
+        resetAnimation();
+      }
+    }
+  }
+
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  window.addEventListener('resize', checkScroll, { passive: true });
+
+  // Initial check on load
+  checkScroll();
 })();
 
 /* ── 6. Authentic Jules PatternGrid Wave & Swimming Fish Background ────── */
@@ -728,8 +1081,8 @@
 
     ctx.clearRect(0, 0, width, height);
 
-    // Slow, serene wave drift
-    wavePhase += 0.0016;
+    // Gentle, smooth wave drift (pleasing ambient pacing)
+    wavePhase += 0.0048;
 
     // Mutate only 4-5 cells every 1600ms (calm, non-distracting twinkle)
     if (time - lastVariantTime > 1600) {
@@ -872,24 +1225,98 @@
   }, { passive: true });
 })();
 
-/* ── 8. Scroll reveal ─────────────────────────────── */
-(function initReveal() {
-  const els = document.querySelectorAll(
-    '.feat-card, .step-row, .plan-card, .hero-editor-container, .pixel-chars-section, .mascot-section'
-  );
-  els.forEach(el => el.classList.add('sr'));
+/* ── 8. Universal Component Fade In / Fade Out Scroll Engine ─────── */
+(function initScrollFadeEngine() {
+  const targetSelectors = [
+    // Hero Components
+    '#hero-logo-canvas',
+    '.hero-tagline',
+    '.hero-editor-container',
+    '.hero-sub',
+    '.hero-ctas',
+    // Features Section
+    '#features .section-header',
+    // How It Works / Walkthrough Components
+    '#how-it-works > div:first-child',
+    '.walkthrough-player-container',
+    '.step-row',
+    '.step-zigzag',
+    // Plans / Pricing Components
+    '.plans-title',
+    '.plans-sub',
+    '.plan-card',
+    '.plans-ctas',
+    '.plans-pixel-deco',
+    // Footer Components
+    '.footer-inner'
+  ];
 
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((e, i) => {
-      if (!e.isIntersecting) return;
-      const siblings = Array.from(e.target.parentElement.children);
-      const delay = siblings.indexOf(e.target) * 100;
-      setTimeout(() => e.target.classList.add('in'), delay);
-      io.unobserve(e.target);
+  const elements = document.querySelectorAll(targetSelectors.join(', '));
+  if (!elements || elements.length === 0) return;
+
+  elements.forEach(el => {
+    // Appropriate fade-in/out variant
+    if (el.id === 'hero-logo-canvas' || el.classList.contains('hero-logo-canvas')) {
+      el.classList.add('sr-scale');
+    } else if (el.classList.contains('hero-editor-container')) {
+      el.classList.add('hero-editor-zoom');
+    } else if (el.classList.contains('walkthrough-player-container')) {
+      el.classList.add('sr-scale');
+    } else {
+      el.classList.add('sr');
+    }
+
+    // Auto-stagger sibling elements for a smooth cascading wave
+    const parent = el.parentElement;
+    if (parent) {
+      if (el.classList.contains('plan-card')) {
+        const cards = Array.from(parent.querySelectorAll('.plan-card'));
+        const idx = cards.indexOf(el);
+        if (idx > 0) el.classList.add(`sr-delay-${Math.min(idx, 4)}`);
+      } else if (el.classList.contains('hero-sub')) {
+        el.classList.add('sr-delay-4');
+      } else if (el.classList.contains('hero-ctas')) {
+        el.classList.add('sr-delay-5');
+      } else if (el.classList.contains('step-row')) {
+        el.classList.add('sr-delay-1');
+      }
+    }
+  });
+
+  // Bi-directional Fade In AND Fade Out Intersection Observer
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        // Enters viewport -> Fade In smoothly
+        entry.target.classList.add('in');
+      } else {
+        // Leaves viewport -> Fade Out smoothly
+        entry.target.classList.remove('in');
+      }
     });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  }, {
+    threshold: 0.08,
+    rootMargin: '-10px 0px -30px 0px'
+  });
 
-  els.forEach(el => io.observe(el));
+  elements.forEach(el => observer.observe(el));
+
+  // Immediate check for elements currently inside or above the viewport on load
+  function checkInitialViewport() {
+    const windowH = window.innerHeight || document.documentElement.clientHeight;
+    elements.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < windowH * 0.95 && rect.bottom > 10) {
+        el.classList.add('in');
+      }
+    });
+  }
+
+  // Allow initial scale(0.7) state to render first so the cinematic entrance zoom plays smoothly
+  requestAnimationFrame(() => {
+    setTimeout(checkInitialViewport, 60);
+  });
+  window.addEventListener('load', () => setTimeout(checkInitialViewport, 80));
 })();
 
 /* ── 9. Plans pixel decoration animation ─────────── */
@@ -998,61 +1425,83 @@
 /* ── 14. Interactive Step-by-Step Video Walkthrough Player ────────── */
 const WALKTHROUGH_STEPS = {
   1: {
-    badge: 'STEP 1 OF 4',
-    title: 'Discover & Search by Intent',
-    desc: 'Open your vault at /app and press ⌘K (or Ctrl+K). Describe in natural language what you need (e.g. "debounce input react" or "s3 upload python") — Pluck\'s hybrid vector engine matches code by semantic meaning, not just exact titles.',
+    badge: 'STEP 1 OF 7',
+    title: 'Personal Vault & Tactile View Switcher',
+    desc: 'Explore your real vault at /app. Toggle between the elevated 3D Grid View and the compact List View with inline code previews, language filters, and AST dependencies.',
     link: 'app.html',
-    linkText: 'Try Step 1 in Vault →',
-    progress: 25,
-    time: '00:32 / 02:10'
+    linkText: 'Explore Real Vault Dashboard →',
+    timestamp: 0
   },
   2: {
-    badge: 'STEP 2 OF 4',
-    title: 'Studio & 1-Click Secret Redaction',
-    desc: 'Paste any snippet into the Studio (/studio). The AST engine scans imports in real-time and immediately highlights credentials (Stripe keys, AWS keys, PATs). Click "Redact → process.env.KEY" to safely convert hardcoded secrets into secure environment references.',
-    link: 'studio.html',
-    linkText: 'Open Studio to Test →',
-    progress: 50,
-    time: '01:05 / 02:10'
+    badge: 'STEP 2 OF 7',
+    title: '⌘K Semantic Intent & Vector Search',
+    desc: 'Trigger the real ⌘K command palette to search snippets in real time. Matching queries like "debounce" instantly filter results with direct keyboard navigation.',
+    link: 'app.html',
+    linkText: 'Test ⌘K Search in Vault →',
+    timestamp: 5
   },
   3: {
-    badge: 'STEP 3 OF 4',
-    title: 'Interactive Variables & In-Browser Runner',
-    desc: 'Need custom parameters? In the snippet detail page (/snippet), change dynamic {{variables}} like delay, port, or limits on the fly. Pluck updates the code in real-time and automatically derives exact npm, pnpm, and yarn install commands. Run QuickJS sandboxed tests directly in your browser.',
+    badge: 'STEP 3 OF 7',
+    title: 'Dynamic {{Variables}} & Sandbox Runner',
+    desc: 'In the snippet view (/snippet.html), edit customizable {{variables}} like delay (ms) on the fly. The live code updates dynamically with auto-derived install commands.',
     link: 'snippet.html?id=use-debounce',
-    linkText: 'Test Variables & Sandbox →',
-    progress: 75,
-    time: '01:42 / 02:10'
+    linkText: 'Test Dynamic Variables →',
+    timestamp: 10
   },
   4: {
-    badge: 'STEP 4 OF 4',
-    title: 'Developer Preferences & Profile Settings',
-    desc: 'Customize default package managers, editor keymaps, and account credentials directly from Settings to tailor Pluck to your development workflow.',
-    link: 'settings.html?tab=account',
-    linkText: 'View Settings Profile →',
-    progress: 100,
-    time: '02:10 / 02:10'
+    badge: 'STEP 4 OF 7',
+    title: 'Universal 1-Click Code Sharing (17+ Channels)',
+    desc: 'Export snippets with 1-click to Ray.so, StackBlitz, GitHub Gists, or direct communication channels like Mail, WhatsApp, LinkedIn, Reddit, and Discord.',
+    link: 'snippet.html?id=use-debounce',
+    linkText: 'Explore Sharing Modal →',
+    timestamp: 15
+  },
+  5: {
+    badge: 'STEP 5 OF 7',
+    title: 'Snippet Studio & AST Secret Redactor',
+    desc: 'Create or edit code in the Studio (/studio.html). Real-time AST scans detect hardcoded API keys and secrets, enabling 1-click redaction into process.env references.',
+    link: 'studio.html',
+    linkText: 'Open Studio Redactor →',
+    timestamp: 22
+  },
+  6: {
+    badge: 'STEP 6 OF 7',
+    title: 'Acme Team Workspaces & RBAC',
+    desc: 'Collaborate with team members (/team.html). Adjust role permissions (Owner, Admin, Editor, Viewer) via animated dropdowns and manage shared collections.',
+    link: 'team.html',
+    linkText: 'Manage Team Workspace →',
+    timestamp: 29
+  },
+  7: {
+    badge: 'STEP 7 OF 7',
+    title: 'Zero-Trust Cyber Dialogs & Auto Sign-Out',
+    desc: 'Clicking the Pluck logo squid triggers the native Pluck cyberpunk confirmation dialog and performs instant auto sign-out with zero browser history leaks.',
+    link: 'app.html',
+    linkText: 'Inspect System Security →',
+    timestamp: 34
   }
 };
 
 let currentChapter = 1;
 let isPlaying = true;
-let currentProgress = 25;
 let playbackSpeed = 1.0;
-let progressTimer = null;
 
-function selectChapter(step) {
-  currentChapter = step;
+function formatWalkthroughTime(sec) {
+  if (isNaN(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60).toString().padStart(2, '0');
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function updateExplainerCard(step) {
   const data = WALKTHROUGH_STEPS[step];
   if (!data) return;
 
-  // Update tabs
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= 7; i++) {
     const btn = document.getElementById(`chap-btn-${i}`);
     if (btn) btn.classList.toggle('active', i === step);
   }
 
-  // Update explainer card
   const badgeEl = document.getElementById('guide-step-badge');
   const titleEl = document.getElementById('guide-step-title');
   const descEl = document.getElementById('guide-step-desc');
@@ -1062,72 +1511,131 @@ function selectChapter(step) {
   if (titleEl) titleEl.textContent = data.title;
   if (descEl) descEl.innerHTML = data.desc;
   if (linkEl) {
-    linkEl.href = data.link;
+    linkEl.href = `auth.html?next=${encodeURIComponent(data.link)}`;
     linkEl.textContent = data.linkText;
   }
+}
 
-  // Update progress bar
-  currentProgress = data.progress;
-  const fill = document.getElementById('walkthrough-progress-fill');
-  const time = document.getElementById('walkthrough-time');
-  if (fill) fill.style.width = `${currentProgress}%`;
-  if (time) time.textContent = data.time;
+function selectChapter(step) {
+  currentChapter = step;
+  const data = WALKTHROUGH_STEPS[step];
+  if (!data) return;
 
-  // Sync AnimatedList selection if active
-  if (window.AnimatedList && window.AnimatedList.landingInstances && window.AnimatedList.landingInstances.walkthrough) {
-    window.AnimatedList.landingInstances.walkthrough.setSelected(step - 1);
+  updateExplainerCard(step);
+
+  const video = document.getElementById('walkthrough-video-element');
+  if (video) {
+    video.currentTime = data.timestamp;
+    if (video.paused && isPlaying) {
+      video.play().catch(() => {});
+    }
   }
 }
 
 function toggleWalkthroughPlay() {
-  isPlaying = !isPlaying;
+  const video = document.getElementById('walkthrough-video-element');
   const btn = document.getElementById('btn-video-play');
-  if (btn) {
-    btn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+  if (!video) return;
+
+  if (video.paused) {
+    video.play().then(() => {
+      isPlaying = true;
+      if (btn) btn.textContent = '⏸ Pause';
+    }).catch(() => {});
+  } else {
+    video.pause();
+    isPlaying = false;
+    if (btn) btn.textContent = '▶ Play';
   }
 }
 
 function restartWalkthrough() {
-  selectChapter(1);
-  isPlaying = true;
+  const video = document.getElementById('walkthrough-video-element');
   const btn = document.getElementById('btn-video-play');
+  if (video) {
+    video.currentTime = 0;
+    video.play().catch(() => {});
+  }
+  isPlaying = true;
   if (btn) btn.textContent = '⏸ Pause';
+  selectChapter(1);
 }
 
 function seekWalkthrough(e) {
   const bar = document.getElementById('walkthrough-progress-bar');
-  if (!bar) return;
+  const video = document.getElementById('walkthrough-video-element');
+  if (!bar || !video || !video.duration) return;
+
   const rect = bar.getBoundingClientRect();
   const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  const step = Math.min(4, Math.max(1, Math.ceil(ratio * 4)));
-  selectChapter(step);
+  video.currentTime = ratio * video.duration;
 }
 
 function toggleSpeed() {
+  const video = document.getElementById('walkthrough-video-element');
   const btn = document.getElementById('btn-speed');
   if (playbackSpeed === 1.0) playbackSpeed = 1.5;
   else if (playbackSpeed === 1.5) playbackSpeed = 2.0;
   else playbackSpeed = 1.0;
+
+  if (video) video.playbackRate = playbackSpeed;
   if (btn) btn.textContent = `${playbackSpeed.toFixed(1)}x`;
 }
 
 function toggleFullscreen() {
-  const screen = document.getElementById('walkthrough-screen');
-  if (!screen) return;
+  const box = document.querySelector('.walkthrough-player-box') || document.getElementById('walkthrough-screen');
+  if (!box) return;
   if (!document.fullscreenElement) {
-    screen.requestFullscreen().catch(() => { });
+    box.requestFullscreen().catch(() => { });
   } else {
     document.exitFullscreen().catch(() => { });
   }
 }
 
-// Auto-advance through chapters smoothly every 8 seconds when playing
-setInterval(() => {
-  if (!isPlaying) return;
-  let next = currentChapter + 1;
-  if (next > 4) next = 1;
-  selectChapter(next);
-}, 8000);
+// Attach video timeupdate sync
+(function initWalkthroughVideoSync() {
+  const video = document.getElementById('walkthrough-video-element');
+  if (!video) return;
+
+  video.addEventListener('timeupdate', () => {
+    const cur = video.currentTime;
+    const dur = video.duration || 56;
+    const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+
+    const fill = document.getElementById('walkthrough-progress-fill');
+    const timeEl = document.getElementById('walkthrough-time');
+
+    if (fill) fill.style.width = `${pct}%`;
+    if (timeEl) timeEl.textContent = `${formatWalkthroughTime(cur)} / ${formatWalkthroughTime(dur)}`;
+
+    // Identify active step by timestamp boundaries
+    let step = 1;
+    if (cur >= 34) step = 7;
+    else if (cur >= 29) step = 6;
+    else if (cur >= 22) step = 5;
+    else if (cur >= 15) step = 4;
+    else if (cur >= 10) step = 3;
+    else if (cur >= 5) step = 2;
+    else step = 1;
+
+    if (step !== currentChapter) {
+      currentChapter = step;
+      updateExplainerCard(step);
+    }
+  });
+
+  video.addEventListener('play', () => {
+    isPlaying = true;
+    const btn = document.getElementById('btn-video-play');
+    if (btn) btn.textContent = '⏸ Pause';
+  });
+
+  video.addEventListener('pause', () => {
+    isPlaying = false;
+    const btn = document.getElementById('btn-video-play');
+    if (btn) btn.textContent = '▶ Play';
+  });
+})();
 
 /* ── 12. React Bits Dock Magnification Engine for Primary Buttons ── */
 (function initDockButtons() {
@@ -1245,88 +1753,102 @@ setInterval(() => {
   const mascot = document.getElementById('peeking-mascot');
   if (!editor || !mascot) return;
 
-  const R = 24;          // Corner radius
-  const d = 8;           // Inward offset from outer border
-  const speed = 16;      // Pixels per second (extra-slow, serene crawl)
-  let currentDist = 25;  // Initial position near bottom-left corner
+  const r = 16;              // Corner curve radius
+  const inset = 2;           // Exact border contact line along card rectangle
+  const baseSpeed = 8.5;     // Pixels per second (slow, calm walking pace)
+  const stepDuration = 0.65; // Seconds per tentacle step (natural gait cadence)
+
+  let currentDist = 25;      // Initial position along bottom edge
+  let walkTime = 0;          // Accumulated walking time for continuous step cycle
   let isHovered = false;
   let lastTimestamp = null;
   let animFrameId = null;
 
+  // Smoothed physics variables for organic tentacle walking
+  let currentWaddle = 0;
+  let currentLift = 0;
+  let currentStretch = 0;
+
   function getPerimeterPoint(s, W, H) {
-    const rArc = Math.max(1, R - d);
-    const l1 = Math.max(1, W - 2 * R); // bottom
-    const l2 = rArc * (Math.PI / 2);   // bottom-right arc
-    const l3 = Math.max(1, H - 2 * R); // right
-    const l4 = rArc * (Math.PI / 2);   // top-right arc
-    const l5 = Math.max(1, W - 2 * R); // top
-    const l6 = rArc * (Math.PI / 2);   // top-left arc
-    const l7 = Math.max(1, H - 2 * R); // left
-    const l8 = rArc * (Math.PI / 2);   // bottom-left arc
+    const rArc = Math.max(1, r - inset);
+    const l1 = Math.max(10, W - 2 * r); // bottom
+    const l2 = rArc * (Math.PI / 2);    // bottom-right arc
+    const l3 = Math.max(10, H - 2 * r); // right
+    const l4 = rArc * (Math.PI / 2);    // top-right arc
+    const l5 = Math.max(10, W - 2 * r); // top
+    const l6 = rArc * (Math.PI / 2);    // top-left arc
+    const l7 = Math.max(10, H - 2 * r); // left
+    const l8 = rArc * (Math.PI / 2);    // bottom-left arc
 
     const P = l1 + l2 + l3 + l4 + l5 + l6 + l7 + l8;
-    const lap = Math.floor(s / P);
     let rem = ((s % P) + P) % P;
 
-    let x, y, baseAngle;
+    let x, y, facing, edgeLean;
 
     if (rem < l1) {
-      // 1. Bottom edge (left to right)
+      // 1. Bottom edge (left to right): tentacles walk right on the bottom border
       const p = rem / l1;
-      x = R + p * l1;
-      y = H - d;
-      baseAngle = 0;
+      x = r + p * l1;
+      y = H - inset;
+      facing = 1;
+      edgeLean = 0;
     } else if ((rem -= l1) < l2) {
       // 2. Bottom-Right corner
       const p = rem / l2;
       const alpha = p * (Math.PI / 2);
-      x = (W - R) + rArc * Math.sin(alpha);
-      y = (H - R) + rArc * Math.cos(alpha);
-      baseAngle = -90 * p;
+      x = (W - r) + rArc * Math.sin(alpha);
+      y = (H - r) + rArc * Math.cos(alpha);
+      facing = 1;
+      edgeLean = -8 * p;
     } else if ((rem -= l2) < l3) {
-      // 3. Right edge (bottom to top)
+      // 3. Right edge (bottom to top): tentacles climb right border
       const p = rem / l3;
-      x = W - d;
-      y = (H - R) - p * l3;
-      baseAngle = -90;
+      x = W - inset;
+      y = (H - r) - p * l3;
+      facing = 1;
+      edgeLean = -8;
     } else if ((rem -= l3) < l4) {
-      // 4. Top-Right corner
+      // 4. Top-Right corner: smoothly turns to face left
       const p = rem / l4;
       const alpha = p * (Math.PI / 2);
-      x = (W - R) + rArc * Math.cos(alpha);
-      y = R - rArc * Math.sin(alpha);
-      baseAngle = -90 - 90 * p;
+      x = (W - r) + rArc * Math.cos(alpha);
+      y = r - rArc * Math.sin(alpha);
+      facing = 1 - 2 * p;
+      edgeLean = -8 * (1 - p);
     } else if ((rem -= l4) < l5) {
-      // 5. Top edge (right to left)
+      // 5. Top edge (right to left): tentacles walk on top border, head upright peeking above (NEVER inverted)
       const p = rem / l5;
-      x = (W - R) - p * l5;
-      y = d;
-      baseAngle = -180;
+      x = (W - r) - p * l5;
+      y = inset;
+      facing = -1;
+      edgeLean = 0;
     } else if ((rem -= l5) < l6) {
       // 6. Top-Left corner
       const p = rem / l6;
       const alpha = p * (Math.PI / 2);
-      x = R - rArc * Math.sin(alpha);
-      y = R - rArc * Math.cos(alpha);
-      baseAngle = -180 - 90 * p;
+      x = r - rArc * Math.sin(alpha);
+      y = r - rArc * Math.cos(alpha);
+      facing = -1;
+      edgeLean = 8 * p;
     } else if ((rem -= l6) < l7) {
-      // 7. Left edge (top to bottom)
+      // 7. Left edge (top to bottom): tentacles step down left border
       const p = rem / l7;
-      x = d;
-      y = R + p * l7;
-      baseAngle = -270;
+      x = inset;
+      y = r + p * l7;
+      facing = -1;
+      edgeLean = 8;
     } else {
       // 8. Bottom-Left corner
       rem -= l7;
       const p = Math.min(1, rem / l8);
       const alpha = p * (Math.PI / 2);
-      x = R - rArc * Math.cos(alpha);
-      y = (H - R) + rArc * Math.sin(alpha);
-      baseAngle = -270 - 90 * p;
+      x = r - rArc * Math.cos(alpha);
+      y = (H - r) + rArc * Math.sin(alpha);
+      facing = -1 + 2 * p;
+      edgeLean = 8 * (1 - p);
     }
 
-    const angle = baseAngle - (lap * 360);
-    return { x, y, angle, P };
+    return { x, y, facing, edgeLean, P };
   }
 
   function step(timestamp) {
@@ -1334,18 +1856,56 @@ setInterval(() => {
     const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
     lastTimestamp = timestamp;
 
+    let strideFactor = 1.0;
+    let targetWaddle = 0;
+    let targetLift = 0;
+    let targetStretch = 0;
+
     if (!isHovered) {
-      currentDist += speed * dt;
+      walkTime += dt;
+
+      // Gait cycle calculation (0 to 1 over stepDuration)
+      const stepCycle = (walkTime % stepDuration) / stepDuration;
+      const stepIndex = Math.floor(walkTime / stepDuration);
+      const isLeftStep = (stepIndex % 2 === 0);
+
+      // Walking propulsion wave: plant & push vs swing
+      const pushWave = Math.sin(stepCycle * Math.PI);
+      strideFactor = 0.18 + 1.45 * Math.pow(pushWave, 1.7);
+
+      // Advance distance traveled along edge border
+      currentDist += baseSpeed * strideFactor * dt;
+
+      // 1. Alternating tentacle waddle: tilts gently with each step
+      const tiltDir = isLeftStep ? -1 : 1;
+      targetWaddle = tiltDir * pushWave * 3.8;
+
+      // 2. Vertical tentacle lift: body lifts away during step and lands on touchdown
+      targetLift = pushWave * 2.8;
+
+      // 3. Elastic octopus squash & stretch
+      targetStretch = (pushWave - 0.45) * 0.06;
     }
+
+    // Smoothly ease physics variables (settles gracefully on pause/resume)
+    const easeRate = Math.min(1, dt * 12);
+    currentWaddle += (targetWaddle - currentWaddle) * easeRate;
+    currentLift += (targetLift - currentLift) * easeRate;
+    currentStretch += (targetStretch - currentStretch) * easeRate;
 
     const W = editor.clientWidth || editor.offsetWidth || 800;
     const H = editor.clientHeight || editor.offsetHeight || 400;
 
     const pt = getPerimeterPoint(currentDist, W, H);
-    const wobble = isHovered ? 0 : Math.sin(timestamp * 0.0018) * 1.8;
-    const finalAngle = pt.angle + wobble;
+    const finalAngle = pt.edgeLean + currentWaddle;
+    const scaleX = (pt.facing * (1 - currentStretch)).toFixed(3);
+    const scaleY = (1 + currentStretch).toFixed(3);
 
-    mascot.style.transform = `translate3d(${pt.x.toFixed(2)}px, ${pt.y.toFixed(2)}px, 0) rotate(${finalAngle.toFixed(2)}deg)`;
+    // Anchor tentacle contact point (28px, 50px) right on the border edge (pt.x, pt.y)
+    const posX = pt.x - 28;
+    const posY = pt.y - 50;
+
+    mascot.style.transform = `translate3d(${posX.toFixed(2)}px, ${posY.toFixed(2)}px, 0) rotate(${finalAngle.toFixed(2)}deg) translateY(${-currentLift.toFixed(2)}px) scale(${scaleX}, ${scaleY})`;
 
     animFrameId = requestAnimationFrame(step);
   }
@@ -1391,6 +1951,269 @@ setInterval(() => {
 
   animFrameId = requestAnimationFrame(step);
 })();
+
+// ── Footer 3D Social Buttons Tooltip Controller ──────────
+(function initFooterTooltips() {
+  function setup() {
+    const socialButtons = document.querySelectorAll('.footer-btn-3d');
+    if (!socialButtons.length) return;
+
+    socialButtons.forEach((btn) => {
+      // 1. Thoroughly remove native title attribute to prevent OS default tooltip
+      btn.removeAttribute('title');
+      btn.querySelectorAll('*').forEach((child) => child.removeAttribute('title'));
+
+      const tooltip = btn.querySelector('.footer-btn-tooltip');
+      if (!tooltip) return;
+
+      const show = () => {
+        tooltip.classList.add('show-tooltip');
+      };
+
+      const hide = () => {
+        tooltip.classList.remove('show-tooltip');
+      };
+
+      btn.addEventListener('mouseenter', show);
+      btn.addEventListener('mouseleave', hide);
+      btn.addEventListener('focus', show);
+      btn.addEventListener('blur', hide);
+      btn.addEventListener('pointerenter', show);
+      btn.addEventListener('pointerleave', hide);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
+
+// ── 15. Global Auth Protection (Require Sign-In to use Pluck) ─────
+(function initLandingAuthProtection() {
+  function isUserAuthed() {
+    try {
+      return !!(localStorage.getItem('pluck_token') || localStorage.getItem('pluck_user'));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Auto signout when clicking logo
+  function autoSignOutOnLogo(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    const token = localStorage.getItem('pluck_token');
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
+    } catch (err) {}
+
+    try {
+      localStorage.removeItem('pluck_user');
+      localStorage.removeItem('pluck_token');
+      localStorage.removeItem('pluck_user_snippets');
+      localStorage.removeItem('pluck_active_snippet');
+      localStorage.removeItem('pluck_auth_pending');
+      sessionStorage.removeItem('pluck_active_snippet');
+      sessionStorage.clear();
+      document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+      document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+    } catch (err) {}
+
+    window.location.href = 'auth.html?status=signed_out';
+  }
+  window.autoSignOutOnLogo = autoSignOutOnLogo;
+
+  // Intercept clicks on landing page
+  document.addEventListener('click', (e) => {
+    // 0. Logo click: auto signout from account
+    const logoEl = e.target.closest('.nav-logo, #nav-logo-link, .nav-logo-squid, .logo-wordmark');
+    if (logoEl) {
+      autoSignOutOnLogo(e);
+      return;
+    }
+
+    // 1. Mockup cards have no functionality - nothing happens when clicked
+    const mockupCard = e.target.closest('.mockup-box, .mockup-select, .mockup-prompt-area, .step-mockup, .detect-card, .step-chat-container, .hero-editor, .chat-ai-bubble, .chat-user-bubble, .chat-action-pill');
+    if (mockupCard && !e.target.closest('a, button')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // 2. Buttons & links: on index.html, never allow direct entry to protected pages without signing in
+    const el = e.target.closest('a, button, [onclick]');
+    if (!el) return;
+
+    const href = el.getAttribute('href') || '';
+    if (href.startsWith('#') || href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:') || href === 'javascript:void(0)') {
+      return;
+    }
+    if (href.startsWith('auth.html') || href === 'index.html' || href === '/') {
+      return;
+    }
+
+    const protectedTargets = ['app.html', 'studio.html', 'snippet.html', 'team.html', 'settings.html', 'share.html'];
+    for (const page of protectedTargets) {
+      if (href.includes(page)) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.location.href = `auth.html?next=${encodeURIComponent(href)}`;
+        return false;
+      }
+    }
+  }, true);
+})();
+
+// ── Pluck Custom Dialog & Modal Engine (Replaces "localhost:4000 says") ──
+(function initPluckDialogEngine(global) {
+  let activeResolve = null;
+
+  function ensureDialogElements() {
+    let overlay = document.getElementById('pluck-dialog-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'pluck-dialog-overlay';
+      overlay.className = 'pluck-dialog-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.innerHTML = `
+        <div class="pluck-dialog-box" id="pluck-dialog-box">
+          <div class="pluck-dialog-header">
+            <div class="pluck-dialog-brand">
+              <img src="squid.png" alt="Pluck" class="pluck-dialog-squid" width="24" height="24" />
+              <span class="pluck-dialog-title" id="pluck-dialog-title">Pluck says:</span>
+            </div>
+            <button type="button" class="pluck-dialog-close" id="pluck-dialog-x" aria-label="Close dialog">✕</button>
+          </div>
+          <div class="pluck-dialog-body" id="pluck-dialog-msg"></div>
+          <div class="pluck-dialog-footer" id="pluck-dialog-footer">
+            <button type="button" class="btn-pluck-dialog-cancel" id="pluck-dialog-cancel">Cancel</button>
+            <button type="button" class="btn-pluck-dialog-confirm" id="pluck-dialog-ok">OK</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      function closeDialog(result) {
+        overlay.classList.remove('open');
+        window.removeEventListener('keydown', handleKey);
+        if (activeResolve) {
+          const r = activeResolve;
+          activeResolve = null;
+          r(result);
+        }
+      }
+
+      function handleKey(e) {
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDialog(false);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeDialog(true);
+        }
+      }
+
+      const closeX = document.getElementById('pluck-dialog-x');
+      const cancelBtn = document.getElementById('pluck-dialog-cancel');
+      const okBtn = document.getElementById('pluck-dialog-ok');
+
+      closeX.addEventListener('click', () => closeDialog(false));
+      cancelBtn.addEventListener('click', () => closeDialog(false));
+      okBtn.addEventListener('click', () => closeDialog(true));
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeDialog(false);
+      });
+
+      overlay._close = closeDialog;
+      overlay._handleKey = handleKey;
+    }
+    return overlay;
+  }
+
+  function pluckConfirm(message, options = {}) {
+    return new Promise((resolve) => {
+      const overlay = ensureDialogElements();
+      activeResolve = resolve;
+
+      const titleEl = document.getElementById('pluck-dialog-title');
+      const msgEl = document.getElementById('pluck-dialog-msg');
+      const cancelBtn = document.getElementById('pluck-dialog-cancel');
+      const okBtn = document.getElementById('pluck-dialog-ok');
+
+      titleEl.textContent = options.title || 'Pluck says:';
+      msgEl.textContent = message || '';
+
+      cancelBtn.style.display = 'inline-flex';
+      cancelBtn.textContent = options.cancelText || 'Cancel';
+
+      okBtn.textContent = options.confirmText || 'OK';
+
+      if (options.danger) {
+        okBtn.className = 'btn-pluck-dialog-confirm danger';
+      } else {
+        okBtn.className = 'btn-pluck-dialog-confirm';
+      }
+
+      window.addEventListener('keydown', overlay._handleKey);
+      overlay.classList.add('open');
+      setTimeout(() => {
+        if (options.focusCancel) {
+          cancelBtn.focus();
+        } else {
+          okBtn.focus();
+        }
+      }, 60);
+    });
+  }
+
+  function pluckAlert(message, options = {}) {
+    return new Promise((resolve) => {
+      const overlay = ensureDialogElements();
+      activeResolve = resolve;
+
+      const titleEl = document.getElementById('pluck-dialog-title');
+      const msgEl = document.getElementById('pluck-dialog-msg');
+      const cancelBtn = document.getElementById('pluck-dialog-cancel');
+      const okBtn = document.getElementById('pluck-dialog-ok');
+
+      titleEl.textContent = options.title || 'Pluck says:';
+      msgEl.textContent = message || '';
+
+      cancelBtn.style.display = 'none';
+
+      okBtn.textContent = options.confirmText || 'OK';
+      okBtn.className = 'btn-pluck-dialog-confirm';
+
+      window.addEventListener('keydown', overlay._handleKey);
+      overlay.classList.add('open');
+      setTimeout(() => okBtn.focus(), 60);
+    });
+  }
+
+  global.pluckConfirm = pluckConfirm;
+  global.pluckAlert = pluckAlert;
+
+  // Intercept native window.alert so all popups display "Pluck says:"
+  global.alert = function (msg) {
+    return pluckAlert(msg);
+  };
+})(window);
+
+
+
 
 
 

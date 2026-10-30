@@ -1,10 +1,14 @@
 /**
  * PLUCK — Cursor Grid Background Engine (React Bits Variant)
- * Zero-dependency interactive canvas grid that reacts to cursor proximity,
- * hold-time fading, and click pulse shockwaves.
+ * Zero-dependency interactive canvas grid that reacts ONLY to cursor hover proximity.
+ * Clicking does nothing at all. No shockwaves, pulses, or expanding waves.
  */
 (function initCursorGrid() {
   'use strict';
+
+  // Guard against duplicate execution
+  if (window.__pluckCursorGridInitialized) return;
+  window.__pluckCursorGridInitialized = true;
 
   const FALLOFF_CURVES = {
     linear: t => t,
@@ -31,8 +35,7 @@
     fillOpacity: 0.08,      // Subtle glowing fill
     gridOpacity: 0.04,      // Faint ambient lattice
     cellRadius: 4,
-    clickPulse: true,
-    pulseSpeed: 650
+    clickPulse: false
   };
 
   function mount() {
@@ -55,7 +58,6 @@
     let touched = new Float64Array(0);
     let w = 0;
     let h = 0;
-    const pulses = [];
     let raf = 0;
     let running = false;
     let lastFrame = performance.now();
@@ -86,7 +88,7 @@
       return [cx, cy];
     }
 
-    function energize(x, y, boost) {
+    function energize(x, y) {
       const r = Math.max(CONFIG.radius, 1);
       const ease = FALLOFF_CURVES[CONFIG.falloff] ?? FALLOFF_CURVES.linear;
       const now = performance.now();
@@ -103,7 +105,7 @@
           const dist = Math.hypot(cx - x, cy - y);
           if (dist > r) continue;
 
-          const level = ease(1 - dist / r) * CONFIG.maxOpacity * (boost ?? 1);
+          const level = ease(1 - dist / r) * CONFIG.maxOpacity;
           if (level > alphas[i]) {
             alphas[i] = level;
             touched[i] = now;
@@ -138,41 +140,11 @@
         ctx.stroke();
       }
 
-      // 2. Expanding click pulse shockwaves
-      for (let pi = pulses.length - 1; pi >= 0; pi--) {
-        const pulse = pulses[pi];
-        const age = (now - pulse.t0) / 1000;
-        const ringR = age * CONFIG.pulseSpeed;
-
-        if (ringR > Math.hypot(w, h)) {
-          pulses.splice(pi, 1);
-          continue;
-        }
-
-        const band = CONFIG.cellSize;
-        const minCol = Math.max(0, Math.floor((pulse.x - ringR - band - offX) / CONFIG.cellSize));
-        const maxCol = Math.min(cols - 1, Math.floor((pulse.x + ringR + band - offX) / CONFIG.cellSize));
-        const minRow = Math.max(0, Math.floor((pulse.y - ringR - band - offY) / CONFIG.cellSize));
-        const maxRow = Math.min(rows - 1, Math.floor((pulse.y + ringR + band - offY) / CONFIG.cellSize));
-
-        for (let cRow = minRow; cRow <= maxRow; cRow++) {
-          for (let cCol = minCol; cCol <= maxCol; cCol++) {
-            const i = cRow * cols + cCol;
-            const [cx, cy] = cellCenter(i);
-            const dist = Math.hypot(cx - pulse.x, cy - pulse.y);
-            if (Math.abs(dist - ringR) < band / 2 && CONFIG.maxOpacity > alphas[i]) {
-              alphas[i] = CONFIG.maxOpacity;
-              touched[i] = now;
-            }
-          }
-        }
-      }
-
-      let anyVisible = pulses.length > 0;
+      let anyVisible = false;
       const fadeStep = dt / Math.max(CONFIG.fadeDuration, 16);
       const half = CONFIG.cellSize / 2;
 
-      // 3. Lit cells rendering
+      // 2. Lit cells rendering (cursor hover glow only)
       for (let i = 0; i < alphas.length; i++) {
         let a = alphas[i];
         if (a <= 0) continue;
@@ -225,25 +197,14 @@
       raf = requestAnimationFrame(draw);
     }
 
+    // Reacts ONLY when hovering cursor. Zero reaction to clicks.
     window.addEventListener('pointermove', (e) => {
       energize(e.clientX, e.clientY);
       wake();
     }, { passive: true });
 
-    window.addEventListener('pointerdown', (e) => {
-      if (!CONFIG.clickPulse) return;
-      pulses.push({ x: e.clientX, y: e.clientY, t0: performance.now() });
-      wake();
-    });
-
     window.addEventListener('resize', rebuild, { passive: true });
     rebuild();
-
-    // Trigger an initial energizing sweep at center
-    setTimeout(() => {
-      energize(w / 2, h / 2, 0.8);
-      wake();
-    }, 150);
   }
 
   if (document.readyState === 'loading') {

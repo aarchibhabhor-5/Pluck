@@ -2,6 +2,55 @@
 <html lang="en">
 
 <head>
+  <script>
+    (function enforcePageAuth() {
+      function purgeAndRedirect() {
+        document.documentElement.style.display = 'none';
+        try {
+          localStorage.removeItem('pluck_user');
+          localStorage.removeItem('pluck_token');
+          localStorage.removeItem('pluck_user_snippets');
+          localStorage.removeItem('pluck_active_snippet');
+          localStorage.removeItem('pluck_auth_pending');
+          sessionStorage.clear();
+          document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+          document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
+        } catch(e) {}
+        var current = window.location.pathname.split('/').pop() + window.location.search;
+        window.location.replace('auth.html?next=' + encodeURIComponent(current));
+      }
+
+      function check() {
+        var token = localStorage.getItem('pluck_token');
+        var user = localStorage.getItem('pluck_user');
+        var hasCookie = document.cookie && document.cookie.includes('pluck_session=');
+        if (!token || !user || !hasCookie) {
+          purgeAndRedirect();
+          return false;
+        }
+        return true;
+      }
+
+      if (!check()) return;
+
+      window.addEventListener('pageshow', function(e) {
+        if (!check()) return;
+      });
+
+      try {
+        var tok = localStorage.getItem('pluck_token');
+        var h = { 'Accept': 'application/json' };
+        if (tok) h['Authorization'] = 'Bearer ' + tok;
+        fetch('/api/auth/me', { headers: h, credentials: 'same-origin' })
+          .then(function(res) {
+            if (!res.ok) {
+              purgeAndRedirect();
+            }
+          })
+          .catch(function() {});
+      } catch(e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vault Dashboard — Pluck</title>
@@ -682,7 +731,7 @@
     <aside class="app-sidebar">
       <!-- App Brand & Logo -->
       <div class="app-sidebar-header">
-        <a href="index.html" class="nav-logo" title="Back to Homepage">
+        <a href="javascript:void(0)" class="nav-logo" onclick="autoSignOutOnLogo(event)" title="Click logo to sign out">
           <img src="squid.png" alt="Pluck" class="nav-logo-squid" width="26" height="26" />
           <span class="logo-wordmark" style="font-size: 13px;">Pluck</span>
         </a>
@@ -719,18 +768,12 @@
             </div>
             <span style="font-size: 10px; color: var(--green);">✓</span>
           </div>
-          <a href="team.html"
-            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; text-decoration: none; color: #ddd6fe; margin-bottom: 4px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span
-                style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">A</span>
-              <span style="font-size: 11px; font-weight: 700; color: #fff;">Acme Core Eng (Team)</span>
-            </div>
-            <span style="font-size: 10px; color: var(--purple-light);">→</span>
-          </a>
-          <div onclick="window.location.href='team.html?action=new'"
-            style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer;">
-            + Create New Team
+          <div id="ws-team-list"></div>
+          <div onclick="openCreateTeamModal()"
+            style="border-top: 1px solid var(--purple-dim); padding: 8px 10px; font-size: 11px; color: var(--cyan); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s;"
+            onmouseover="this.style.background='rgba(56,189,248,0.1)'"
+            onmouseout="this.style.background='transparent'">
+            <span style="font-weight: 700;">+</span> <span>Create New Team</span>
           </div>
         </div>
       </div>
@@ -926,7 +969,48 @@
     </div>
   </div>
 
-  <script src="app-script.js"></script>
+  <!-- ░░░ CREATE TEAM WORKSPACE MODAL ░░░ -->
+  <div id="create-team-modal" class="modal-fade-overlay" onclick="if (event.target === this) closeCreateTeamModal();"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="pixel-border-box modal-fade-box" style="background: #141417; border: 1px solid var(--purple-light); padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.85), 0 0 20px rgba(124,58,237,0.3); border-radius: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 18px;">🏢</span>
+          <h3 style="font-family: var(--mono); font-size: 15px; color: var(--white); margin: 0;">Create New Team</h3>
+        </div>
+        <button onclick="closeCreateTeamModal()" style="background: transparent; border: none; color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; line-height: 1;">✕</button>
+      </div>
+
+      <p style="font-size: 11px; color: var(--muted); margin-bottom: 16px; line-height: 1.5;">
+        Create a collaborative workspace for your team with shared code snippet collections, role permissions (Admin, Editor, Viewer), and real-time audit logging.
+      </p>
+
+      <form id="create-team-form" onsubmit="event.preventDefault(); submitCreateTeam();">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 10px; color: var(--muted); margin-bottom: 6px; font-family: var(--mono); text-transform: uppercase;">Team Name *</label>
+          <input type="text" id="new-team-name-input" placeholder="e.g. Acme Backend, Infra Core, Mobile Team" maxlength="60" required
+            oninput="updateTeamSlugPreview(this.value)"
+            style="width: 100%; box-sizing: border-box; background: #0c0c0e; border: 1px solid rgba(124,58,237,0.4); color: var(--white); padding: 10px 12px; font-family: var(--mono); font-size: 12px; border-radius: 4px;" />
+        </div>
+
+        <div id="new-team-slug-preview-row" style="margin-bottom: 16px; font-size: 11px; color: var(--muted); font-family: var(--mono); display: none;">
+          Workspace URL: <span style="color: #64748b;">/team.html?id=</span><span id="new-team-slug-preview" style="color: var(--cyan); font-weight: 600;"></span>
+        </div>
+
+        <div id="create-team-error" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 8px 12px; font-size: 11px; margin-bottom: 16px; border-radius: 4px;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-outline-pixel" onclick="closeCreateTeamModal()">Cancel</button>
+          <button type="submit" class="btn-solid-pixel" id="btn-submit-team" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px;">
+            <span id="create-team-spinner" class="auth-spinner" style="display: none; width: 12px; height: 12px; margin: 0;"></span>
+            <span id="create-team-btn-text">Create Team</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app-script.js?v=pluck_dialog_v3"></script>
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const initialFolderParam = urlParams.get('folder');
@@ -1008,11 +1092,14 @@
 
         // Fetch team permissions to know caller's role for team snippets
         try {
-          const tRes = await fetch('/api/teams/acme-core-eng', { headers });
-          if (tRes.ok) {
-            const tData = await tRes.json();
-            window.__pluckTeamRole = tData.role || 'Viewer';
-            window.__pluckCanEditSnippets = tData.canEditSnippets !== false;
+          const activeTeamId = localStorage.getItem('pluck_active_team_id');
+          if (activeTeamId) {
+            const tRes = await fetch(`/api/teams/${encodeURIComponent(activeTeamId)}`, { headers });
+            if (tRes.ok) {
+              const tData = await tRes.json();
+              window.__pluckTeamRole = tData.role || 'Viewer';
+              window.__pluckCanEditSnippets = tData.canEditSnippets !== false;
+            }
           }
         } catch (e) {}
       } catch (err) {
@@ -1289,7 +1376,12 @@
       }
       const snip = userSnippets.find(s => s.id === id || s.slug === id);
       const title = snip ? snip.title : id;
-      if (!confirm(`Are you sure you want to delete snippet "${title}"?`)) return;
+      const confirmed = await pluckConfirm(`Are you sure you want to delete snippet "${title}"?`, {
+        danger: true,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      });
+      if (!confirmed) return;
 
       showToast(`Deleting "${title}" from vault...`, 'info');
 
@@ -1501,18 +1593,183 @@
     });
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeSortDropdown();
+      if (e.key === 'Escape') {
+        closeSortDropdown();
+        closeCreateTeamModal();
+      }
     });
+
+    function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = localStorage.getItem('pluck_token');
+      let user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('pluck_user') || 'null');
+      } catch (e) {}
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (user && user.id) headers['X-User-Id'] = user.id;
+      if (user && user.email) headers['X-User-Email'] = user.email;
+      return headers;
+    }
+
+    async function loadUserTeamsInDropdown() {
+      const listEl = document.getElementById('ws-team-list');
+      if (!listEl) return;
+      try {
+        const res = await fetch('/api/teams', { headers: getAuthHeaders() });
+        if (res.ok) {
+          const data = await res.json();
+          const teams = data.teams || [];
+          if (teams.length === 0) {
+            listEl.innerHTML = '';
+            return;
+          }
+          listEl.innerHTML = teams.map(t => {
+            const initial = (t.name ? t.name.charAt(0) : 'T').toUpperCase();
+            return `
+              <a href="team.html?id=${encodeURIComponent(t.id || t.slug)}"
+                style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; cursor: pointer; text-decoration: none; color: #ddd6fe; margin-bottom: 4px; border-radius: 3px; transition: background 0.15s;"
+                onmouseover="this.style.background='rgba(139,92,246,0.18)'"
+                onmouseout="this.style.background='transparent'">
+                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                  <span style="width: 18px; height: 18px; background: var(--pink); color: #fff; font-size: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; border-radius: 2px;">${escapeHtml(initial)}</span>
+                  <span style="font-size: 11px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(t.name)} (Team)</span>
+                </div>
+                <span style="font-size: 10px; color: var(--purple-light); flex-shrink: 0;">→</span>
+              </a>
+            `;
+          }).join('');
+        }
+      } catch (e) {
+        console.warn('Could not load user teams in dropdown:', e);
+      }
+    }
 
     function toggleWorkspaceDropdown() {
       const d = document.getElementById('ws-dropdown');
-      d.style.display = d.style.display === 'none' ? 'block' : 'none';
+      if (!d) return;
+      const isClosed = d.style.display === 'none' || !d.style.display;
+      d.style.display = isClosed ? 'block' : 'none';
+      if (isClosed) {
+        loadUserTeamsInDropdown();
+      }
     }
 
     function selectWorkspace(ws) {
       document.getElementById('ws-dropdown').style.display = 'none';
       if (ws === 'personal') {
         showToast('Active Workspace: Personal Vault');
+      }
+    }
+
+    function openCreateTeamModal() {
+      const d = document.getElementById('ws-dropdown');
+      if (d) d.style.display = 'none';
+
+      const modal = document.getElementById('create-team-modal');
+      const input = document.getElementById('new-team-name-input');
+      const err = document.getElementById('create-team-error');
+      const previewRow = document.getElementById('new-team-slug-preview-row');
+      const spinner = document.getElementById('create-team-spinner');
+      const btnText = document.getElementById('create-team-btn-text');
+      const btn = document.getElementById('btn-submit-team');
+
+      if (input) input.value = '';
+      if (err) { err.textContent = ''; err.style.display = 'none'; }
+      if (previewRow) previewRow.style.display = 'none';
+      if (spinner) spinner.style.display = 'none';
+      if (btnText) btnText.textContent = 'Create Team';
+      if (btn) btn.disabled = false;
+
+      if (modal) {
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => modal.classList.add('show'));
+        setTimeout(() => { if (input) input.focus(); }, 60);
+      }
+    }
+
+    function closeCreateTeamModal() {
+      const modal = document.getElementById('create-team-modal');
+      if (modal) {
+        modal.classList.remove('show');
+        setTimeout(() => {
+          if (!modal.classList.contains('show')) {
+            modal.style.display = 'none';
+          }
+        }, 250);
+      }
+    }
+
+    function updateTeamSlugPreview(val) {
+      const previewRow = document.getElementById('new-team-slug-preview-row');
+      const previewSpan = document.getElementById('new-team-slug-preview');
+      if (!previewRow || !previewSpan) return;
+      const slug = (val || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      if (slug) {
+        previewSpan.textContent = slug;
+        previewRow.style.display = 'block';
+      } else {
+        previewRow.style.display = 'none';
+      }
+    }
+
+    async function submitCreateTeam() {
+      const input = document.getElementById('new-team-name-input');
+      const name = input ? input.value.trim() : '';
+      const err = document.getElementById('create-team-error');
+      const spinner = document.getElementById('create-team-spinner');
+      const btnText = document.getElementById('create-team-btn-text');
+      const btn = document.getElementById('btn-submit-team');
+
+      if (!name) {
+        if (err) {
+          err.textContent = 'Please enter a name for the team.';
+          err.style.display = 'block';
+        }
+        if (input) input.focus();
+        return;
+      }
+
+      if (err) err.style.display = 'none';
+      if (spinner) spinner.style.display = 'inline-block';
+      if (btnText) btnText.textContent = 'Creating...';
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/teams', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.message || data.error || 'Failed to create team.');
+        }
+
+        const team = data.team;
+        if (team && team.id) {
+          localStorage.setItem('pluck_active_team_id', team.id);
+        }
+
+        showToast(`🎉 Team "${team ? team.name : name}" created successfully!`, 'success');
+        closeCreateTeamModal();
+        loadUserTeamsInDropdown();
+
+        // Redirect to new team workspace
+        setTimeout(() => {
+          const targetId = (team && (team.id || team.slug)) || '';
+          window.location.href = `team.html?id=${encodeURIComponent(targetId)}`;
+        }, 500);
+      } catch (e) {
+        if (spinner) spinner.style.display = 'none';
+        if (btnText) btnText.textContent = 'Create Team';
+        if (btn) btn.disabled = false;
+        if (err) {
+          err.textContent = e.message || 'An error occurred while creating the team.';
+          err.style.display = 'block';
+        }
+        showToast(e.message || 'Error creating team', 'error');
       }
     }
 
@@ -1524,12 +1781,18 @@
       }
     });
 
-    function confirmSignOut(e) {
+    async function confirmSignOut(e) {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
-      if (!confirm('Are you sure you want to sign out of Pluck?')) {
+      const confirmed = await pluckConfirm('Are you sure you want to sign out of Pluck?', {
+        title: 'Pluck says:',
+        danger: true,
+        confirmText: 'OK',
+        cancelText: 'Cancel'
+      });
+      if (!confirmed) {
         return false;
       }
       localStorage.removeItem('pluck_user');
@@ -1538,7 +1801,7 @@
       sessionStorage.removeItem('pluck_active_snippet');
       document.cookie = 'pluck_session=; max-age=0; path=/;';
       fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-      window.location.href = 'auth.html';
+      window.location.href = 'auth.html?status=signed_out';
       return true;
     }
 
@@ -1595,10 +1858,11 @@
       syncUserSession();
       setViewMode(currentViewMode, true);
       fetchUserSnippets();
+      loadUserTeamsInDropdown();
     });
   </script>
   <script src="animated-list.js"></script>
-  <script src="app-script.js"></script>
+  <script src="app-script.js?v=pluck_dialog_v3"></script>
   <script src="magic-bento.js"></script>
   <script src="border-glow.js"></script>
 </body>
