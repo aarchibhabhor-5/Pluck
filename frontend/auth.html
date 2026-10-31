@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -574,7 +575,7 @@
       }
 
       if (!activeGoogleClientId) {
-        activeGoogleClientId = localStorage.getItem('pluck_google_client_id') || '47687512907-8lb19snrvc57n11g9rn5fg5v0c7uvkju.apps.googleusercontent.com';
+        activeGoogleClientId = localStorage.getItem('pluck_google_client_id') || '';
       }
 
       initGoogleIdentityServices();
@@ -583,33 +584,36 @@
     function initGoogleIdentityServices() {
       if (window.google && window.google.accounts && activeGoogleClientId) {
         try {
+          const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
           google.accounts.id.initialize({
             client_id: activeGoogleClientId,
             callback: handleGoogleJwtResponse,
             auto_select: false,
-            cancel_on_tap_outside: true
+            cancel_on_tap_outside: true,
+            use_fedcm_for_prompt: false
           });
 
-          // Render official Google Sign-In button if element exists
-          const btnTarget = document.getElementById('google-gsi-btn');
-          if (btnTarget) {
-            google.accounts.id.renderButton(btnTarget, {
-              theme: 'filled_black',
-              size: 'large',
-              type: 'standard',
-              shape: 'rectangular',
-              text: 'continue_with',
-              logo_alignment: 'left',
-              width: 340
+          // Render official Google Sign-In button and prompt only when origin is authorized
+          if (!isLocalhost) {
+            const btnTarget = document.getElementById('google-gsi-btn');
+            if (btnTarget) {
+              google.accounts.id.renderButton(btnTarget, {
+                theme: 'filled_black',
+                size: 'large',
+                type: 'standard',
+                shape: 'rectangular',
+                text: 'continue_with',
+                logo_alignment: 'left',
+                width: 340
+              });
+            }
+
+            google.accounts.id.prompt((notification) => {
+              if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                console.log('Google One-Tap note:', notification.getNotDisplayedReason());
+              }
             });
           }
-
-          // Trigger One-Tap prompt
-          google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              console.log('Google One-Tap note:', notification.getNotDisplayedReason());
-            }
-          });
         } catch (err) {
           console.warn('Google Identity initialization notice:', err);
         }

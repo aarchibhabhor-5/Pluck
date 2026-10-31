@@ -1,5 +1,6 @@
 package dev.pluck.backend;
 
+import dev.pluck.backend.controller.AuthController;
 import dev.pluck.backend.model.User;
 import dev.pluck.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,6 +57,16 @@ class PluckBackendApplicationTests {
     @Autowired
     private dev.pluck.backend.repository.SnippetRepository snippetRepository;
 
+    @Autowired
+    private dev.pluck.backend.repository.SessionRepository sessionRepository;
+
+    private String createTestSessionToken(User user) {
+        String token = "sess_test_" + java.util.UUID.randomUUID().toString().replace("-", "");
+        String hash = AuthController.hashPasswordStatic(token);
+        sessionRepository.save(new dev.pluck.backend.model.Session(hash, user.getId()));
+        return "Bearer " + token;
+    }
+
     private void cleanupTestMember(User user) {
         if (user == null || user.getEmail() == null) return;
         dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
@@ -65,10 +76,35 @@ class PluckBackendApplicationTests {
         }
     }
 
+    private User getOrCreateTestAdmin() {
+        dev.pluck.backend.model.Team team = teamRepository.findById("acme-core-eng").orElse(null);
+        if (team != null && team.getOwnerUserId() != null) {
+            User owner = userRepository.findById(team.getOwnerUserId()).orElse(null);
+            if (owner != null) return owner;
+        }
+        return userRepository.findAll().stream().findFirst().orElseGet(() -> {
+            User u = new User("usr_test_admin", "Test Admin", "admin@pluck.dev", "A", "owner");
+            u.setPassword(AuthController.hashPasswordStatic("PluckAdmin@Test2026"));
+            return userRepository.save(u);
+        });
+    }
+
+    private User getOrCreateTestViewer() {
+        User admin = getOrCreateTestAdmin();
+        return userRepository.findAll().stream()
+                .filter(u -> !u.getId().equals(admin.getId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    User u = new User("usr_test_viewer", "Test Viewer", "viewer@pluck.dev", "V", "member");
+                    u.setPassword(AuthController.hashPasswordStatic("PluckViewer@Test2026"));
+                    return userRepository.save(u);
+                });
+    }
+
     @Test
     void testInspectSnippetsAndRemove() {
-        User user5 = userRepository.findByEmail("aarchibhabhor5@gmail.com").orElse(null);
-        User user6 = userRepository.findByEmail("aarchibhabhor6@gmail.com").orElse(null);
+        User user5 = getOrCreateTestAdmin();
+        User user6 = getOrCreateTestViewer();
         org.junit.jupiter.api.Assertions.assertNotNull(user5);
         org.junit.jupiter.api.Assertions.assertNotNull(user6);
 
@@ -92,6 +128,9 @@ class PluckBackendApplicationTests {
                 teamRepository.save(team);
             }
 
+            String authHeader5 = createTestSessionToken(user5);
+            String authHeader6 = createTestSessionToken(user6);
+
             List<dev.pluck.backend.model.Snippet> allSnippets = snippetRepository.findAll();
             for (dev.pluck.backend.model.Snippet s : allSnippets) {
                 if ("Untitled Snippet".equals(s.getTitle()) || "java functions".equals(s.getTitle())) {
@@ -99,7 +138,7 @@ class PluckBackendApplicationTests {
                     org.springframework.http.ResponseEntity<?> res5 = snippetController.updateSnippet(
                             s.getId(),
                             java.util.Map.of("folderId", "general", "folderName", "general", "teamId", "acme-core-eng", "visibility", "team"),
-                            null,
+                            authHeader5,
                             user5.getId(),
                             user5.getEmail()
                     );
@@ -109,7 +148,7 @@ class PluckBackendApplicationTests {
                     org.springframework.http.ResponseEntity<?> res6 = snippetController.updateSnippet(
                             s.getId(),
                             java.util.Map.of("folderId", "general", "folderName", "general", "teamId", "acme-core-eng", "visibility", "team"),
-                            null,
+                            authHeader6,
                             user6.getId(),
                             user6.getEmail()
                     );
@@ -119,7 +158,7 @@ class PluckBackendApplicationTests {
                     org.springframework.http.ResponseEntity<?> resRestore = snippetController.updateSnippet(
                             s.getId(),
                             java.util.Map.of("folderId", "col_database", "folderName", "database", "teamId", "acme-core-eng", "visibility", "team"),
-                            null,
+                            authHeader5,
                             user5.getId(),
                             user5.getEmail()
                     );
@@ -133,19 +172,21 @@ class PluckBackendApplicationTests {
 
     @Test
     void testAuthLogin() {
-        // Test login for user 5
-        org.springframework.http.ResponseEntity<?> res5 = authController.login(java.util.Map.of(
-                "email", "aarchibhabhor5@gmail.com",
-                "password", "Aarchibhabhor@15"
-        ));
-        org.junit.jupiter.api.Assertions.assertEquals(200, res5.getStatusCode().value(), "User 5 login should succeed");
+        String testEmail = "test.login." + System.currentTimeMillis() + "@pluck.dev";
+        String testPassword = "PluckTestSecure@2026";
+        User testUser = new User("usr_test_login", "Test Login User", testEmail, "T", "member");
+        testUser.setPassword(AuthController.hashPasswordStatic(testPassword));
+        userRepository.save(testUser);
 
-        // Test login for user 6
-        org.springframework.http.ResponseEntity<?> res6 = authController.login(java.util.Map.of(
-                "email", "aarchibhabhor6@gmail.com",
-                "password", "Aarchibhabhor@15"
-        ));
-        org.junit.jupiter.api.Assertions.assertEquals(200, res6.getStatusCode().value(), "User 6 login should succeed");
+        try {
+            org.springframework.http.ResponseEntity<?> res = authController.login(java.util.Map.of(
+                    "email", testEmail,
+                    "password", testPassword
+            ));
+            org.junit.jupiter.api.Assertions.assertEquals(200, res.getStatusCode().value(), "Test user login should succeed");
+        } finally {
+            userRepository.delete(testUser);
+        }
     }
 
     @Autowired
@@ -173,13 +214,16 @@ class PluckBackendApplicationTests {
             System.out.println("PURGED " + toDelete.size() + " DUMMY/TEST ARTIFACTS FROM ATLAS ACTIVITY EVENTS");
         }
 
-        User user5 = userRepository.findByEmail("aarchibhabhor5@gmail.com").orElse(null);
-        User user6 = userRepository.findByEmail("aarchibhabhor6@gmail.com").orElse(null);
+        User user5 = getOrCreateTestAdmin();
+        User user6 = getOrCreateTestViewer();
         org.junit.jupiter.api.Assertions.assertNotNull(user5);
         org.junit.jupiter.api.Assertions.assertNotNull(user6);
 
+        String authHeader5 = createTestSessionToken(user5);
+        String authHeader6 = createTestSessionToken(user6);
+
         // 2. Test activity feed for User 5
-        org.springframework.http.ResponseEntity<?> res5 = teamController.getActivity("acme-core-eng", null, user5.getId());
+        org.springframework.http.ResponseEntity<?> res5 = teamController.getActivity("acme-core-eng", authHeader5, user5.getId());
         org.junit.jupiter.api.Assertions.assertEquals(200, res5.getStatusCode().value());
         java.util.Map<?, ?> map5 = (java.util.Map<?, ?>) res5.getBody();
         List<?> list5 = (List<?>) map5.get("activity");
@@ -191,7 +235,7 @@ class PluckBackendApplicationTests {
         }
 
         // 3. Test activity feed for User 6
-        org.springframework.http.ResponseEntity<?> res6 = teamController.getActivity("acme-core-eng", null, user6.getId());
+        org.springframework.http.ResponseEntity<?> res6 = teamController.getActivity("acme-core-eng", authHeader6, user6.getId());
         org.junit.jupiter.api.Assertions.assertEquals(200, res6.getStatusCode().value());
         java.util.Map<?, ?> map6 = (java.util.Map<?, ?>) res6.getBody();
         List<?> list6 = (List<?>) map6.get("activity");
@@ -205,8 +249,8 @@ class PluckBackendApplicationTests {
 
     @Test
     void testViewerRoleEnforcement() {
-        User user5 = userRepository.findByEmail("aarchibhabhor5@gmail.com").orElse(null);
-        User user6 = userRepository.findByEmail("aarchibhabhor6@gmail.com").orElse(null);
+        User user5 = getOrCreateTestAdmin();
+        User user6 = getOrCreateTestViewer();
         org.junit.jupiter.api.Assertions.assertNotNull(user5);
         org.junit.jupiter.api.Assertions.assertNotNull(user6);
 
@@ -230,6 +274,9 @@ class PluckBackendApplicationTests {
                 teamRepository.save(team);
             }
 
+            String authHeader5 = createTestSessionToken(user5);
+            String authHeader6 = createTestSessionToken(user6);
+
             // 1. Viewer attempts to create a team snippet -> Expect 403 FORBIDDEN
             org.springframework.http.ResponseEntity<?> createViewerRes = snippetController.createSnippet(
                     java.util.Map.of(
@@ -238,7 +285,7 @@ class PluckBackendApplicationTests {
                             "visibility", "team",
                             "teamId", "acme-core-eng"
                     ),
-                    null,
+                    authHeader6,
                     user6.getId(),
                     user6.getEmail()
             );
@@ -248,7 +295,7 @@ class PluckBackendApplicationTests {
             org.springframework.http.ResponseEntity<?> inviteViewerRes = teamController.inviteMember(
                     "acme-core-eng",
                     java.util.Map.of("email", "hacker@pluck.dev", "role", "Admin"),
-                    null,
+                    authHeader6,
                     user6.getId(),
                     user6.getEmail()
             );
@@ -259,14 +306,14 @@ class PluckBackendApplicationTests {
                     "acme-core-eng",
                     user6.getId(),
                     java.util.Map.of("role", "Admin"),
-                    null,
+                    authHeader6,
                     user6.getId(),
                     user6.getEmail()
             );
             org.junit.jupiter.api.Assertions.assertEquals(403, roleViewerRes.getStatusCode().value(), "Viewer must not be allowed to change roles");
 
             // 4. Verify Admin (user5) has full access
-            org.springframework.http.ResponseEntity<?> teamRes5 = teamController.getTeam("acme-core-eng", null, user5.getId(), user5.getEmail());
+            org.springframework.http.ResponseEntity<?> teamRes5 = teamController.getTeam("acme-core-eng", authHeader5, user5.getId(), user5.getEmail());
             org.junit.jupiter.api.Assertions.assertEquals(200, teamRes5.getStatusCode().value());
             java.util.Map<?, ?> teamMap5 = (java.util.Map<?, ?>) teamRes5.getBody();
             org.junit.jupiter.api.Assertions.assertEquals("Admin", teamMap5.get("role"));
@@ -274,7 +321,7 @@ class PluckBackendApplicationTests {
             org.junit.jupiter.api.Assertions.assertEquals(true, teamMap5.get("canManageMembers"));
 
             // 5. Verify Viewer (user6) role resolution
-            org.springframework.http.ResponseEntity<?> teamRes6 = teamController.getTeam("acme-core-eng", null, user6.getId(), user6.getEmail());
+            org.springframework.http.ResponseEntity<?> teamRes6 = teamController.getTeam("acme-core-eng", authHeader6, user6.getId(), user6.getEmail());
             org.junit.jupiter.api.Assertions.assertEquals(200, teamRes6.getStatusCode().value());
             java.util.Map<?, ?> teamMap6 = (java.util.Map<?, ?>) teamRes6.getBody();
             org.junit.jupiter.api.Assertions.assertEquals("Viewer", teamMap6.get("role"));

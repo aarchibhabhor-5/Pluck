@@ -510,10 +510,10 @@
         <div id="view-chooser">
           <div class="account-chooser-list">
             <button type="button" class="account-item-btn" onclick="selectAccount(currentUser.email, currentUser.name)">
-              <div class="account-avatar" id="chooser-avatar">A</div>
+              <div class="account-avatar" id="chooser-avatar">D</div>
               <div class="account-info">
-                <div class="account-name" id="chooser-name">Aarchi Bhabhor</div>
-                <div class="account-email" id="chooser-email">aarchibhabhor5@gmail.com</div>
+                <div class="account-name" id="chooser-name">Developer</div>
+                <div class="account-email" id="chooser-email">developer@pluck.dev</div>
               </div>
             </button>
 
@@ -620,8 +620,8 @@
     let selectedName = '';
 
     // Detected / default user from localStorage or session
-    const lastEmail = localStorage.getItem('pluck_last_email') || 'aarchibhabhor5@gmail.com';
-    const lastName = localStorage.getItem('pluck_last_name') || 'Aarchi Bhabhor';
+    const lastEmail = localStorage.getItem('pluck_last_email') || 'developer@pluck.dev';
+    const lastName = localStorage.getItem('pluck_last_name') || 'Developer';
 
     const currentUser = {
       email: lastEmail,

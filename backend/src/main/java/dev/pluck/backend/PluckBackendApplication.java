@@ -21,6 +21,11 @@ public class PluckBackendApplication {
      * automatically switches to the running local MongoDB to prevent app hang/downtime.
      */
     private static void checkAndConfigureMongoFallback() {
+        // When running in cloud hosting environments like Render, always use the configured cloud MongoDB URI
+        if (System.getenv("RENDER") != null || System.getenv("DYNO") != null || "production".equalsIgnoreCase(System.getenv("ENVIRONMENT"))) {
+            return;
+        }
+
         String mongoUri = System.getProperty("MONGODB_URI");
         if (mongoUri == null || mongoUri.trim().isEmpty()) {
             mongoUri = System.getenv("MONGODB_URI");
@@ -28,14 +33,36 @@ public class PluckBackendApplication {
         if (mongoUri != null && mongoUri.contains("mongodb+srv://")) {
             boolean reachable = false;
             try {
-                try (java.net.Socket socket = new java.net.Socket()) {
-                    socket.connect(new java.net.InetSocketAddress("159.41.230.197", 27017), 1500);
-                    reachable = true;
-                } catch (Exception e1) {
-                    try (java.net.Socket socket2 = new java.net.Socket()) {
-                        socket2.connect(new java.net.InetSocketAddress("159.41.230.198", 27017), 1500);
-                        reachable = true;
-                    } catch (Exception ignored) {}
+                String host = null;
+                int atIdx = mongoUri.indexOf('@');
+                if (atIdx != -1) {
+                    int end = mongoUri.indexOf('/', atIdx);
+                    if (end == -1) end = mongoUri.indexOf('?', atIdx);
+                    if (end == -1) end = mongoUri.length();
+                    host = mongoUri.substring(atIdx + 1, end).trim();
+                }
+
+                if (host != null && !host.isEmpty()) {
+                    java.util.Hashtable<String, String> env = new java.util.Hashtable<>();
+                    env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+                    javax.naming.directory.DirContext dirContext = new javax.naming.directory.InitialDirContext(env);
+                    javax.naming.directory.Attributes attrs = dirContext.getAttributes("_mongodb._tcp." + host, new String[]{"SRV"});
+                    javax.naming.directory.Attribute attr = attrs != null ? attrs.get("SRV") : null;
+                    if (attr != null && attr.size() > 0) {
+                        for (int i = 0; i < Math.min(attr.size(), 3); i++) {
+                            String srvRecord = (String) attr.get(i);
+                            String[] parts = srvRecord.split("\\s+");
+                            if (parts.length >= 4) {
+                                String targetHost = parts[3].endsWith(".") ? parts[3].substring(0, parts[3].length() - 1) : parts[3];
+                                int port = Integer.parseInt(parts[2]);
+                                try (java.net.Socket socket = new java.net.Socket()) {
+                                    socket.connect(new java.net.InetSocketAddress(targetHost, port), 1500);
+                                    reachable = true;
+                                    break;
+                                } catch (Exception ignored) {}
+                            }
+                        }
+                    }
                 }
             } catch (Exception ignored) {}
 

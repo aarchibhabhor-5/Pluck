@@ -46,3 +46,16 @@ build/
 *.cert
 *.crt
 credentials.json
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets.*
+*.secrets
+
+# OS & Temp files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.tmp

@@ -121,14 +121,6 @@ public class AuthController {
             return true;
         }
 
-        // 3. Known hash for account 2 if user registered with a typo -> update to new password
-        if ("d9ac7a0a64a3f5f63ac5a50ab97333d4dcac2e9717b6b8c9ce7b635a93f7d856".equalsIgnoreCase(stored)
-                && ("Aarchibhabhor@15".equals(rawPassword) || "Aarchibhabhor@15".equals(trimmed))) {
-            user.setPassword(hashedTrimmed);
-            userRepository.save(user);
-            return true;
-        }
-
         return false;
     }
 

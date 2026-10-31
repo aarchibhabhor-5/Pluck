@@ -15,6 +15,12 @@
 id_rsa
 id_rsa.pub
 credentials.json
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets.*
+*.secrets
 
 # Dependencies & Build artifacts
 node_modules/
@@ -24,3 +30,10 @@ dist/
 .idea/
 .vscode/
 *.log
+
+# OS & Temp files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*.tmp

@@ -11,8 +11,8 @@
       try {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
-      } catch (e) {}
+        fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => { });
+      } catch (e) { }
 
       try {
         localStorage.removeItem('pluck_user');
@@ -24,7 +24,7 @@
         document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
         document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
         document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      } catch (e) {}
+      } catch (e) { }
     }
   }
   purge();
@@ -563,9 +563,9 @@
     // Specific card hover snaps with aligned gaze rotation
     const cardTargets = {
       'feat-search': { x: -7.5, y: -5.5, rot: -135 },
-      'feat-deps':   { x: -7.5, y: 5.0,  rot: 145 },
-      'feat-secret': { x: 7.5,  y: -5.5, rot: -45 },
-      'feat-team':   { x: 7.5,  y: 5.0,  rot: 35 }
+      'feat-deps': { x: -7.5, y: 5.0, rot: 145 },
+      'feat-secret': { x: 7.5, y: -5.5, rot: -45 },
+      'feat-team': { x: 7.5, y: 5.0, rot: 35 }
     };
 
     Object.entries(cardTargets).forEach(([id, offset]) => {
@@ -849,7 +849,7 @@
     }
 
     // Surge sparks along internal mechanic circuits/tentacles when unfolding (evenly in all zones)
-    window.triggerMascotTentacleBurst = function() {
+    window.triggerMascotTentacleBurst = function () {
       for (let z = 0; z < 5; z++) {
         for (let b = 0; b < 3; b++) {
           sparks.push(createSpark(z, true));
@@ -1527,7 +1527,7 @@ function selectChapter(step) {
   if (video) {
     video.currentTime = data.timestamp;
     if (video.paused && isPlaying) {
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
   }
 }
@@ -1541,7 +1541,7 @@ function toggleWalkthroughPlay() {
     video.play().then(() => {
       isPlaying = true;
       if (btn) btn.textContent = '⏸ Pause';
-    }).catch(() => {});
+    }).catch(() => { });
   } else {
     video.pause();
     isPlaying = false;
@@ -1554,7 +1554,7 @@ function restartWalkthrough() {
   const btn = document.getElementById('btn-video-play');
   if (video) {
     video.currentTime = 0;
-    video.play().catch(() => {});
+    video.play().catch(() => { });
   }
   isPlaying = true;
   if (btn) btn.textContent = '⏸ Pause';
@@ -2012,8 +2012,8 @@ function toggleFullscreen() {
     try {
       const headers = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = 'Bearer ' + token;
-      fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
-    } catch (err) {}
+      fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => { });
+    } catch (err) { }
 
     try {
       localStorage.removeItem('pluck_user');
@@ -2026,7 +2026,7 @@ function toggleFullscreen() {
       document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
       document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-    } catch (err) {}
+    } catch (err) { }
 
     window.location.href = 'auth.html?status=signed_out';
   }

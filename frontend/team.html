@@ -53,6 +53,7 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <title>Team Workspace | Pluck</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -742,7 +743,7 @@
 
     async function loadMembers() {
       const tbody = document.getElementById('team-members-tbody');
-      if (!tbody) return;
+      if (!tbody || !currentTeamId) return;
 
       try {
         const res = await fetch(`/api/teams/${currentTeamId}/members`, { headers: getAuthHeaders() });
@@ -1278,7 +1279,7 @@
 
     async function loadActivity() {
       const list = document.getElementById('team-activity-list');
-      if (!list) return;
+      if (!list || !currentTeamId) return;
 
       try {
         const res = await fetch(`/api/teams/${currentTeamId}/activity`, { headers: getAuthHeaders() });
@@ -1374,7 +1375,7 @@
     // ── Team Collections Subsystem ─────────────────────────────────────
     async function loadCollections() {
       const grid = document.getElementById('team-collections-grid');
-      if (!grid) return;
+      if (!grid || !currentTeamId) return;
       try {
         const res = await fetch(`/api/teams/${currentTeamId}/collections`, { headers: getAuthHeaders() });
         const data = await res.json();
@@ -1814,11 +1815,14 @@
     }
 
     // Initial load
-    loadTeamData();
+    loadTeamData().then(() => {
+      if (currentTeamId) {
+        loadCollections();
+        loadMembers();
+        loadActivity();
+      }
+    });
     loadUserTeams();
-    loadCollections();
-    loadMembers();
-    loadActivity();
 
     // Listen to storage sync events across tabs
     window.addEventListener('storage', (e) => {
