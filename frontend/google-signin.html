@@ -769,8 +769,12 @@
       const nextBtn = document.getElementById('btn-right-action');
       if (nextBtn) nextBtn.disabled = true;
 
+      const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? '/api'
+        : 'https://pluck-0y8b.onrender.com/api';
+
       try {
-        const res = await fetch('/api/auth/oauth', {
+        const res = await fetch(`${API_BASE}/auth/oauth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

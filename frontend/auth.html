@@ -5,6 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script>
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? '/api'
+      : 'https://pluck-0y8b.onrender.com/api';
+  </script>
   <script src="api-config.js"></script>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -27,6 +32,7 @@
       width: 100%;
       margin-top: 4px;
     }
+
     .password-toggle-btn {
       position: absolute;
       right: 8px;
@@ -42,25 +48,32 @@
       transition: color 0.15s ease, transform 0.1s ease;
       z-index: 2;
     }
+
     .password-toggle-btn:hover {
       color: var(--cyan);
       transform: scale(1.08);
     }
+
     .password-toggle-btn:active {
       transform: scale(0.95);
     }
+
     .auth-spinner {
       display: inline-block;
       width: 14px;
       height: 14px;
-      border: 2px solid rgba(255,255,255,0.3);
+      border: 2px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
       border-top-color: #fff;
       animation: auth-spin 0.6s linear infinite;
     }
+
     @keyframes auth-spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
+
     .auth-quick-pill {
       display: flex;
       align-items: center;
@@ -75,12 +88,14 @@
       transition: all 0.15s ease;
       text-align: left;
     }
+
     .auth-quick-pill:hover {
       background: rgba(56, 189, 248, 0.16);
       border-color: #38bdf8;
       transform: translateY(-1px);
       box-shadow: 0 4px 14px rgba(56, 189, 248, 0.2);
     }
+
     .auth-alert-btn {
       display: inline-flex;
       align-items: center;
@@ -97,35 +112,43 @@
       text-decoration: none;
       margin-top: 6px;
     }
+
     .auth-alert-btn:hover {
       background: rgba(124, 58, 237, 0.5);
       border-color: var(--cyan);
       color: var(--cyan);
     }
+
     .modal-backdrop-anim {
       opacity: 0;
       transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
     .modal-backdrop-anim.visible {
       opacity: 1;
     }
+
     .modal-dialog-anim {
       opacity: 0;
       transform: translate(-50%, -46%) scale(0.96);
       transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
     .modal-dialog-anim.visible {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
     }
+
     .auth-card {
       animation: authCardFadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
+
     @keyframes authCardFadeIn {
       from {
         opacity: 0;
         transform: translateY(18px) scale(0.98);
       }
+
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -159,7 +182,8 @@
       <!-- OAuth Providers -->
       <div class="oauth-buttons" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
         <div id="google-gsi-btn" style="display: none; width: 100%; justify-content: center;"></div>
-        <button type="button" class="btn-oauth" id="google-custom-btn" onclick="simulateOAuth('Google')" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
+        <button type="button" class="btn-oauth" id="google-custom-btn" onclick="simulateOAuth('Google')"
+          style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s ease;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -190,19 +214,24 @@
 
         <div class="form-group">
           <label class="form-label" for="email">WORK OR PERSONAL EMAIL</label>
-          <input type="email" id="email" class="form-input" placeholder="developer@company.com" required autocomplete="email" />
+          <input type="email" id="email" class="form-input" placeholder="developer@company.com" required
+            autocomplete="email" />
         </div>
 
         <div class="form-group" style="margin-top: 14px;">
           <div style="display: flex; justify-content: space-between; align-items: baseline;">
             <label class="form-label" for="password">PASSWORD</label>
-            <a href="#" id="forgot-link" onclick="openForgotModal(event)" style="font-size: 10px; color: var(--purple-light); text-decoration: none;">Forgot?</a>
+            <a href="#" id="forgot-link" onclick="openForgotModal(event)"
+              style="font-size: 10px; color: var(--purple-light); text-decoration: none;">Forgot?</a>
           </div>
           <div class="password-input-wrapper">
-            <input type="password" id="password" class="form-input" placeholder="••••••••••••" required autocomplete="current-password"
-              oninput="checkPasswordStrength(this.value)" style="width: 100%; padding-right: 42px; box-sizing: border-box;" />
-            <button type="button" id="toggle-password-btn" class="password-toggle-btn" onclick="togglePasswordVisibility()" title="Show password" aria-label="Toggle password visibility">
-              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <input type="password" id="password" class="form-input" placeholder="••••••••••••" required
+              autocomplete="current-password" oninput="checkPasswordStrength(this.value)"
+              style="width: 100%; padding-right: 42px; box-sizing: border-box;" />
+            <button type="button" id="toggle-password-btn" class="password-toggle-btn"
+              onclick="togglePasswordVisibility()" title="Show password" aria-label="Toggle password visibility">
+              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
@@ -221,39 +250,47 @@
         </div>
 
         <!-- Inline error alert -->
-        <div id="auth-error" style="display: none; margin-top: 14px; padding: 12px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-size: 11px; line-height: 1.5; border-radius: 4px;">
+        <div id="auth-error"
+          style="display: none; margin-top: 14px; padding: 12px 14px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; font-size: 11px; line-height: 1.5; border-radius: 4px;">
         </div>
 
-        <button type="submit" class="btn-solid-pixel" id="auth-submit-btn" style="width: 100%; margin-top: 20px; padding: 12px; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <button type="submit" class="btn-solid-pixel" id="auth-submit-btn"
+          style="width: 100%; margin-top: 20px; padding: 12px; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span>Sign In to Vault</span>
         </button>
       </form>
 
       <!-- Terms disclaimer -->
       <p style="font-size: 10px; color: var(--muted); text-align: center; line-height: 1.6;">
-        By continuing, you agree to Pluck's <a href="#" class="underline-cyan">Terms</a> and <a href="#" class="underline-pink">Privacy Policy</a>. Secrets are auto-scanned client-side before save.
+        By continuing, you agree to Pluck's <a href="#" class="underline-cyan">Terms</a> and <a href="#"
+          class="underline-pink">Privacy Policy</a>. Secrets are auto-scanned client-side before save.
       </p>
 
     </div>
   </div>
 
   <!-- Modals & Dialogs Backdrop -->
-  <div id="auth-backdrop" class="modal-backdrop-anim" onclick="closeAllModals()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 9998;"></div>
+  <div id="auth-backdrop" class="modal-backdrop-anim" onclick="closeAllModals()"
+    style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 9998;">
+  </div>
 
   <!-- 2. Forgot Password Modal -->
-  <div id="forgot-modal" class="pixel-border-box modal-dialog-anim" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #0f131f; border: 1px solid var(--purple-light); padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(124,58,237,0.25); border-radius: 8px;">
+  <div id="forgot-modal" class="pixel-border-box modal-dialog-anim"
+    style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #0f131f; border: 1px solid var(--purple-light); padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(124,58,237,0.25); border-radius: 8px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 18px;">🔑</span>
         <strong style="color: #fff; font-size: 15px;">Reset Password</strong>
       </div>
-      <button onclick="closeAllModals()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
+      <button onclick="closeAllModals()"
+        style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
     </div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5;">
       Enter your account email below. We'll generate a secure password reset link for your account.
     </p>
 
-    <div id="forgot-result-box" style="display: none; margin-bottom: 14px; padding: 12px; background: rgba(56,189,248,0.1); border: 1px solid #38bdf8; border-radius: 4px; font-size: 11px; line-height: 1.5;">
+    <div id="forgot-result-box"
+      style="display: none; margin-bottom: 14px; padding: 12px; background: rgba(56,189,248,0.1); border: 1px solid #38bdf8; border-radius: 4px; font-size: 11px; line-height: 1.5;">
       <div id="forgot-result-message" style="color: #bae6fd; font-weight: 700;"></div>
       <div id="forgot-dev-link-wrap" style="margin-top: 8px; display: none;">
         <a href="#" id="forgot-dev-link" class="auth-alert-btn" style="display: inline-block;">
@@ -265,14 +302,17 @@
     <form onsubmit="event.preventDefault(); submitForgotPassword();">
       <div class="form-group" style="margin-bottom: 16px;">
         <label class="form-label" style="font-size: 10px;">REGISTERED EMAIL</label>
-        <input type="email" id="forgot-email-input" class="form-input" placeholder="developer@company.com" required style="width: 100%; box-sizing: border-box;" />
+        <input type="email" id="forgot-email-input" class="form-input" placeholder="developer@company.com" required
+          style="width: 100%; box-sizing: border-box;" />
       </div>
       <div style="display: flex; gap: 10px;">
-        <button type="submit" class="btn-solid-pixel" id="btn-submit-forgot" style="flex: 1; padding: 11px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <button type="submit" class="btn-solid-pixel" id="btn-submit-forgot"
+          style="flex: 1; padding: 11px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span id="forgot-spinner" class="auth-spinner" style="display: none;"></span>
           <span id="forgot-btn-text">Send Reset Link</span>
         </button>
-        <button type="button" class="btn-outline-pixel" onclick="closeAllModals()" style="padding: 11px 16px; font-size: 11px;">
+        <button type="button" class="btn-outline-pixel" onclick="closeAllModals()"
+          style="padding: 11px 16px; font-size: 11px;">
           Cancel
         </button>
       </div>
@@ -280,13 +320,15 @@
   </div>
 
   <!-- 3. Set New Password Modal (for ?reset= token) -->
-  <div id="reset-modal" class="pixel-border-box modal-dialog-anim" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #0f131f; border: 1px solid #10b981; padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(16,185,129,0.25); border-radius: 8px;">
+  <div id="reset-modal" class="pixel-border-box modal-dialog-anim"
+    style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: #0f131f; border: 1px solid #10b981; padding: 24px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px rgba(16,185,129,0.25); border-radius: 8px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="font-size: 18px;">🛡️</span>
         <strong style="color: #fff; font-size: 15px;">Create New Password</strong>
       </div>
-      <button onclick="closeAllModals()" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
+      <button onclick="closeAllModals()"
+        style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
     </div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 14px; line-height: 1.5;">
       Your password must be at least 10 characters long.
@@ -296,18 +338,22 @@
       <input type="hidden" id="reset-token-field" value="" />
       <div class="form-group" style="margin-bottom: 12px;">
         <label class="form-label" style="font-size: 10px;">NEW PASSWORD</label>
-        <input type="password" id="reset-password-input" class="form-input" placeholder="Min 10 characters" required minlength="10" style="width: 100%; box-sizing: border-box;" />
+        <input type="password" id="reset-password-input" class="form-input" placeholder="Min 10 characters" required
+          minlength="10" style="width: 100%; box-sizing: border-box;" />
       </div>
       <div class="form-group" style="margin-bottom: 16px;">
         <label class="form-label" style="font-size: 10px;">CONFIRM NEW PASSWORD</label>
-        <input type="password" id="reset-password-confirm" class="form-input" placeholder="Repeat new password" required minlength="10" style="width: 100%; box-sizing: border-box;" />
+        <input type="password" id="reset-password-confirm" class="form-input" placeholder="Repeat new password" required
+          minlength="10" style="width: 100%; box-sizing: border-box;" />
       </div>
       <div style="display: flex; gap: 10px;">
-        <button type="submit" class="btn-solid-pixel" id="btn-submit-reset" style="flex: 1; padding: 11px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <button type="submit" class="btn-solid-pixel" id="btn-submit-reset"
+          style="flex: 1; padding: 11px; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span id="reset-spinner" class="auth-spinner" style="display: none;"></span>
           <span id="reset-btn-text">Save New Password</span>
         </button>
-        <button type="button" class="btn-outline-pixel" onclick="closeAllModals()" style="padding: 11px 16px; font-size: 11px;">
+        <button type="button" class="btn-outline-pixel" onclick="closeAllModals()"
+          style="padding: 11px 16px; font-size: 11px;">
           Cancel
         </button>
       </div>
@@ -361,13 +407,13 @@
       document.getElementById('name-group').style.display = mode === 'signup' ? 'block' : 'none';
       document.getElementById('pw-strength-container').style.display = mode === 'signup' ? 'flex' : 'none';
       document.getElementById('forgot-link').style.display = mode === 'login' ? 'inline' : 'none';
-      
+
       const submitBtn = document.getElementById('auth-submit-btn');
       if (submitBtn) {
         submitBtn.innerHTML = `<span>${mode === 'login' ? 'Sign In to Vault' : 'Create Pluck Account'}</span>`;
         submitBtn.disabled = false;
       }
-      
+
       const errorEl = document.getElementById('auth-error');
       if (errorEl) errorEl.style.display = 'none';
 
@@ -451,7 +497,7 @@
       }
 
       const isSignup = currentMode === 'signup';
-      const endpoint = isSignup ? '/api/auth/register' : '/api/auth/login';
+      const endpoint = isSignup ? `${API_BASE}/auth/register` : `${API_BASE}/auth/login`;
       const payload = isSignup ? { email, password, name } : { email, password };
 
       btn.disabled = true;
@@ -563,7 +609,7 @@
 
     async function loadGoogleConfig() {
       try {
-        const res = await fetch('/api/auth/config');
+        const res = await fetch(`${API_BASE}/auth/config`);
         if (res.ok) {
           const cfg = await res.json();
           if (cfg.googleClientId) {
@@ -731,7 +777,7 @@
           }
         }
 
-        const res = await fetch('/api/auth/oauth', {
+        const res = await fetch(`${API_BASE}/auth/oauth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -807,7 +853,7 @@
       if (btn) btn.disabled = true;
 
       try {
-        const res = await fetch('/api/auth/forgot-password', {
+        const res = await fetch(`${API_BASE}/auth/forgot-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email })
@@ -890,7 +936,7 @@
       if (btn) btn.disabled = true;
 
       try {
-        const res = await fetch('/api/auth/reset-password', {
+        const res = await fetch(`${API_BASE}/auth/reset-password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, newPassword })
@@ -943,221 +989,220 @@
   <!-- Interactive Terminal Cursor Grid Background Engine -->
   <!-- Strict Hover-Only: Zero click reaction, zero shockwaves/pulses, no startup burst -->
   <script>
-  (function initCursorGrid() {
-    'use strict';
-    if (window.__pluckCursorGridInitialized) return;
-    window.__pluckCursorGridInitialized = true;
+    (function initCursorGrid() {
+      'use strict';
+      if (window.__pluckCursorGridInitialized) return;
+      window.__pluckCursorGridInitialized = true;
 
-    const FALLOFF_CURVES = {
-      linear: t => t,
-      smooth: t => t * t * (3 - 2 * t),
-      sharp: t => t * t * t
-    };
+      const FALLOFF_CURVES = {
+        linear: t => t,
+        smooth: t => t * t * (3 - 2 * t),
+        sharp: t => t * t * t
+      };
 
-    function hexToRgb(hex) {
-      const h = hex.replace('#', '');
-      const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-      const num = parseInt(v.slice(0, 6), 16);
-      return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
-    }
-
-    const CONFIG = {
-      cellSize: 64,
-      color: '#00F2FE',       // Electric Cyan
-      radius: 160,
-      falloff: 'smooth',
-      holdTime: 350,
-      fadeDuration: 750,
-      lineWidth: 1.2,
-      maxOpacity: 0.95,
-      fillOpacity: 0.08,      // Subtle glowing fill
-      gridOpacity: 0.04,      // Faint ambient lattice
-      cellRadius: 4
-    };
-
-    function mount() {
-      let canvas = document.getElementById('cursor-grid-canvas');
-      if (!canvas) {
-        canvas = document.createElement('canvas');
-        canvas.id = 'cursor-grid-canvas';
-        canvas.className = 'cursor-grid-canvas';
-        document.body.prepend(canvas);
+      function hexToRgb(hex) {
+        const h = hex.replace('#', '');
+        const v = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+        const num = parseInt(v.slice(0, 6), 16);
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
       }
 
-      const ctx = canvas.getContext('2d');
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const CONFIG = {
+        cellSize: 64,
+        color: '#00F2FE',       // Electric Cyan
+        radius: 160,
+        falloff: 'smooth',
+        holdTime: 350,
+        fadeDuration: 750,
+        lineWidth: 1.2,
+        maxOpacity: 0.95,
+        fillOpacity: 0.08,      // Subtle glowing fill
+        gridOpacity: 0.04,      // Faint ambient lattice
+        cellRadius: 4
+      };
 
-      let cols = 0;
-      let rows = 0;
-      let offX = 0;
-      let offY = 0;
-      let alphas = new Float32Array(0);
-      let touched = new Float64Array(0);
-      let w = 0;
-      let h = 0;
-      let raf = 0;
-      let running = false;
-      let lastFrame = performance.now();
+      function mount() {
+        let canvas = document.getElementById('cursor-grid-canvas');
+        if (!canvas) {
+          canvas = document.createElement('canvas');
+          canvas.id = 'cursor-grid-canvas';
+          canvas.className = 'cursor-grid-canvas';
+          document.body.prepend(canvas);
+        }
 
-      function rebuild() {
-        w = window.innerWidth;
-        h = window.innerHeight;
-        canvas.width = Math.max(1, Math.round(w * dpr));
-        canvas.height = Math.max(1, Math.round(h * dpr));
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const ctx = canvas.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-        cols = Math.ceil(w / CONFIG.cellSize) + 1;
-        rows = Math.ceil(h / CONFIG.cellSize) + 1;
-        offX = (w - cols * CONFIG.cellSize) / 2;
-        offY = (h - rows * CONFIG.cellSize) / 2;
+        let cols = 0;
+        let rows = 0;
+        let offX = 0;
+        let offY = 0;
+        let alphas = new Float32Array(0);
+        let touched = new Float64Array(0);
+        let w = 0;
+        let h = 0;
+        let raf = 0;
+        let running = false;
+        let lastFrame = performance.now();
 
-        alphas = new Float32Array(cols * rows);
-        touched = new Float64Array(cols * rows);
+        function rebuild() {
+          w = window.innerWidth;
+          h = window.innerHeight;
+          canvas.width = Math.max(1, Math.round(w * dpr));
+          canvas.height = Math.max(1, Math.round(h * dpr));
+          canvas.style.width = w + 'px';
+          canvas.style.height = h + 'px';
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        wake();
-      }
+          cols = Math.ceil(w / CONFIG.cellSize) + 1;
+          rows = Math.ceil(h / CONFIG.cellSize) + 1;
+          offX = (w - cols * CONFIG.cellSize) / 2;
+          offY = (h - rows * CONFIG.cellSize) / 2;
 
-      function cellCenter(i) {
-        const cx = offX + (i % cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
-        const cy = offY + Math.floor(i / cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
-        return [cx, cy];
-      }
+          alphas = new Float32Array(cols * rows);
+          touched = new Float64Array(cols * rows);
 
-      function energize(x, y) {
-        const r = Math.max(CONFIG.radius, 1);
-        const ease = FALLOFF_CURVES[CONFIG.falloff] ?? FALLOFF_CURVES.linear;
-        const now = performance.now();
+          wake();
+        }
 
-        const minCol = Math.max(0, Math.floor((x - r - offX) / CONFIG.cellSize));
-        const maxCol = Math.min(cols - 1, Math.floor((x + r - offX) / CONFIG.cellSize));
-        const minRow = Math.max(0, Math.floor((y - r - offY) / CONFIG.cellSize));
-        const maxRow = Math.min(rows - 1, Math.floor((y + r - offY) / CONFIG.cellSize));
+        function cellCenter(i) {
+          const cx = offX + (i % cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
+          const cy = offY + Math.floor(i / cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
+          return [cx, cy];
+        }
 
-        for (let cRow = minRow; cRow <= maxRow; cRow++) {
-          for (let cCol = minCol; cCol <= maxCol; cCol++) {
-            const i = cRow * cols + cCol;
-            const [cx, cy] = cellCenter(i);
-            const dist = Math.hypot(cx - x, cy - y);
-            if (dist > r) continue;
+        function energize(x, y) {
+          const r = Math.max(CONFIG.radius, 1);
+          const ease = FALLOFF_CURVES[CONFIG.falloff] ?? FALLOFF_CURVES.linear;
+          const now = performance.now();
 
-            const level = ease(1 - dist / r) * CONFIG.maxOpacity;
-            if (level > alphas[i]) {
-              alphas[i] = level;
-              touched[i] = now;
-            } else if (level > 0) {
-              touched[i] = now;
+          const minCol = Math.max(0, Math.floor((x - r - offX) / CONFIG.cellSize));
+          const maxCol = Math.min(cols - 1, Math.floor((x + r - offX) / CONFIG.cellSize));
+          const minRow = Math.max(0, Math.floor((y - r - offY) / CONFIG.cellSize));
+          const maxRow = Math.min(rows - 1, Math.floor((y + r - offY) / CONFIG.cellSize));
+
+          for (let cRow = minRow; cRow <= maxRow; cRow++) {
+            for (let cCol = minCol; cCol <= maxCol; cCol++) {
+              const i = cRow * cols + cCol;
+              const [cx, cy] = cellCenter(i);
+              const dist = Math.hypot(cx - x, cy - y);
+              if (dist > r) continue;
+
+              const level = ease(1 - dist / r) * CONFIG.maxOpacity;
+              if (level > alphas[i]) {
+                alphas[i] = level;
+                touched[i] = now;
+              } else if (level > 0) {
+                touched[i] = now;
+              }
             }
           }
         }
-      }
 
-      function draw(now) {
-        const dt = Math.min(now - lastFrame, 50);
-        lastFrame = now;
-        ctx.clearRect(0, 0, w, h);
-        const [cr, cg, cb] = hexToRgb(CONFIG.color);
+        function draw(now) {
+          const dt = Math.min(now - lastFrame, 50);
+          lastFrame = now;
+          ctx.clearRect(0, 0, w, h);
+          const [cr, cg, cb] = hexToRgb(CONFIG.color);
 
-        // 1. Ambient faint static lattice
-        if (CONFIG.gridOpacity > 0) {
-          ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + CONFIG.gridOpacity + ')';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          for (let cCol = 0; cCol <= cols; cCol++) {
-            const x = Math.round(offX + cCol * CONFIG.cellSize) + 0.5;
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
+          // 1. Ambient faint static lattice
+          if (CONFIG.gridOpacity > 0) {
+            ctx.strokeStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + CONFIG.gridOpacity + ')';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let cCol = 0; cCol <= cols; cCol++) {
+              const x = Math.round(offX + cCol * CONFIG.cellSize) + 0.5;
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, h);
+            }
+            for (let cRow = 0; cRow <= rows; cRow++) {
+              const y = Math.round(offY + cRow * CONFIG.cellSize) + 0.5;
+              ctx.moveTo(0, y);
+              ctx.lineTo(w, y);
+            }
+            ctx.stroke();
           }
-          for (let cRow = 0; cRow <= rows; cRow++) {
-            const y = Math.round(offY + cRow * CONFIG.cellSize) + 0.5;
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-          }
-          ctx.stroke();
-        }
 
-        let anyVisible = false;
-        const fadeStep = dt / Math.max(CONFIG.fadeDuration, 16);
-        const half = CONFIG.cellSize / 2;
+          let anyVisible = false;
+          const fadeStep = dt / Math.max(CONFIG.fadeDuration, 16);
+          const half = CONFIG.cellSize / 2;
 
-        // 2. Lit cells rendering (hover proximity only)
-        for (let i = 0; i < alphas.length; i++) {
-          let a = alphas[i];
-          if (a <= 0) continue;
-
-          if (now - touched[i] > CONFIG.holdTime) {
-            a = Math.max(0, a - fadeStep);
-            alphas[i] = a;
+          // 2. Lit cells rendering (hover proximity only)
+          for (let i = 0; i < alphas.length; i++) {
+            let a = alphas[i];
             if (a <= 0) continue;
+
+            if (now - touched[i] > CONFIG.holdTime) {
+              a = Math.max(0, a - fadeStep);
+              alphas[i] = a;
+              if (a <= 0) continue;
+            }
+            anyVisible = true;
+
+            const [cx, cy] = cellCenter(i);
+            const gradient = ctx.createRadialGradient(cx, cy, half * 0.1, cx, cy, CONFIG.cellSize);
+            gradient.addColorStop(0, 'rgba(' + cr + ',' + cg + ',' + cb + ',' + a + ')');
+            gradient.addColorStop(1, 'rgba(' + cr + ',' + cg + ',' + cb + ',0)');
+
+            const x = cx - half + 0.5;
+            const y = cy - half + 0.5;
+            const s = CONFIG.cellSize - 1;
+
+            ctx.beginPath();
+            if (CONFIG.cellRadius > 0) {
+              ctx.roundRect(x, y, s, s, CONFIG.cellRadius);
+            } else {
+              ctx.rect(x, y, s, s);
+            }
+
+            if (CONFIG.fillOpacity > 0) {
+              ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (a * CONFIG.fillOpacity) + ')';
+              ctx.fill();
+            }
+
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = CONFIG.lineWidth;
+            ctx.stroke();
           }
-          anyVisible = true;
 
-          const [cx, cy] = cellCenter(i);
-          const gradient = ctx.createRadialGradient(cx, cy, half * 0.1, cx, cy, CONFIG.cellSize);
-          gradient.addColorStop(0, 'rgba(' + cr + ',' + cg + ',' + cb + ',' + a + ')');
-          gradient.addColorStop(1, 'rgba(' + cr + ',' + cg + ',' + cb + ',0)');
-
-          const x = cx - half + 0.5;
-          const y = cy - half + 0.5;
-          const s = CONFIG.cellSize - 1;
-
-          ctx.beginPath();
-          if (CONFIG.cellRadius > 0) {
-            ctx.roundRect(x, y, s, s, CONFIG.cellRadius);
+          if (anyVisible) {
+            raf = requestAnimationFrame(draw);
           } else {
-            ctx.rect(x, y, s, s);
+            running = false;
+            if (CONFIG.gridOpacity <= 0) ctx.clearRect(0, 0, w, h);
           }
-
-          if (CONFIG.fillOpacity > 0) {
-            ctx.fillStyle = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (a * CONFIG.fillOpacity) + ')';
-            ctx.fill();
-          }
-
-          ctx.strokeStyle = gradient;
-          ctx.lineWidth = CONFIG.lineWidth;
-          ctx.stroke();
         }
 
-        if (anyVisible) {
+        function wake() {
+          if (running) return;
+          running = true;
+          lastFrame = performance.now();
           raf = requestAnimationFrame(draw);
-        } else {
-          running = false;
-          if (CONFIG.gridOpacity <= 0) ctx.clearRect(0, 0, w, h);
         }
+
+        // ONLY pointermove illuminates cells. Clicks do nothing.
+        window.addEventListener('pointermove', (e) => {
+          energize(e.clientX, e.clientY);
+          wake();
+        }, { passive: true });
+
+        window.addEventListener('resize', rebuild, { passive: true });
+        rebuild();
       }
 
-      function wake() {
-        if (running) return;
-        running = true;
-        lastFrame = performance.now();
-        raf = requestAnimationFrame(draw);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', mount);
+      } else {
+        mount();
       }
 
-      // ONLY pointermove illuminates cells. Clicks do nothing.
-      window.addEventListener('pointermove', (e) => {
-        energize(e.clientX, e.clientY);
-        wake();
-      }, { passive: true });
-
-      window.addEventListener('resize', rebuild, { passive: true });
-      rebuild();
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', mount);
-    } else {
-      mount();
-    }
-
-    window.PluckCursorGrid = {
-      init: mount,
-      config: CONFIG
-    };
-  })();
+      window.PluckCursorGrid = {
+        init: mount,
+        config: CONFIG
+      };
+    })();
   </script>
   <script src="border-glow.js?v=20261030"></script>
 </body>
 
 </html>
-

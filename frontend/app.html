@@ -42,7 +42,8 @@
         var tok = localStorage.getItem('pluck_token');
         var h = { 'Accept': 'application/json' };
         if (tok) h['Authorization'] = 'Bearer ' + tok;
-        fetch('/api/auth/me', { headers: h, credentials: 'same-origin' })
+        var apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '/api' : 'https://pluck-0y8b.onrender.com/api';
+        fetch(apiBase + '/auth/me', { headers: h })
           .then(function(res) {
             if (!res.ok) {
               purgeAndRedirect();
