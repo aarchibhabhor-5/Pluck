@@ -51,40 +51,13 @@ self.onmessage = function (e) {
 
   const t0 = performance.now();
 
-  // Python simulation in Web Worker if user runs Python locally
-  if (lang === 'python' || lang === 'py') {
-    const printMatches = Array.from(cleanCode.matchAll(/print\s*\((.*?)\)/g));
-    if (printMatches.length > 0) {
-      printMatches.forEach(m => {
-        let arg = m[1].trim();
-        if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
-          stdout.push(arg.slice(1, -1));
-        } else {
-          try { stdout.push(String(eval(arg))); } catch (e) { stdout.push(arg); }
-        }
-      });
-      status = 'SUCCESS';
-      exitCode = 0;
-    } else {
-      stdout.push('[PYTHON WORKER] Executed Python snippet. (To run with full CPython 3 standard library, select "Cloud Sandbox" engine).');
-    }
-  } else if (lang === 'java') {
-    // Java simulation in Web Worker
-    const printMatches = Array.from(cleanCode.matchAll(/System\.out\.println\s*\((.*?)\);/g));
-    if (printMatches.length > 0) {
-      printMatches.forEach(m => {
-        let arg = m[1].trim();
-        if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
-          stdout.push(arg.slice(1, -1));
-        } else {
-          stdout.push(arg);
-        }
-      });
-      status = 'SUCCESS';
-      exitCode = 0;
-    } else {
-      stdout.push('[JAVA WORKER] Executed Java class structure. (To compile via OpenJDK 21 javac, select "Cloud Sandbox" engine).');
-    }
+  // Non-JavaScript languages require compiler/interpreter on Cloud Sandbox
+  if (lang === 'java' || lang === 'python' || lang === 'py' || lang === 'rust' || lang === 'go' || lang === 'cpp' || lang === 'c') {
+    const langName = lang === 'java' ? 'Java (OpenJDK 21)' : (lang.startsWith('py') ? 'Python 3' : lang.toUpperCase());
+    stderr.push(`[RUNTIME NOTICE] ${langName} snippets compile and execute via the Cloud Sandbox.`);
+    stderr.push(`👉 Please switch the engine dropdown above to "⚡ Cloud Sandbox (Render)" for full compiler execution.`);
+    status = 'ERROR';
+    exitCode = 1;
   } else {
     // JavaScript / TypeScript execution
     if (lang === 'typescript' || lang === 'ts') {
@@ -124,12 +97,20 @@ self.onmessage = function (e) {
       // Also auto-export useDebounce or common declared functions
       execCode += `\ntry { if (typeof useDebounce === 'function') exports['useDebounce'] = useDebounce; } catch(e) {}`;
 
+      // If code is an expression without return or declaration, return its evaluated value
+      if (!/\breturn\b/.test(execCode) && !execCode.includes('console.log')) {
+        const trimmed = execCode.trim();
+        if (!/^(const|let|var|function|class|import|export|if|for|while|try)\b/.test(trimmed)) {
+          execCode = 'return (' + trimmed.replace(/;+$/, '') + ');';
+        }
+      }
+
       const runnerFn = new Function('exports', 'module', 'useState', 'useEffect', 'useCallback', 'useMemo', 'useRef', execCode);
       const result = runnerFn(sandboxScope.exports, sandboxScope.module, useState, useEffect, useCallback, useMemo, useRef);
 
       // Check entry point
-      const safeArgs = Array.isArray(args) ? args : [];
       const effectiveEntry = entryPoint || (typeof sandboxScope.exports['useDebounce'] === 'function' ? 'useDebounce' : '');
+      const safeArgs = (Array.isArray(args) && args.length > 0) ? args : (effectiveEntry === 'useDebounce' ? ['search-query', 300] : []);
 
       if (effectiveEntry && typeof sandboxScope.exports[effectiveEntry] === 'function') {
         returnValue = sandboxScope.exports[effectiveEntry](...safeArgs);

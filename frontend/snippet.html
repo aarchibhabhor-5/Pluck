@@ -653,6 +653,14 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
           codeBlock.textContent = snip.code || '';
         }
 
+        // Auto-select execution engine based on language
+        const snipLang = (snip.language || 'typescript').toLowerCase();
+        const backendLangs = ['java', 'python', 'py', 'rust', 'go', 'cpp', 'c', 'sql', 'bash', 'sh'];
+        const engineSelect = document.getElementById('runner-engine-select');
+        if (engineSelect) {
+          engineSelect.value = backendLangs.includes(snipLang) ? 'backend' : 'worker';
+        }
+
         // Update Edit & Share buttons
         document.querySelectorAll('a[href^="studio.html"]').forEach(a => {
           a.href = `studio.html?id=${encodeURIComponent(snip.id || snip.slug)}`;
@@ -1427,15 +1435,16 @@ export function useDebounce(value, delay = 300) {
       pill.style.borderColor = '#fbbf24';
 
       out.innerHTML = `<span style="color: #a78bfa;">[SANDBOX START]</span> Initializing execution environment...\n` +
-        `<span style="color: #64748b;">[CONFIG] Language: <strong>${language}</strong> | Mode: <strong>${engine === 'backend' ? 'Backend Sandbox (Port 4000)' : 'Web Worker (In-Browser)'}</strong></span>\n`;
+        `<span style="color: #64748b;">[CONFIG] Language: <strong>${language}</strong> | Mode: <strong>${engine === 'backend' ? 'Cloud Sandbox (Render)' : 'Web Worker (In-Browser)'}</strong></span>\n`;
 
       try {
         let result = null;
 
         if (engine === 'backend') {
-          // Attempt backend execution on port 4000
+          // Direct execution via Cloud backend
           try {
-            const apiBase = (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '4000')) ? 'http://localhost:4000/api' : '/api';
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const apiBase = isLocal ? 'http://localhost:4000/api' : 'https://pluck-0y8b.onrender.com/api';
             const res = await fetch(`${apiBase}/runner/execute`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1451,7 +1460,8 @@ export function useDebounce(value, delay = 300) {
 
             if (res.ok) {
               result = await res.json();
-              if (result && result.status === 'ERROR' && result.stderr && result.stderr.some(l => l.includes('error: 2') || l.includes('not available') || l.includes('Cannot run program') || l.includes('not installed'))) {
+              const isJs = language === 'javascript' || language === 'typescript' || language === 'js' || language === 'ts';
+              if (result && result.status === 'ERROR' && isJs && result.stderr && result.stderr.some(l => l.includes('error: 2') || l.includes('not available') || l.includes('Cannot run program') || l.includes('not installed'))) {
                 out.innerHTML += `<span style="color: #f59e0b;">[NOTICE] Backend compiler environment initializing. Running via In-Browser Web Worker...\n</span>`;
                 result = await runInWebWorker(codeToRun, language, entryPoint, args);
               }
@@ -1459,9 +1469,14 @@ export function useDebounce(value, delay = 300) {
               throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
           } catch (backendErr) {
-            console.warn('Backend sandbox request failed, falling back to Web Worker:', backendErr);
-            out.innerHTML += `<span style="color: #f59e0b;">[FALLBACK] Backend not reachable (${backendErr.message}). Switching to In-Browser Web Worker...\n</span>`;
-            result = await runInWebWorker(codeToRun, language, entryPoint, args);
+            console.warn('Backend sandbox request failed:', backendErr);
+            const isJs = language === 'javascript' || language === 'typescript' || language === 'js' || language === 'ts';
+            if (isJs) {
+              out.innerHTML += `<span style="color: #f59e0b;">[FALLBACK] Backend not reachable (${backendErr.message}). Switching to In-Browser Web Worker...\n</span>`;
+              result = await runInWebWorker(codeToRun, language, entryPoint, args);
+            } else {
+              throw new Error(`Cloud Sandbox backend unreachable: ${backendErr.message}. (Server may be spinning up from cold start — please retry in a moment)`);
+            }
           }
         } else {
           // Direct Web Worker execution

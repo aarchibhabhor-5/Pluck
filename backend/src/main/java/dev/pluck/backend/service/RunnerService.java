@@ -61,7 +61,28 @@ public class RunnerService {
         Path tempFile = null;
         try {
             tempFile = Files.createTempFile("pluck_py_run_", ".py");
-            Files.writeString(tempFile, request.getCode(), StandardCharsets.UTF_8);
+            String pyCode = request.getCode() != null ? request.getCode() : "";
+
+            // Auto-invoke entry point if specified and not explicitly called
+            if (request.getEntryPoint() != null && !request.getEntryPoint().trim().isEmpty()) {
+                String ep = request.getEntryPoint().trim();
+                if (!pyCode.contains(ep + "(")) {
+                    List<?> argsList = request.getArgs();
+                    String argsStr = "";
+                    if (argsList != null && !argsList.isEmpty()) {
+                        argsStr = objectMapper.writeValueAsString(argsList);
+                        argsStr = argsStr.substring(1, argsStr.length() - 1);
+                    }
+                    pyCode += "\nif __name__ == '__main__':\n" +
+                              "    try:\n" +
+                              "        _ret = " + ep + "(" + argsStr + ")\n" +
+                              "        if _ret is not None:\n" +
+                              "            print(_ret)\n" +
+                              "    except Exception as _e:\n" +
+                              "        import traceback; traceback.print_exc()\n";
+                }
+            }
+            Files.writeString(tempFile, pyCode, StandardCharsets.UTF_8);
 
             String pythonCmd = resolveCommand("python3", "python");
             ProcessBuilder pb = new ProcessBuilder(pythonCmd, tempFile.toAbsolutePath().toString());
@@ -226,15 +247,42 @@ public class RunnerService {
         Path tempDir = null;
         try {
             tempDir = Files.createTempDirectory("pluck_java_run_");
-            String code = request.getCode();
+            String code = request.getCode() != null ? request.getCode().trim() : "";
 
-            // Find class name or default to Main
             String className = "Main";
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("public\\s+class\\s+(\\w+)").matcher(code);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?:public\\s+)?class\\s+(\\w+)").matcher(code);
             if (m.find()) {
                 className = m.group(1);
+                // Ensure class is public so Java launcher can access it
+                if (!code.contains("public class " + className)) {
+                    code = code.replaceFirst("class\\s+" + className, "public class " + className);
+                }
+
+                // If class does not define a main method, inject a main method so it can run
+                if (!code.contains("main(") && !code.contains("main (")) {
+                    StringBuilder injected = new StringBuilder("\n    public static void main(String[] args) throws Exception {\n");
+                    if (request.getEntryPoint() != null && !request.getEntryPoint().trim().isEmpty()) {
+                        String ep = request.getEntryPoint().trim();
+                        injected.append("        ").append(className).append(" _inst = new ").append(className).append("();\n");
+                        injected.append("        System.out.println(_inst.").append(ep).append("());\n");
+                    } else {
+                        injected.append("        System.out.println(\"✓ Class ").append(className).append(" compiled and loaded successfully.\");\n");
+                    }
+                    injected.append("    }\n");
+
+                    int lastBrace = code.lastIndexOf('}');
+                    if (lastBrace != -1) {
+                        code = code.substring(0, lastBrace) + injected.toString() + code.substring(lastBrace);
+                    }
+                }
             } else {
-                code = "public class Main {\n" + code + "\n}";
+                // Raw Java statements without any class wrapper
+                code = "public class Main {\n" +
+                       "    public static void main(String[] args) throws Exception {\n" +
+                       "        " + code + "\n" +
+                       "    }\n" +
+                       "}";
+                className = "Main";
             }
 
             Path javaFile = tempDir.resolve(className + ".java");
