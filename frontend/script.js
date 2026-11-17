@@ -60,7 +60,7 @@
   let cols, drops;
   const FONT_SIZE = 13;
   const COLORS = ['#7c3aed', '#ec4899', '#06b6d4', '#f59e0b'];
-  const FRAME_INTERVAL = 65; // ~15fps ambient rain
+  const FRAME_INTERVAL = 95; // calm, relaxed ambient matrix rain
   let rafId = 0;
   let lastDraw = 0;
   let resizeTimer = null;
@@ -293,9 +293,9 @@
     return true;
   }
 
-  function updateRobot() {
-    if (robot.moveTimer > 0) robot.moveTimer--;
-    if (robot.actionTimer > 0) robot.actionTimer--;
+  function updateRobot(dtScale) {
+    if (robot.moveTimer > 0) robot.moveTimer -= dtScale;
+    if (robot.actionTimer > 0) robot.actionTimer -= dtScale;
 
     switch (robot.state) {
       case 'IDLE': {
@@ -400,12 +400,15 @@
       }
     }
 
+    const dtScale = Math.min(dt / 33.33, 2); // calm 30fps-equivalent pace at smooth 60/120fps
+    const damping = Math.pow(config.ejectedPieceDamping, dtScale);
+
     for (let i = ejectedPieces.length - 1; i >= 0; i--) {
       const p = ejectedPieces[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vx *= config.ejectedPieceDamping;
-      p.vy *= config.ejectedPieceDamping;
+      p.x += p.vx * dtScale;
+      p.y += p.vy * dtScale;
+      p.vx *= damping;
+      p.vy *= damping;
 
       if (p.x < charWidth) { p.x = charWidth; p.vx *= -1; }
       if (p.x > canvas.width - charWidth) { p.x = canvas.width - charWidth; p.vx *= -1; }
@@ -457,8 +460,9 @@
     const dt = Math.min(time - lastTime, 100);
     lastTime = time;
 
+    const dtScale = Math.min(dt / 33.33, 2);
     updatePhysics(dt);
-    updateRobot();
+    updateRobot(dtScale);
     render();
     animFrameId = requestAnimationFrame(loop);
   }
@@ -680,17 +684,23 @@
       }, { passive: true });
     }
 
-    function updatePupil() {
+    let lastPupilTime = 0;
+
+    function updatePupil(now) {
       pupilRaf = 0;
       if (!pupilInView || document.hidden) return;
 
-      currentX += (targetX - currentX) * 0.18;
-      currentY += (targetY - currentY) * 0.18;
+      const dtSec = lastPupilTime ? Math.min((now - lastPupilTime) / 1000, 0.05) : 0.016;
+      lastPupilTime = now;
+      const ease = 1 - Math.exp(-dtSec * 6.0); // smooth, natural gaze glide
+
+      currentX += (targetX - currentX) * ease;
+      currentY += (targetY - currentY) * ease;
 
       let diffRot = (targetRot - currentRot) % 360;
       if (diffRot > 180) diffRot -= 360;
       if (diffRot < -180) diffRot += 360;
-      currentRot += diffRot * 0.18;
+      currentRot += diffRot * ease;
 
       pupil.style.setProperty(
         'transform',
@@ -700,6 +710,8 @@
 
       if (Math.abs(targetX - currentX) > 0.03 || Math.abs(targetY - currentY) > 0.03 || Math.abs(diffRot) > 0.2) {
         pupilRaf = requestAnimationFrame(updatePupil);
+      } else {
+        lastPupilTime = 0;
       }
     }
   }
@@ -861,10 +873,14 @@
 
       let sparksVisible = false;
       let sparksRaf = 0;
+      let lastSparkTime = 0;
 
-      function drawSparks() {
+      function drawSparks(now) {
         sparksRaf = 0;
         if (!sparksVisible || document.hidden) return;
+
+        const dtScale = lastSparkTime ? Math.min((now - lastSparkTime) / 33.33, 2) : 0.5;
+        lastSparkTime = now;
 
         ctx.clearRect(0, 0, W, H);
 
@@ -876,8 +892,8 @@
             continue;
           }
 
-          const nextX = s.x + s.vx;
-          const nextY = s.y + s.vy;
+          const nextX = s.x + s.vx * dtScale;
+          const nextY = s.y + s.vy * dtScale;
 
           if (isInside(nextX, s.y)) s.x = nextX;
           else s.vx *= -1;
@@ -885,7 +901,7 @@
           if (isInside(s.x, nextY)) s.y = nextY;
           else s.vy *= -1;
 
-          s.life++;
+          s.life += dtScale;
 
           if (!isInside(s.x, s.y) || s.life > s.maxLife) {
             const fresh = createSpark(s.zone, false);
@@ -1172,16 +1188,23 @@
   }
 
   let lastVariantTime = 0;
+  let lastDotFrameTime = 0;
 
   function render(time) {
+    dotGridRaf = 0;
+    if (!dotGridVisible || document.hidden) return;
     if (width <= 0 || height <= 0) {
       resize();
     }
 
+    const dtSec = lastDotFrameTime ? Math.min((time - lastDotFrameTime) / 1000, 0.05) : 0.016;
+    lastDotFrameTime = time;
+    const fishStep = dtSec * 30; // calm 30fps-equivalent swim speed at silky 60/120fps
+
     ctx.clearRect(0, 0, width, height);
 
-    // Gentle, smooth wave drift (pleasing ambient pacing)
-    wavePhase += 0.0048;
+    // Gentle, smooth wave drift (identical calm pace on 60Hz/120Hz displays)
+    wavePhase += dtSec * 0.22;
 
     // Mutate only 4-5 cells every 1600ms (calm, non-distracting twinkle)
     if (time - lastVariantTime > 1600) {
@@ -1251,7 +1274,7 @@
     const maxSubY = Math.floor(height / C) - 4;
 
     fishes.forEach(fish => {
-      fish.moveCounter++;
+      fish.moveCounter += fishStep;
       if (fish.moveCounter >= fish.moveSpeed) {
         fish.moveCounter = 0;
 
@@ -1302,6 +1325,7 @@
 
   function startDotGrid() {
     if (!dotGridRaf && dotGridVisible && !document.hidden) {
+      lastDotFrameTime = 0;
       dotGridRaf = requestAnimationFrame(render);
     }
   }
@@ -1581,9 +1605,10 @@
     rafId = 0;
     if (visibleSet.size === 0 || document.hidden) return;
     rafId = requestAnimationFrame(animate);
-    if (now - lastTick < 33) return; // ~30fps is plenty smooth for subtle divider drift
+    if (!lastTick) { lastTick = now; return; }
+    const dtSec = Math.min((now - lastTick) / 1000, 0.05);
     lastTick = now;
-    pos = (pos + 0.6) % 240;
+    pos = (pos + dtSec * 14) % 240; // gentle 14px/sec drift
     visibleSet.forEach(el => {
       el.style.backgroundPositionX = `${pos.toFixed(1)}px`;
     });
@@ -1852,9 +1877,9 @@ function toggleFullscreen() {
   }
 
   const DISTANCE = 140;      // Proximity distance in px
-  const MAX_SCALE = 1.08;     // Max magnification
-  const STIFFNESS = 0.22;
-  const DAMPING = 0.72;
+  const MAX_SCALE = 1.07;     // Gentle magnification
+  const STIFFNESS = 0.11;     // Smooth, unhurried spring
+  const DAMPING = 0.78;
 
   const buttonStates = Array.from(buttons).map(btn => ({
     el: btn,

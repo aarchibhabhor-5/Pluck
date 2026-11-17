@@ -14,7 +14,7 @@
 
   const CHARS = '0123456789ABCDEF{}()<>=+*!?;:_/~$#@';
   const FONT_SIZE = 14;
-  const FRAME_INTERVAL = 65; // ~15fps smooth ambient rain without burning GPU
+  const FRAME_INTERVAL = 85; // calm, smooth ambient rain
   let cols = 0;
   let drops = [];
   let rafId = 0;
@@ -274,9 +274,9 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
   if (!buttons.length) return;
 
   const DISTANCE = 140;
-  const MAX_SCALE = 1.08;
-  const STIFFNESS = 0.22;
-  const DAMPING = 0.72;
+  const MAX_SCALE = 1.07;
+  const STIFFNESS = 0.11;
+  const DAMPING = 0.78;
 
   const buttonStates = Array.from(buttons).map(btn => ({
     el: btn,

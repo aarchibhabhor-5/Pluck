@@ -90,12 +90,12 @@
           card.style.setProperty('--glow-intensity', '1');
 
           if (CONFIG.enableTilt || CONFIG.enableMagnetism) {
-            const rotateX = ((y - centerY) / centerY) * -4.5;
-            const rotateY = ((x - centerX) / centerX) * 4.5;
-            const magnetX = ((x - centerX) / centerX) * 2;
-            const magnetY = ((y - centerY) / centerY) * 2;
+            const rotateX = ((y - centerY) / centerY) * -3.5;
+            const rotateY = ((x - centerX) / centerX) * 3.5;
+            const magnetX = ((x - centerX) / centerX) * 1.6;
+            const magnetY = ((y - centerY) / centerY) * 1.6;
 
-            card.style.transform = `perspective(1200px) translate3d(${magnetX.toFixed(1)}px, calc(-6px + ${magnetY.toFixed(1)}px), 14px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
+            card.style.transform = `perspective(1200px) translate3d(${magnetX.toFixed(1)}px, calc(-5px + ${magnetY.toFixed(1)}px), 12px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
           }
         }
 
@@ -197,8 +197,8 @@
         p.style.setProperty('--dy', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
         p.style.setProperty('--dx2', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
         p.style.setProperty('--dy2', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
-        p.style.setProperty('--duration', `${(2.2 + Math.random() * 1.4).toFixed(2)}s`);
-        p.style.setProperty('--delay', `${(Math.random() * 0.6).toFixed(2)}s`);
+        p.style.setProperty('--duration', `${(3.4 + Math.random() * 1.8).toFixed(2)}s`);
+        p.style.setProperty('--delay', `${(Math.random() * 0.9).toFixed(2)}s`);
 
         frag.appendChild(p);
         particles.push(p);
