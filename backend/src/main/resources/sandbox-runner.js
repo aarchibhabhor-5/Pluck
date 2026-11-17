@@ -67,6 +67,15 @@ function main() {
     clearTimeout: () => {},
     setInterval: () => {},
     clearInterval: () => {},
+    useState: (init) => {
+      let val = init;
+      const setter = (next) => { val = typeof next === 'function' ? next(val) : next; };
+      return [val, setter];
+    },
+    useEffect: (fn) => { if (typeof fn === 'function') fn(); },
+    useCallback: (fn) => fn,
+    useMemo: (fn) => (typeof fn === 'function' ? fn() : fn),
+    useRef: (init) => ({ current: init }),
     Math,
     Date,
     JSON,

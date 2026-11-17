@@ -24,11 +24,15 @@
       function check() {
         var token = localStorage.getItem('pluck_token');
         var user = localStorage.getItem('pluck_user');
-        var hasCookie = document.cookie && document.cookie.includes('pluck_session=');
-        if (!token || !user || !hasCookie) {
+        if (!token || !user) {
           purgeAndRedirect();
           return false;
         }
+        try {
+          if (!document.cookie || !document.cookie.includes('pluck_session=')) {
+            document.cookie = 'pluck_session=' + encodeURIComponent(token) + '; path=/; max-age=604800; SameSite=Lax';
+          }
+        } catch(e) {}
         return true;
       }
 
@@ -45,7 +49,8 @@
         var apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '/api' : 'https://pluck-0y8b.onrender.com/api';
         fetch(apiBase + '/auth/me', { headers: h })
           .then(function(res) {
-            if (!res.ok) {
+            // Only purge if server explicitly rejected credentials (401/403), NOT on 502/503 cold starts
+            if (res.status === 401 || res.status === 403) {
               purgeAndRedirect();
             }
           })

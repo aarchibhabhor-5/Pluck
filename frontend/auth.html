@@ -531,12 +531,23 @@
       btn.disabled = true;
       btn.innerHTML = `<span class="auth-spinner"></span> <span>${isSignup ? 'Creating account...' : 'Authenticating...'}</span>`;
 
+      // Free tier cold start awareness notice
+      const coldStartTimer = setTimeout(() => {
+        if (btn.disabled) {
+          btn.innerHTML = `<span class="auth-spinner"></span> <span>Waking cloud backend (~25s)...</span>`;
+          if (typeof showToast === 'function') {
+            showToast('Render backend is spinning up from sleep. Hang tight...', 'info');
+          }
+        }
+      }, 3500);
+
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
+        clearTimeout(coldStartTimer);
 
         const data = await res.json().catch(() => ({}));
 
@@ -617,9 +628,15 @@
           window.location.replace(nextUrl);
         }, 450);
       } catch (err) {
+        clearTimeout(coldStartTimer);
         btn.disabled = false;
         btn.innerHTML = `<span>${isSignup ? 'Create Pluck Account' : 'Sign In to Vault'}</span>`;
-        showAuthError(err.message || 'Network error connecting to backend.');
+        const errMsg = err.message || String(err);
+        if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError')) {
+          showAuthError('Cloud server is waking up or network timed out. Please click again to retry.');
+        } else {
+          showAuthError(errMsg || 'Network error connecting to backend.');
+        }
       }
     }
 

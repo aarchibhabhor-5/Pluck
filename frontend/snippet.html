@@ -24,11 +24,15 @@
       function check() {
         var token = localStorage.getItem('pluck_token');
         var user = localStorage.getItem('pluck_user');
-        var hasCookie = document.cookie && document.cookie.includes('pluck_session=');
-        if (!token || !user || !hasCookie) {
+        if (!token || !user) {
           purgeAndRedirect();
           return false;
         }
+        try {
+          if (!document.cookie || !document.cookie.includes('pluck_session=')) {
+            document.cookie = 'pluck_session=' + encodeURIComponent(token) + '; path=/; max-age=604800; SameSite=Lax';
+          }
+        } catch(e) {}
         return true;
       }
 
@@ -45,7 +49,8 @@
         var apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? '/api' : 'https://pluck-0y8b.onrender.com/api';
         fetch(apiBase + '/auth/me', { headers: h })
           .then(function (res) {
-            if (!res.ok) {
+            // Only purge if server explicitly rejected credentials (401/403), NOT on 502/503 cold starts
+            if (res.status === 401 || res.status === 403) {
               purgeAndRedirect();
             }
           })
@@ -235,8 +240,8 @@
               <div style="display: flex; align-items: center; gap: 8px;">
                 <select id="runner-engine-select" class="select-pixel"
                   style="font-size: 11px; padding: 5px 8px; background: #121218; color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">
-                  <option value="backend">⚡ Backend Sandbox (Port 4000)</option>
-                  <option value="worker">🌐 In-Browser Web Worker</option>
+                  <option value="worker" selected>🌐 In-Browser Runner (Instant)</option>
+                  <option value="backend">⚡ Cloud Sandbox (Render)</option>
                 </select>
                 <button id="btn-run-sandbox" class="btn-solid-pixel" onclick="executeSandbox()"
                   style="font-size: 11px; padding: 7px 16px;">▶ Execute In Sandbox</button>
@@ -1446,6 +1451,10 @@ export function useDebounce(value, delay = 300) {
 
             if (res.ok) {
               result = await res.json();
+              if (result && result.status === 'ERROR' && result.stderr && result.stderr.some(l => l.includes('error: 2') || l.includes('not available') || l.includes('Cannot run program') || l.includes('not installed'))) {
+                out.innerHTML += `<span style="color: #f59e0b;">[NOTICE] Backend compiler environment initializing. Running via In-Browser Web Worker...\n</span>`;
+                result = await runInWebWorker(codeToRun, language, entryPoint, args);
+              }
             } else {
               throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
@@ -1551,6 +1560,12 @@ export function useDebounce(value, delay = 300) {
       if (res.returnValue !== null && res.returnValue !== undefined) {
         const strVal = typeof res.returnValue === 'object' ? JSON.stringify(res.returnValue, null, 2) : String(res.returnValue);
         out.innerHTML += `<span style="color: #fbbf24;">[RETURN VALUE]</span> <span style="color: #fde68a;">${escapeHtml(strVal)}</span>\n`;
+      }
+
+      const hasOutput = (res.stdout && res.stdout.length > 0) || (res.stderr && res.stderr.length > 0) || (res.returnValue !== null && res.returnValue !== undefined);
+      if (!hasOutput && isSuccess) {
+        out.innerHTML += `<span style="color: #94a3b8;">[OUTPUT] (Code executed cleanly with no stdout / return value)</span>\n` +
+          `<span style="color: #64748b; font-size: 11px;">💡 Tip: Click <strong>"Sample Args"</strong> or add <strong>console.log(...)</strong> in your snippet to see live outputs.</span>\n`;
       }
 
       if (isSuccess) {

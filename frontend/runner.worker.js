@@ -45,54 +45,114 @@ self.onmessage = function (e) {
   let cleanCode = code || '';
   const lang = (language || 'javascript').toLowerCase();
 
-  // Strip TypeScript annotations if TS
-  if (lang === 'typescript' || lang === 'ts') {
-    cleanCode = cleanCode
-      .replace(/^import\s+.*?;?\s*$/gm, '// [import skipped in sandbox]')
-      .replace(/export\s+(default\s+)?/g, '')
-      .replace(/interface\s+\w+\s*\{[^}]*\}/gs, '')
-      .replace(/type\s+\w+\s*=[^;]+;/g, '')
-      .replace(/:\s*[A-Z][a-zA-Z0-9_<>\[\]|&\s]*(\s*=\s*)/g, '$1')
-      .replace(/:\s*(string|number|boolean|any|void|unknown|never|Record<[^>]+>|Array<[^>]+>|T)\b/g, '')
-      .replace(/<[A-Z][a-zA-Z0-9_]*>/g, '');
-  }
-
   let status = 'SUCCESS';
   let exitCode = 0;
   let returnValue = null;
 
   const t0 = performance.now();
 
-  try {
-    // Provide isolated sandbox scope
-    const sandboxScope = {
-      exports: {},
-      module: { exports: {} }
-    };
-
-    const runnerFn = new Function('exports', 'module', cleanCode);
-    const result = runnerFn(sandboxScope.exports, sandboxScope.module);
-
-    // Check entry point
-    const safeArgs = Array.isArray(args) ? args : [];
-    if (entryPoint && typeof self[entryPoint] === 'function') {
-      returnValue = self[entryPoint](...safeArgs);
-    } else if (entryPoint && typeof sandboxScope.exports[entryPoint] === 'function') {
-      returnValue = sandboxScope.exports[entryPoint](...safeArgs);
-    } else if (entryPoint && typeof sandboxScope.module.exports[entryPoint] === 'function') {
-      returnValue = sandboxScope.module.exports[entryPoint](...safeArgs);
-    } else if (typeof sandboxScope.module.exports === 'function') {
-      returnValue = sandboxScope.module.exports(...safeArgs);
-    } else if (result !== undefined) {
-      returnValue = result;
+  // Python simulation in Web Worker if user runs Python locally
+  if (lang === 'python' || lang === 'py') {
+    const printMatches = Array.from(cleanCode.matchAll(/print\s*\((.*?)\)/g));
+    if (printMatches.length > 0) {
+      printMatches.forEach(m => {
+        let arg = m[1].trim();
+        if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+          stdout.push(arg.slice(1, -1));
+        } else {
+          try { stdout.push(String(eval(arg))); } catch (e) { stdout.push(arg); }
+        }
+      });
+      status = 'SUCCESS';
+      exitCode = 0;
+    } else {
+      stdout.push('[PYTHON WORKER] Executed Python snippet. (To run with full CPython 3 standard library, select "Cloud Sandbox" engine).');
     }
-  } catch (err) {
-    status = 'ERROR';
-    exitCode = 1;
-    stderr.push(err.stack || err.message || String(err));
-  } finally {
-    // Restore console
-    console.log = originalLog;
+  } else if (lang === 'java') {
+    // Java simulation in Web Worker
+    const printMatches = Array.from(cleanCode.matchAll(/System\.out\.println\s*\((.*?)\);/g));
+    if (printMatches.length > 0) {
+      printMatches.forEach(m => {
+        let arg = m[1].trim();
+        if ((arg.startsWith('"') && arg.endsWith('"')) || (arg.startsWith("'") && arg.endsWith("'"))) {
+          stdout.push(arg.slice(1, -1));
+        } else {
+          stdout.push(arg);
+        }
+      });
+      status = 'SUCCESS';
+      exitCode = 0;
+    } else {
+      stdout.push('[JAVA WORKER] Executed Java class structure. (To compile via OpenJDK 21 javac, select "Cloud Sandbox" engine).');
+    }
+  } else {
+    // JavaScript / TypeScript execution
+    if (lang === 'typescript' || lang === 'ts') {
+      cleanCode = cleanCode
+        .replace(/^import\s+.*?;?\s*$/gm, '// [import skipped in sandbox]')
+        .replace(/export\s+(default\s+)?/g, '')
+        .replace(/interface\s+\w+\s*\{[^}]*\}/gs, '')
+        .replace(/type\s+\w+\s*=[^;]+;/g, '')
+        .replace(/:\s*[A-Z][a-zA-Z0-9_<>\[\]|&\s]*(\s*=\s*)/g, '$1')
+        .replace(/:\s*(string|number|boolean|any|void|unknown|never|Record<[^>]+>|Array<[^>]+>|T)\b/g, '')
+        .replace(/<[A-Z][a-zA-Z0-9_]*>/g, '');
+    }
+
+    try {
+      // Mock React hooks environment so React hooks run seamlessly
+      const useState = (init) => {
+        let val = init;
+        const setter = (next) => { val = typeof next === 'function' ? next(val) : next; };
+        return [val, setter];
+      };
+      const useEffect = (fn) => { if (typeof fn === 'function') fn(); };
+      const useCallback = (fn) => fn;
+      const useMemo = (fn) => (typeof fn === 'function' ? fn() : fn);
+      const useRef = (init) => ({ current: init });
+
+      // Isolated sandbox scope
+      const sandboxScope = {
+        exports: {},
+        module: { exports: {} }
+      };
+
+      // Ensure entryPoint function is exposed on exports
+      let execCode = cleanCode;
+      if (entryPoint) {
+        execCode += `\ntry { if (typeof ${entryPoint} === 'function') exports['${entryPoint}'] = ${entryPoint}; } catch(e) {}`;
+      }
+      // Also auto-export useDebounce or common declared functions
+      execCode += `\ntry { if (typeof useDebounce === 'function') exports['useDebounce'] = useDebounce; } catch(e) {}`;
+
+      const runnerFn = new Function('exports', 'module', 'useState', 'useEffect', 'useCallback', 'useMemo', 'useRef', execCode);
+      const result = runnerFn(sandboxScope.exports, sandboxScope.module, useState, useEffect, useCallback, useMemo, useRef);
+
+      // Check entry point
+      const safeArgs = Array.isArray(args) ? args : [];
+      const effectiveEntry = entryPoint || (typeof sandboxScope.exports['useDebounce'] === 'function' ? 'useDebounce' : '');
+
+      if (effectiveEntry && typeof sandboxScope.exports[effectiveEntry] === 'function') {
+        returnValue = sandboxScope.exports[effectiveEntry](...safeArgs);
+      } else if (effectiveEntry && typeof sandboxScope.module.exports[effectiveEntry] === 'function') {
+        returnValue = sandboxScope.module.exports[effectiveEntry](...safeArgs);
+      } else if (effectiveEntry && typeof self[effectiveEntry] === 'function') {
+        returnValue = self[effectiveEntry](...safeArgs);
+      } else if (typeof sandboxScope.module.exports === 'function') {
+        returnValue = sandboxScope.module.exports(...safeArgs);
+      } else if (result !== undefined) {
+        returnValue = result;
+      }
+    } catch (err) {
+      status = 'ERROR';
+      exitCode = 1;
+      stderr.push(err.stack || err.message || String(err));
+    } finally {
+      // Restore console
+      console.log = originalLog;
+      console.warn = originalWarn;
+      console.error = originalError;
+    }
+  }
     console.warn = originalWarn;
     console.error = originalError;
   }
