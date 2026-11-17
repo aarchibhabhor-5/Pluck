@@ -63,7 +63,8 @@ public class RunnerService {
             tempFile = Files.createTempFile("pluck_py_run_", ".py");
             Files.writeString(tempFile, request.getCode(), StandardCharsets.UTF_8);
 
-            ProcessBuilder pb = new ProcessBuilder("python", tempFile.toAbsolutePath().toString());
+            String pythonCmd = resolveCommand("python3", "python");
+            ProcessBuilder pb = new ProcessBuilder(pythonCmd, tempFile.toAbsolutePath().toString());
             pb.redirectErrorStream(false);
 
             long start = System.currentTimeMillis();
@@ -105,7 +106,13 @@ public class RunnerService {
             RunResponse err = new RunResponse();
             err.setStatus("ERROR");
             err.setExitCode(1);
-            err.setStderr(List.of("Python sandbox execution error: " + e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Unknown execution failure";
+            if (msg.contains("error: 2") || msg.contains("No such file or directory")) {
+                err.setStderr(List.of("Python 3 runtime is not installed or available on this host environment.",
+                                      "Tip: Switch execution mode to 'In-Browser Runner' for client-side execution."));
+            } else {
+                err.setStderr(List.of("Python sandbox execution error: " + msg));
+            }
             err.setRuntime("Python 3 Sandbox Engine (Isolated)");
             return err;
         } finally {
@@ -143,8 +150,9 @@ public class RunnerService {
             }
 
             // Prepare command
+            String nodeCmd = resolveCommand("node", "nodejs");
             ProcessBuilder pb = new ProcessBuilder(
-                    "node",
+                    nodeCmd,
                     "--max-old-space-size=" + memoryLimitMb,
                     tempScript.toAbsolutePath().toString(),
                     tempPayload.toAbsolutePath().toString()
@@ -232,25 +240,46 @@ public class RunnerService {
             Path javaFile = tempDir.resolve(className + ".java");
             Files.writeString(javaFile, code, StandardCharsets.UTF_8);
 
-            // Compile
-            ProcessBuilder compilePb = new ProcessBuilder("javac", javaFile.getFileName().toString());
-            compilePb.directory(tempDir.toFile());
-            Process compileProc = compilePb.start();
-            boolean compiled = compileProc.waitFor(5000, TimeUnit.MILLISECONDS);
+            String javacCmd = resolveJavaExecutable("javac");
+            String javaCmd = resolveJavaExecutable("java");
 
-            if (!compiled || compileProc.exitValue() != 0) {
-                String compErr = new String(compileProc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-                RunResponse err = new RunResponse();
-                err.setStatus("ERROR");
-                err.setExitCode(1);
-                err.setStderr(List.of(compErr.trim()));
-                err.setRuntime("Java Runtime Environment (Sandbox)");
-                return err;
+            boolean useDirectRunner = false;
+            try {
+                Process testJavac = new ProcessBuilder(javacCmd, "-version").start();
+                if (!testJavac.waitFor(2500, TimeUnit.MILLISECONDS) || testJavac.exitValue() != 0) {
+                    useDirectRunner = true;
+                }
+            } catch (Exception ignored) {
+                // javac binary not available; fall back to Java 11+ single-file source runner
+                useDirectRunner = true;
+            }
+
+            if (!useDirectRunner) {
+                // Compile
+                ProcessBuilder compilePb = new ProcessBuilder(javacCmd, javaFile.getFileName().toString());
+                compilePb.directory(tempDir.toFile());
+                Process compileProc = compilePb.start();
+                boolean compiled = compileProc.waitFor(8000, TimeUnit.MILLISECONDS);
+
+                if (!compiled || compileProc.exitValue() != 0) {
+                    String compErr = new String(compileProc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                    RunResponse err = new RunResponse();
+                    err.setStatus("ERROR");
+                    err.setExitCode(1);
+                    err.setStderr(List.of(compErr.trim()));
+                    err.setRuntime("Java Runtime Environment (Sandbox)");
+                    return err;
+                }
             }
 
             // Run
             long start = System.currentTimeMillis();
-            ProcessBuilder runPb = new ProcessBuilder("java", "-Xmx64m", className);
+            ProcessBuilder runPb;
+            if (useDirectRunner) {
+                runPb = new ProcessBuilder(javaCmd, "-Xmx64m", javaFile.getFileName().toString());
+            } else {
+                runPb = new ProcessBuilder(javaCmd, "-Xmx64m", className);
+            }
             runPb.directory(tempDir.toFile());
             Process runProc = runPb.start();
 
@@ -290,7 +319,15 @@ public class RunnerService {
             RunResponse err = new RunResponse();
             err.setStatus("ERROR");
             err.setExitCode(1);
-            err.setStderr(List.of("Java sandbox execution error: " + e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : "Unknown execution failure";
+            if (msg.contains("error: 2") || msg.contains("No such file or directory")) {
+                err.setStderr(List.of(
+                    "Java runtime (java/javac) is initializing or not available on this server host.",
+                    "Tip: Switch execution mode to 'In-Browser Runner' in the top right for instant execution."
+                ));
+            } else {
+                err.setStderr(List.of("Java sandbox execution error: " + msg));
+            }
             err.setRuntime("Java Runtime Environment (Sandbox)");
             return err;
         } finally {
@@ -302,5 +339,29 @@ public class RunnerService {
                 } catch (Exception ignored) {}
             }
         }
+    }
+
+    private String resolveCommand(String... candidates) {
+        for (String c : candidates) {
+            try {
+                Process p = new ProcessBuilder(c, "--version").start();
+                if (p.waitFor(1500, TimeUnit.MILLISECONDS)) {
+                    return c;
+                }
+            } catch (Exception ignored) {}
+        }
+        return candidates[0];
+    }
+
+    private String resolveJavaExecutable(String binaryName) {
+        String javaHome = System.getProperty("java.home");
+        if (javaHome != null) {
+            boolean isWin = System.getProperty("os.name", "").toLowerCase().contains("win");
+            File file = new File(javaHome, "bin" + File.separator + binaryName + (isWin ? ".exe" : ""));
+            if (file.exists() && file.canExecute()) {
+                return file.getAbsolutePath();
+            }
+        }
+        return binaryName;
     }
 }
