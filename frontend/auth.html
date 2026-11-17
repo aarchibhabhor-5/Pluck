@@ -29,35 +29,38 @@
   <style>
     .password-input-wrapper {
       position: relative;
-      display: flex;
-      align-items: center;
       width: 100%;
       margin-top: 4px;
     }
 
     .password-toggle-btn {
       position: absolute;
-      right: 8px;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
       background: none;
       border: none;
       cursor: pointer;
-      color: var(--muted);
+      color: #94a3b8;
       padding: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       outline: none;
-      transition: color 0.15s ease, transform 0.1s ease;
-      z-index: 2;
+      line-height: 1;
+      transition: color 0.2s ease, opacity 0.2s ease;
+      z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
-    .password-toggle-btn:hover {
-      color: var(--cyan);
-      transform: scale(1.08);
+    .password-toggle-btn:hover,
+    .password-toggle-btn:focus {
+      color: #38bdf8;
     }
 
     .password-toggle-btn:active {
-      transform: scale(0.95);
+      opacity: 0.7;
     }
 
     .auth-spinner {
@@ -421,7 +424,8 @@
       eyeBtn.innerHTML = isPassword ? EYE_OFF_SVG : EYE_OPEN_SVG;
       eyeBtn.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
       eyeBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-      eyeBtn.style.color = isPassword ? 'var(--cyan)' : 'var(--muted)';
+      // Use explicit hex colors so they work even before style.css CSS vars resolve
+      eyeBtn.style.color = isPassword ? '#38bdf8' : '#94a3b8';
     }
 
     function switchAuthMode(mode, keepValues = true) {
@@ -946,7 +950,7 @@
         if (btn) {
           btn.innerHTML = EYE_OPEN_SVG;
           btn.setAttribute('title', 'Show password');
-          btn.style.color = 'var(--muted)';
+          btn.style.color = '#94a3b8';
         }
       });
 
