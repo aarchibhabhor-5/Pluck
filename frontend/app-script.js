@@ -14,7 +14,7 @@
 
   const CHARS = '0123456789ABCDEF{}()<>=+*!?;:_/~$#@';
   const FONT_SIZE = 14;
-  const FRAME_INTERVAL = 85; // calm, smooth ambient rain
+  const FRAME_INTERVAL = 115; // slow, relaxed ambient rain
   let cols = 0;
   let drops = [];
   let rafId = 0;
@@ -122,7 +122,7 @@ function showToast(message, type = 'info') {
     let userSnippets = [];
     try {
       userSnippets = JSON.parse(localStorage.getItem('pluck_user_snippets') || '[]');
-    } catch (e) {}
+    } catch (e) { }
 
     const snippetItems = userSnippets.map(s => {
       const depName = (s.dependencies && s.dependencies.length > 0)
@@ -180,7 +180,7 @@ function showToast(message, type = 'info') {
             localStorage.removeItem('pluck_token');
             localStorage.removeItem('pluck_user_snippets');
             sessionStorage.clear();
-          } catch (e) {}
+          } catch (e) { }
         }
         window.location.href = item.path;
       });
@@ -249,7 +249,7 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
         showToast(label, 'success');
         return;
       }
-    } catch (e) {}
+    } catch (e) { }
     showToast('Failed to copy', 'error');
   }
 
@@ -274,9 +274,9 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
   if (!buttons.length) return;
 
   const DISTANCE = 140;
-  const MAX_SCALE = 1.07;
-  const STIFFNESS = 0.11;
-  const DAMPING = 0.78;
+  const MAX_SCALE = 1.06;
+  const STIFFNESS = 0.065;
+  const DAMPING = 0.84;
 
   const buttonStates = Array.from(buttons).map(btn => ({
     el: btn,
@@ -436,7 +436,7 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
         localStorage.removeItem('pluck_token');
         localStorage.removeItem('pluck_user_snippets');
         sessionStorage.clear();
-      } catch (e) {}
+      } catch (e) { }
       const currentDest = window.location.pathname.split('/').pop() + window.location.search;
       window.location.replace(`auth.html?next=${encodeURIComponent(currentDest)}`);
     }
@@ -474,8 +474,8 @@ function autoSignOutOnLogo(e) {
   try {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = 'Bearer ' + token;
-    fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
-  } catch (err) {}
+    fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => { });
+  } catch (err) { }
 
   // 2. Clear all local storage & session state
   try {
@@ -489,7 +489,7 @@ function autoSignOutOnLogo(e) {
     document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
     document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-  } catch (err) {}
+  } catch (err) { }
 
   // 3. Immediately redirect to auth page without stacking duplicate history entries
   window.location.replace('auth.html?status=signed_out');
@@ -513,8 +513,8 @@ document.addEventListener('click', (e) => {
       try {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = 'Bearer ' + token;
-        fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => {});
-      } catch (err) {}
+        fetch('/api/auth/logout', { method: 'POST', headers: headers, keepalive: true }).catch(() => { });
+      } catch (err) { }
       try {
         localStorage.removeItem('pluck_user');
         localStorage.removeItem('pluck_token');
@@ -524,7 +524,7 @@ document.addEventListener('click', (e) => {
         document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
         document.cookie = 'pluck_session=; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
         document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
-      } catch (err) {}
+      } catch (err) { }
     }
   }
 }, true);

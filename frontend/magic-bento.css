@@ -21,7 +21,7 @@
   contain: paint;
   border-radius: var(--border-radius, 6px);
   transform-style: preserve-3d;
-  transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: border-color 0.42s ease, box-shadow 0.45s ease, transform 0.52s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Ensure inner card content is securely positioned above all dynamic glow layers */

@@ -60,7 +60,7 @@
   let cols, drops;
   const FONT_SIZE = 13;
   const COLORS = ['#7c3aed', '#ec4899', '#06b6d4', '#f59e0b'];
-  const FRAME_INTERVAL = 95; // calm, relaxed ambient matrix rain
+  const FRAME_INTERVAL = 125; // slow, relaxed ambient matrix rain
   let rafId = 0;
   let lastDraw = 0;
   let resizeTimer = null;
@@ -152,16 +152,16 @@
     emptySlotChar: '.',
     emptySlotColor: '#242429',
     ejectedPieceColors: ['#EC4899', '#06B6D4', '#F59E0B', '#C084FC'],
-    ejectionIntervalMs: 1200,
-    ejectedPieceBaseSpeed: 2.2,
+    ejectionIntervalMs: 2200,
+    ejectedPieceBaseSpeed: 1.1,
     ejectedPieceDamping: 0.985,
     maxEjectedPieces: 6,
     initialEjectedPiecesCount: 3,
     robotChar: '@',
     robotColor: '#FFFBEB',
-    robotMoveInterval: 2,
-    robotPickupDelay: 4,
-    robotPlaceDelay: 4,
+    robotMoveInterval: 4,
+    robotPickupDelay: 8,
+    robotPlaceDelay: 8,
     logicalCharWidth: 84,
     logicalCharHeight: 12,
     mobileLogicalCharWidth: 54,
@@ -692,7 +692,7 @@
 
       const dtSec = lastPupilTime ? Math.min((now - lastPupilTime) / 1000, 0.05) : 0.016;
       lastPupilTime = now;
-      const ease = 1 - Math.exp(-dtSec * 6.0); // smooth, natural gaze glide
+      const ease = 1 - Math.exp(-dtSec * 3.5); // slow, graceful gaze glide
 
       currentX += (targetX - currentX) * ease;
       currentY += (targetY - currentY) * ease;
@@ -879,7 +879,7 @@
         sparksRaf = 0;
         if (!sparksVisible || document.hidden) return;
 
-        const dtScale = lastSparkTime ? Math.min((now - lastSparkTime) / 33.33, 2) : 0.5;
+        const dtScale = lastSparkTime ? Math.min((now - lastSparkTime) / 55, 1.5) : 0.35;
         lastSparkTime = now;
 
         ctx.clearRect(0, 0, W, H);
@@ -1049,27 +1049,31 @@
     animState = 'none';
   }
 
+  let scrollCheckRaf = 0;
+
   function checkScroll() {
+    scrollCheckRaf = 0;
+    if (animState === 'completed') return;
     const triggerEl = charsSection || section;
     const rect = triggerEl.getBoundingClientRect();
     const sectionRect = section.getBoundingClientRect();
     const windowH = window.innerHeight || document.documentElement.clientHeight;
 
-    // Trigger when user scrolls down and characters/features enter view
-    if (rect.top <= windowH * 0.78 && sectionRect.bottom >= windowH * 0.15) {
+    if (rect.top <= windowH * 0.82 && sectionRect.bottom >= windowH * 0.12) {
       if (animState === 'none') {
         startAnimation();
-      }
-    } else if (rect.top > windowH * 0.95 || sectionRect.bottom < -100) {
-      // User scrolled back up above characters or far below features -> reset so it replays smoothly
-      if (animState !== 'none') {
-        resetAnimation();
       }
     }
   }
 
-  window.addEventListener('scroll', checkScroll, { passive: true });
-  window.addEventListener('resize', checkScroll, { passive: true });
+  function scheduleCheckScroll() {
+    if (!scrollCheckRaf && animState !== 'completed') {
+      scrollCheckRaf = requestAnimationFrame(checkScroll);
+    }
+  }
+
+  window.addEventListener('scroll', scheduleCheckScroll, { passive: true });
+  window.addEventListener('resize', scheduleCheckScroll, { passive: true });
 
   // Initial check on load
   checkScroll();
@@ -1179,6 +1183,42 @@
     }
   }
 
+  const dotCache = document.createElement('canvas');
+  const dotCacheCtx = dotCache.getContext('2d');
+
+  function paintCellToCache(r, c) {
+    if (!dotCacheCtx) return;
+    const cellX = c * R;
+    const cellY = r * R;
+    dotCacheCtx.clearRect(cellX, cellY, R, R);
+
+    const patIdx = grid[r]?.[c] ?? 5;
+    if (patIdx === 5) return;
+    const pat = ZE_PATTERNS[patIdx];
+    if (!pat) return;
+
+    dotCacheCtx.fillStyle = patIdx === 2 ? VARIANT_COLOR : DOT_COLOR;
+    for (let pr = 0; pr < 3; pr++) {
+      for (let pc = 0; pc < 3; pc++) {
+        if (pat[pr][pc] === 1) {
+          dotCacheCtx.fillRect(cellX + pc * C, cellY + pr * C, C, C);
+        }
+      }
+    }
+  }
+
+  function rebuildDotCache() {
+    if (!dotCacheCtx || width <= 0 || height <= 0) return;
+    dotCache.width = width;
+    dotCache.height = height;
+    dotCacheCtx.clearRect(0, 0, width, height);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        paintCellToCache(r, c);
+      }
+    }
+  }
+
   // Calculate wave surface Y at given X coordinate
   function getWaveY(x, phase) {
     if (width <= 0) return waveBaseY;
@@ -1196,17 +1236,20 @@
     if (width <= 0 || height <= 0) {
       resize();
     }
+    if (dotCache.width !== width || dotCache.height !== height) {
+      rebuildDotCache();
+    }
 
     const dtSec = lastDotFrameTime ? Math.min((time - lastDotFrameTime) / 1000, 0.05) : 0.016;
     lastDotFrameTime = time;
-    const fishStep = dtSec * 30; // calm 30fps-equivalent swim speed at silky 60/120fps
+    const fishStep = dtSec * 18;
 
     ctx.clearRect(0, 0, width, height);
 
-    // Gentle, smooth wave drift (identical calm pace on 60Hz/120Hz displays)
-    wavePhase += dtSec * 0.22;
+    // Slow, hypnotic wave drift
+    wavePhase += dtSec * 0.13;
 
-    // Mutate only 4-5 cells every 1600ms (calm, non-distracting twinkle)
+    // Update only 5 twinkling cells in the offscreen cache every 1600ms
     if (time - lastVariantTime > 1600) {
       lastVariantTime = time;
       for (let k = 0; k < 5; k++) {
@@ -1215,59 +1258,30 @@
         if (grid[randR] && grid[randR][randC] !== undefined) {
           const rand = Math.random();
           grid[randR][randC] = rand < 0.50 ? 5 : (rand < 0.90 ? 0 : 2);
+          paintCellToCache(randR, randC);
         }
       }
     }
 
-    // 1. Draw soft water tint below the wave
-    ctx.fillStyle = WATER_TINT;
+    // 1. Build wave contour once, fill water tint, and blit cached dot-grid in ONE GPU call
+    ctx.save();
     ctx.beginPath();
     ctx.moveTo(0, height);
     ctx.lineTo(0, getWaveY(0, wavePhase));
-    for (let x = 6; x <= width; x += 6) {
+    for (let x = 16; x <= width; x += 16) {
       ctx.lineTo(x, getWaveY(x, wavePhase));
     }
+    ctx.lineTo(width, getWaveY(width, wavePhase));
     ctx.lineTo(width, height);
     ctx.closePath();
+
+    ctx.fillStyle = WATER_TINT;
     ctx.fill();
-
-    // 2. Draw pixel grid cells below the undulating wave line (calm, uncrowded)
-    for (let r = 0; r < rows; r++) {
-      const cellY = r * R;
-      for (let c = 0; c < cols; c++) {
-        const cellX = c * R;
-        const waveTop = getWaveY(cellX, wavePhase);
-
-        // Above the wave crest -> empty
-        if (cellY + R < waveTop) continue;
-
-        const patIdx = grid[r]?.[c] ?? 5;
-        if (patIdx === 5) continue; // empty space
-        const pat = ZE_PATTERNS[patIdx];
-        if (!pat) continue;
-
-        // Color selection: subdued so foreground elements pop
-        if (patIdx === 2) {
-          ctx.fillStyle = VARIANT_COLOR;
-        } else if (patIdx === 0) {
-          ctx.fillStyle = DOT_COLOR;
-        } else {
-          ctx.fillStyle = DOT_COLOR;
-        }
-
-        for (let pr = 0; pr < 3; pr++) {
-          for (let pc = 0; pc < 3; pc++) {
-            if (pat[pr][pc] === 1) {
-              const px = cellX + pc * C;
-              const py = cellY + pr * C;
-              if (py >= waveTop - C / 2) {
-                ctx.fillRect(px, py, C, C);
-              }
-            }
-          }
-        }
-      }
+    ctx.clip();
+    if (dotCache.width > 0 && dotCache.height > 0) {
+      ctx.drawImage(dotCache, 0, 0);
     }
+    ctx.restore();
 
     // 3. Update and draw leisurely swimming pixel fish
     const maxSubX = Math.floor(width / C) - 4;
@@ -1449,20 +1463,17 @@
     }
   });
 
-  // Bi-directional Fade In AND Fade Out Intersection Observer
+  // Smooth one-time Scroll Reveal Intersection Observer (no jarring flicker on scroll-back)
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        // Enters viewport -> Fade In smoothly
         entry.target.classList.add('in');
-      } else {
-        // Leaves viewport -> Fade Out smoothly
-        entry.target.classList.remove('in');
+        observer.unobserve(entry.target);
       }
     });
   }, {
-    threshold: 0.08,
-    rootMargin: '-10px 0px -30px 0px'
+    threshold: 0.06,
+    rootMargin: '0px 0px -24px 0px'
   });
 
   elements.forEach(el => observer.observe(el));
@@ -1485,25 +1496,35 @@
   window.addEventListener('load', () => setTimeout(checkInitialViewport, 80));
 })();
 
-/* ── 9. Plans pixel decoration animation ─────────── */
+/* ── 9. Plans pixel decoration animation (Single lightweight timer) ──── */
 (function animatePlansPixels() {
-  // Make the plan cards have a subtle pixel shimmer on hover
-  document.querySelectorAll('.plan-card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-      card.style.transition = 'transform 0.1s, box-shadow 0.1s';
-    });
-  });
+  const plansSection = document.getElementById('plans');
+  const bars = Array.from(document.querySelectorAll('.plan-card .bar.bar-on'));
+  if (!bars.length) return;
 
-  // Animate the plan signal bars
-  document.querySelectorAll('.plan-card').forEach((card, i) => {
-    const bars = card.querySelectorAll('.bar');
-    bars.forEach((bar, j) => {
-      if (!bar.classList.contains('bar-on')) return;
-      setInterval(() => {
-        bar.style.opacity = (0.6 + Math.random() * 0.4).toString();
-      }, 800 + j * 200 + i * 100);
-    });
-  });
+  let visible = false;
+  let timer = null;
+
+  function tick() {
+    if (!visible || document.hidden) return;
+    for (let i = 0; i < bars.length; i++) {
+      if (Math.random() < 0.35) {
+        bars[i].style.opacity = (0.65 + Math.random() * 0.35).toFixed(2);
+      }
+    }
+  }
+
+  const io = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    if (visible && !timer) {
+      timer = setInterval(tick, 900);
+    } else if (!visible && timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }, { threshold: 0.05 });
+
+  io.observe(plansSection || bars[0]);
 })();
 
 /* ── 10. Chat bubble typing animation ─────────────── */
@@ -1608,7 +1629,7 @@
     if (!lastTick) { lastTick = now; return; }
     const dtSec = Math.min((now - lastTick) / 1000, 0.05);
     lastTick = now;
-    pos = (pos + dtSec * 14) % 240; // gentle 14px/sec drift
+    pos = (pos + dtSec * 7) % 240; // slow, subtle 7px/sec drift
     visibleSet.forEach(el => {
       el.style.backgroundPositionX = `${pos.toFixed(1)}px`;
     });
@@ -1877,9 +1898,9 @@ function toggleFullscreen() {
   }
 
   const DISTANCE = 140;      // Proximity distance in px
-  const MAX_SCALE = 1.07;     // Gentle magnification
-  const STIFFNESS = 0.11;     // Smooth, unhurried spring
-  const DAMPING = 0.78;
+  const MAX_SCALE = 1.06;     // Gentle magnification
+  const STIFFNESS = 0.065;    // Slow, silky glide
+  const DAMPING = 0.84;
 
   const buttonStates = Array.from(buttons).map(btn => ({
     el: btn,
@@ -2025,8 +2046,8 @@ function toggleFullscreen() {
 
   const r = 16;              // Corner curve radius
   const inset = 2;           // Exact border contact line along card rectangle
-  const baseSpeed = 8.5;     // Pixels per second (slow, calm walking pace)
-  const stepDuration = 0.65; // Seconds per tentacle step (natural gait cadence)
+  const baseSpeed = 5.5;     // Pixels per second (unhurried, calm walking pace)
+  const stepDuration = 0.9;  // Seconds per tentacle step (relaxed gait cadence)
 
   let currentDist = 25;      // Initial position along bottom edge
   let walkTime = 0;          // Accumulated walking time for continuous step cycle

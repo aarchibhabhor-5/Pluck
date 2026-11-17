@@ -102,6 +102,7 @@
         card.addEventListener('mouseenter', (e) => {
           cachedRect = card.getBoundingClientRect();
           cachedVer = rectVersion;
+          card.classList.add('is-tilting');
           card.style.willChange = 'transform';
 
           const relX = ((e.clientX - cachedRect.left) / Math.max(1, cachedRect.width)) * 100;
@@ -127,6 +128,7 @@
             rafId = 0;
           }
           cachedRect = null;
+          card.classList.remove('is-tilting');
           card.style.transform = '';
           card.style.willChange = 'auto';
           card.style.setProperty('--glow-intensity', '0');
@@ -197,8 +199,8 @@
         p.style.setProperty('--dy', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
         p.style.setProperty('--dx2', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
         p.style.setProperty('--dy2', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
-        p.style.setProperty('--duration', `${(3.4 + Math.random() * 1.8).toFixed(2)}s`);
-        p.style.setProperty('--delay', `${(Math.random() * 0.9).toFixed(2)}s`);
+        p.style.setProperty('--duration', `${(4.5 + Math.random() * 2.5).toFixed(2)}s`);
+        p.style.setProperty('--delay', `${(Math.random() * 1.1).toFixed(2)}s`);
 
         frag.appendChild(p);
         particles.push(p);
