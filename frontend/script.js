@@ -2326,7 +2326,7 @@ function toggleFullscreen() {
       document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
     } catch (err) { }
 
-    window.location.href = 'auth.html?status=signed_out';
+    window.location.replace('auth.html?status=signed_out');
   }
   window.autoSignOutOnLogo = autoSignOutOnLogo;
 

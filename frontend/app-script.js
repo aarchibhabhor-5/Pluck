@@ -491,8 +491,8 @@ function autoSignOutOnLogo(e) {
     document.cookie = 'JSESSIONID=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT;';
   } catch (err) {}
 
-  // 3. Immediately redirect to auth page with signed_out notification parameter
-  window.location.href = 'auth.html?status=signed_out';
+  // 3. Immediately redirect to auth page without stacking duplicate history entries
+  window.location.replace('auth.html?status=signed_out');
 }
 window.autoSignOutOnLogo = autoSignOutOnLogo;
 

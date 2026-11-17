@@ -763,7 +763,8 @@
       } catch (e) {}
       localStorage.removeItem('pluck_token');
       localStorage.removeItem('pluck_user');
-      window.location.href = 'auth.html';
+      document.cookie = 'pluck_session=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      window.location.replace('auth.html?status=signed_out');
     }
 
     // Initial load on page ready

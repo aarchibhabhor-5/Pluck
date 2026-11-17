@@ -610,8 +610,8 @@
 
         showToast(data.message || (isSignup ? 'Account created in MongoDB!' : 'Welcome back to Pluck!'), 'success');
         setTimeout(() => {
-          window.location.href = nextUrl;
-        }, 500);
+          window.location.replace(nextUrl);
+        }, 450);
       } catch (err) {
         btn.disabled = false;
         btn.innerHTML = `<span>${isSignup ? 'Create Pluck Account' : 'Sign In to Vault'}</span>`;
@@ -732,6 +732,19 @@
       loadGoogleConfig();
     }
 
+    // Reset button state if restored from browser back-forward cache (bfcache)
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) {
+        const btn = document.getElementById('auth-submit-btn');
+        if (btn) {
+          btn.disabled = false;
+          btn.style.background = '';
+          btn.style.color = '';
+          btn.innerHTML = `<span>${currentMode === 'signup' ? 'Create Pluck Account' : 'Sign In to Vault'}</span>`;
+        }
+      }
+    });
+
     // Call on load and window.onload
     loadGoogleConfig();
     window.addEventListener('load', () => {
@@ -828,7 +841,7 @@
         sessionStorage.removeItem('pluck_active_snippet');
 
         showToast(`Welcome, ${data.user.name}! (Signed in with Google)`, 'success');
-        setTimeout(() => { window.location.href = nextUrl; }, 500);
+        setTimeout(() => { window.location.replace(nextUrl); }, 450);
       } catch (e) {
         showToast(e.message || 'Failed to authenticate with Google', 'error');
       }
