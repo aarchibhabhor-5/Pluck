@@ -346,7 +346,7 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
 // ── 7. Enforce Authentication (Block Pluck usage without signing in) ──
 (function enforceAuthRouteGuard() {
   function verify() {
-    const publicPages = ['index.html', 'auth.html', 'google-signin.html', 'share.html'];
+    const publicPages = ['index.html', 'auth.html', 'share.html'];
     const currentPage = window.location.pathname.split('/').pop().toLowerCase() || 'index.html';
 
     // Do not guard public landing, auth, or shared link pages
