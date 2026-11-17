@@ -1,5 +1,6 @@
 package dev.pluck.backend.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,15 +10,29 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
+    private static final String BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
     private final JavaMailSender mailSender;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
 
     @Value("${spring.mail.username:}")
     private String mailUsername;
@@ -39,9 +54,64 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    public boolean isBrevoConfigured() {
+        return brevoApiKey != null && !brevoApiKey.trim().isEmpty();
+    }
+
     public boolean isSmtpConfigured() {
         return mailUsername != null && !mailUsername.trim().isEmpty() &&
                mailPassword != null && !mailPassword.trim().isEmpty();
+    }
+
+    private String normalizedBaseUrl() {
+        String base = (appBaseUrl != null && !appBaseUrl.trim().isEmpty()) ? appBaseUrl.trim() : "http://localhost:4000";
+        return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+    }
+
+    private Map<String, Object> sendViaBrevo(String recipientEmail, String senderName, String subject, String htmlContent) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String fromEmail = (mailFrom != null && !mailFrom.trim().isEmpty()) ? mailFrom.trim() : "notifications@pluck.dev";
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("sender", Map.of("name", senderName, "email", fromEmail));
+            payload.put("to", List.of(Map.of("email", recipientEmail)));
+            payload.put("subject", subject);
+            payload.put("htmlContent", htmlContent);
+
+            String jsonBody = objectMapper.writeValueAsString(payload);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BREVO_API_URL))
+                    .timeout(Duration.ofSeconds(15))
+                    .header("accept", "application/json")
+                    .header("content-type", "application/json")
+                    .header("api-key", brevoApiKey.trim())
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("[EmailService] Brevo email sent successfully to {} (status {})", recipientEmail, response.statusCode());
+                result.put("delivered", true);
+                result.put("provider", "brevo");
+                result.put("message", "Email sent to " + recipientEmail);
+            } else {
+                log.error("[EmailService] Brevo API error (status {}): {}", response.statusCode(), response.body());
+                result.put("delivered", false);
+                result.put("provider", "brevo");
+                result.put("reason", "BREVO_API_ERROR");
+                result.put("statusCode", response.statusCode());
+                result.put("error", response.body());
+            }
+        } catch (Exception e) {
+            log.error("[EmailService] Failed to send email via Brevo to {}: {}", recipientEmail, e.getMessage());
+            result.put("delivered", false);
+            result.put("provider", "brevo");
+            result.put("reason", "BREVO_SEND_ERROR");
+            result.put("error", e.getMessage());
+        }
+        return result;
     }
 
     /**
@@ -54,10 +124,18 @@ public class EmailService {
             String role,
             String rawToken
     ) {
-        String inviteUrl = appBaseUrl + "/auth.html?invite=" + rawToken;
+        String inviteUrl = normalizedBaseUrl() + "/auth.html?invite=" + rawToken;
         Map<String, Object> result = new HashMap<>();
         result.put("inviteUrl", inviteUrl);
         result.put("recipient", recipientEmail);
+
+        String subject = "You're invited to join " + teamName + " on Pluck";
+        String html = generateInviteHtml(recipientEmail, teamName, inviterName, role, inviteUrl);
+
+        if (isBrevoConfigured()) {
+            result.putAll(sendViaBrevo(recipientEmail, "Pluck Workspace", subject, html));
+            return result;
+        }
 
         if (!isSmtpConfigured()) {
             log.info("\n================================================================================" +
@@ -65,12 +143,11 @@ public class EmailService {
                     "\nTo: " + recipientEmail +
                     "\nInvited by: " + inviterName + " to workspace: '" + teamName + "' as " + role +
                     "\nInvite URL: " + inviteUrl +
-                    "\nNOTE: Real SMTP credentials (SPRING_MAIL_USERNAME & SPRING_MAIL_PASSWORD) are not set." +
-                    "\nConfigure them in application.properties or environment to send live emails." +
+                    "\nNOTE: Configure BREVO_API_KEY (recommended) or SMTP credentials to send live emails." +
                     "\n================================================================================");
             result.put("delivered", false);
-            result.put("reason", "SMTP_NOT_CONFIGURED");
-            result.put("message", "SMTP credentials not configured. Set SPRING_MAIL_USERNAME and SPRING_MAIL_PASSWORD to deliver real emails.");
+            result.put("reason", "EMAIL_NOT_CONFIGURED");
+            result.put("message", "Email provider not configured. Set BREVO_API_KEY to deliver real emails.");
             return result;
         }
 
@@ -87,14 +164,13 @@ public class EmailService {
             String senderAddress = (mailUsername != null && mailUsername.contains("@")) ? mailUsername : mailFrom;
             helper.setFrom(senderAddress, "Pluck Workspace");
             helper.setTo(recipientEmail);
-            helper.setSubject("You're invited to join " + teamName + " on Pluck");
-
-            String html = generateInviteHtml(recipientEmail, teamName, inviterName, role, inviteUrl);
+            helper.setSubject(subject);
             helper.setText(html, true);
 
             mailSender.send(message);
             log.info("[EmailService] Real invite email dispatched successfully to {} for team {}", recipientEmail, teamName);
             result.put("delivered", true);
+            result.put("provider", "smtp");
             result.put("message", "Invitation email sent to " + recipientEmail);
             return result;
         } catch (Exception e) {
@@ -110,22 +186,29 @@ public class EmailService {
      * Dispatches password reset email with secure recovery link
      */
     public Map<String, Object> sendPasswordResetEmail(String recipientEmail, String resetToken) {
-        String resetUrl = appBaseUrl + "/auth.html?reset=" + resetToken;
+        String resetUrl = normalizedBaseUrl() + "/auth.html?reset=" + resetToken;
         Map<String, Object> result = new HashMap<>();
         result.put("resetUrl", resetUrl);
         result.put("recipient", recipientEmail);
+
+        String subject = "Reset your Pluck account password";
+        String html = generateResetPasswordHtml(recipientEmail, resetUrl);
+
+        if (isBrevoConfigured()) {
+            result.putAll(sendViaBrevo(recipientEmail, "Pluck Security", subject, html));
+            return result;
+        }
 
         if (!isSmtpConfigured()) {
             log.info("\n================================================================================" +
                     "\n[PLUCK EMAIL SERVICE — SIMULATED PASSWORD RESET]" +
                     "\nTo: " + recipientEmail +
                     "\nReset URL: " + resetUrl +
-                    "\nNOTE: Real SMTP credentials (SPRING_MAIL_USERNAME & SPRING_MAIL_PASSWORD) are not set." +
-                    "\nConfigure them in application.properties or environment to send live emails." +
+                    "\nNOTE: Configure BREVO_API_KEY (recommended) or SMTP credentials to send live emails." +
                     "\n================================================================================");
             result.put("delivered", false);
-            result.put("reason", "SMTP_NOT_CONFIGURED");
-            result.put("message", "SMTP credentials not configured. Use the generated reset link below.");
+            result.put("reason", "EMAIL_NOT_CONFIGURED");
+            result.put("message", "Email provider not configured. Use the generated reset link below.");
             return result;
         }
 
@@ -142,14 +225,13 @@ public class EmailService {
             String senderAddress = (mailUsername != null && mailUsername.contains("@")) ? mailUsername : mailFrom;
             helper.setFrom(senderAddress, "Pluck Security");
             helper.setTo(recipientEmail);
-            helper.setSubject("Reset your Pluck account password");
-
-            String html = generateResetPasswordHtml(recipientEmail, resetUrl);
+            helper.setSubject(subject);
             helper.setText(html, true);
 
             mailSender.send(message);
             log.info("[EmailService] Password reset email sent successfully to {}", recipientEmail);
             result.put("delivered", true);
+            result.put("provider", "smtp");
             result.put("message", "Password reset email sent to " + recipientEmail);
             return result;
         } catch (Exception e) {

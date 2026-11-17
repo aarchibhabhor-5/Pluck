@@ -442,12 +442,21 @@ public class AuthController {
         resetTokens.put(rawToken, new ResetTokenInfo(email, user.getId(), Instant.now().plusSeconds(3600)));
 
         Map<String, Object> emailResult = emailService.sendPasswordResetEmail(email, rawToken);
+        boolean delivered = Boolean.TRUE.equals(emailResult.get("delivered"));
 
         Map<String, Object> res = new HashMap<>();
         res.put("success", true);
-        res.put("message", "Password reset link dispatched to " + email);
-        res.put("resetUrl", "/auth.html?reset=" + rawToken);
-        res.put("emailDelivery", emailResult);
+        if (delivered) {
+            res.put("message", "Password reset email sent to " + email + ". Please check your inbox (and spam folder).");
+        } else {
+            res.put("message", "Password reset link generated for " + email);
+            res.put("resetUrl", "/auth.html?reset=" + rawToken);
+        }
+        Map<String, Object> safeDelivery = new HashMap<>(emailResult);
+        if (delivered) {
+            safeDelivery.remove("resetUrl");
+        }
+        res.put("emailDelivery", safeDelivery);
         return ResponseEntity.ok(res);
     }
 
