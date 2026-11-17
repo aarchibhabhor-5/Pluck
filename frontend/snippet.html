@@ -1484,7 +1484,7 @@ export function useDebounce(value, delay = 300) {
     function runInWebWorker(code, language, entryPoint, args) {
       return new Promise((resolve, reject) => {
         try {
-          const worker = new Worker('runner.worker.js');
+          const worker = new Worker('runner.worker.js?v=pluck_runner_v4');
           const timeoutTimer = setTimeout(() => {
             worker.terminate();
             resolve({

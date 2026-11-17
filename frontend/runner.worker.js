@@ -153,9 +153,6 @@ self.onmessage = function (e) {
       console.error = originalError;
     }
   }
-    console.warn = originalWarn;
-    console.error = originalError;
-  }
 
   const t1 = performance.now();
   const durationMs = Math.round((t1 - t0) * 100) / 100;
