@@ -1,14 +1,17 @@
 /**
- * PLUCK — Cursor Grid Background Engine (React Bits Variant)
+ * PLUCK — Cursor Grid Background Engine (High-Performance Edition)
  * Zero-dependency interactive canvas grid that reacts ONLY to cursor hover proximity.
- * Clicking does nothing at all. No shockwaves, pulses, or expanding waves.
+ * Optimized with offscreen lattice caching, active-cell tracking, rAF throttling,
+ * visibility pausing, and zero per-frame gradient allocations.
  */
 (function initCursorGrid() {
   'use strict';
 
-  // Guard against duplicate execution
   if (window.__pluckCursorGridInitialized) return;
   window.__pluckCursorGridInitialized = true;
+
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouchDevice = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
   const FALLOFF_CURVES = {
     linear: t => t,
@@ -25,15 +28,15 @@
 
   const CONFIG = {
     cellSize: 64,
-    color: '#00F2FE',       // Electric Cyan
+    color: '#00F2FE',
     radius: 160,
     falloff: 'smooth',
-    holdTime: 350,
-    fadeDuration: 750,
+    holdTime: 320,
+    fadeDuration: 680,
     lineWidth: 1.2,
-    maxOpacity: 0.95,
-    fillOpacity: 0.08,      // Subtle glowing fill
-    gridOpacity: 0.04,      // Faint ambient lattice
+    maxOpacity: 0.9,
+    fillOpacity: 0.08,
+    gridOpacity: 0.04,
     cellRadius: 4,
     clickPulse: false
   };
@@ -47,8 +50,16 @@
       document.body.prepend(canvas);
     }
 
-    const ctx = canvas.getContext('2d');
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const ctx = canvas.getContext('2d', { alpha: true });
+    if (!ctx) return;
+
+    // Offscreen cache for static lattice so we don't stroke 60+ lines every frame
+    const bgCanvas = document.createElement('canvas');
+    const bgCtx = bgCanvas.getContext('2d', { alpha: true });
+
+    const [cr, cg, cb] = hexToRgb(CONFIG.color);
+    const rgbPrefix = `rgba(${cr}, ${cg}, ${cb}, `;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
     let cols = 0;
     let rows = 0;
@@ -56,11 +67,48 @@
     let offY = 0;
     let alphas = new Float32Array(0);
     let touched = new Float64Array(0);
+    const activeCells = new Set();
     let w = 0;
     let h = 0;
     let raf = 0;
     let running = false;
     let lastFrame = performance.now();
+    let pendingPointer = null;
+    let resizeTimer = null;
+
+    function drawStaticLattice() {
+      bgCanvas.width = canvas.width;
+      bgCanvas.height = canvas.height;
+      bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bgCtx.clearRect(0, 0, w, h);
+
+      if (CONFIG.gridOpacity > 0) {
+        bgCtx.strokeStyle = `${rgbPrefix}${CONFIG.gridOpacity})`;
+        bgCtx.lineWidth = 1;
+        bgCtx.beginPath();
+        for (let cCol = 0; cCol <= cols; cCol++) {
+          const x = Math.round(offX + cCol * CONFIG.cellSize) + 0.5;
+          bgCtx.moveTo(x, 0);
+          bgCtx.lineTo(x, h);
+        }
+        for (let cRow = 0; cRow <= rows; cRow++) {
+          const y = Math.round(offY + cRow * CONFIG.cellSize) + 0.5;
+          bgCtx.moveTo(0, y);
+          bgCtx.lineTo(w, y);
+        }
+        bgCtx.stroke();
+      }
+    }
+
+    function blitStaticLattice() {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (CONFIG.gridOpacity > 0 && bgCanvas.width > 0 && bgCanvas.height > 0) {
+        ctx.drawImage(bgCanvas, 0, 0);
+      }
+      ctx.restore();
+    }
 
     function rebuild() {
       w = window.innerWidth;
@@ -78,133 +126,145 @@
 
       alphas = new Float32Array(cols * rows);
       touched = new Float64Array(cols * rows);
+      activeCells.clear();
 
-      wake();
+      drawStaticLattice();
+      blitStaticLattice();
     }
 
-    function cellCenter(i) {
-      const cx = offX + (i % cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
-      const cy = offY + Math.floor(i / cols) * CONFIG.cellSize + CONFIG.cellSize / 2;
-      return [cx, cy];
-    }
-
-    function energize(x, y) {
+    function energize(x, y, now) {
       const r = Math.max(CONFIG.radius, 1);
-      const ease = FALLOFF_CURVES[CONFIG.falloff] ?? FALLOFF_CURVES.linear;
-      const now = performance.now();
+      const rSq = r * r;
+      const ease = FALLOFF_CURVES[CONFIG.falloff] || FALLOFF_CURVES.linear;
+      const cs = CONFIG.cellSize;
+      const half = cs * 0.5;
 
-      const minCol = Math.max(0, Math.floor((x - r - offX) / CONFIG.cellSize));
-      const maxCol = Math.min(cols - 1, Math.floor((x + r - offX) / CONFIG.cellSize));
-      const minRow = Math.max(0, Math.floor((y - r - offY) / CONFIG.cellSize));
-      const maxRow = Math.min(rows - 1, Math.floor((y + r - offY) / CONFIG.cellSize));
+      const minCol = Math.max(0, Math.floor((x - r - offX) / cs));
+      const maxCol = Math.min(cols - 1, Math.floor((x + r - offX) / cs));
+      const minRow = Math.max(0, Math.floor((y - r - offY) / cs));
+      const maxRow = Math.min(rows - 1, Math.floor((y + r - offY) / cs));
 
       for (let cRow = minRow; cRow <= maxRow; cRow++) {
+        const cy = offY + cRow * cs + half;
+        const dy = cy - y;
+        const dySq = dy * dy;
         for (let cCol = minCol; cCol <= maxCol; cCol++) {
-          const i = cRow * cols + cCol;
-          const [cx, cy] = cellCenter(i);
-          const dist = Math.hypot(cx - x, cy - y);
-          if (dist > r) continue;
+          const cx = offX + cCol * cs + half;
+          const dx = cx - x;
+          const distSq = dx * dx + dySq;
+          if (distSq > rSq) continue;
 
+          const dist = Math.sqrt(distSq);
+          const i = cRow * cols + cCol;
           const level = ease(1 - dist / r) * CONFIG.maxOpacity;
           if (level > alphas[i]) {
             alphas[i] = level;
             touched[i] = now;
+            activeCells.add(i);
           } else if (level > 0) {
             touched[i] = now;
+            activeCells.add(i);
           }
         }
       }
     }
 
     function draw(now) {
-      const dt = Math.min(now - lastFrame, 50);
-      lastFrame = now;
-      ctx.clearRect(0, 0, w, h);
-      const [cr, cg, cb] = hexToRgb(CONFIG.color);
-
-      // 1. Ambient faint static lattice
-      if (CONFIG.gridOpacity > 0) {
-        ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, ${CONFIG.gridOpacity})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let cCol = 0; cCol <= cols; cCol++) {
-          const x = Math.round(offX + cCol * CONFIG.cellSize) + 0.5;
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, h);
-        }
-        for (let cRow = 0; cRow <= rows; cRow++) {
-          const y = Math.round(offY + cRow * CONFIG.cellSize) + 0.5;
-          ctx.moveTo(0, y);
-          ctx.lineTo(w, y);
-        }
-        ctx.stroke();
+      raf = 0;
+      if (document.hidden) {
+        running = false;
+        return;
       }
 
-      let anyVisible = false;
+      const dt = Math.min(now - lastFrame, 50);
+      lastFrame = now;
+
+      if (pendingPointer) {
+        energize(pendingPointer.x, pendingPointer.y, now);
+        pendingPointer = null;
+      }
+
+      blitStaticLattice();
+
       const fadeStep = dt / Math.max(CONFIG.fadeDuration, 16);
-      const half = CONFIG.cellSize / 2;
+      const cs = CONFIG.cellSize;
+      const s = cs - 1;
+      const rad = CONFIG.cellRadius;
+      const hasRoundRect = rad > 0 && typeof ctx.roundRect === 'function';
 
-      // 2. Lit cells rendering (cursor hover glow only)
-      for (let i = 0; i < alphas.length; i++) {
+      ctx.lineWidth = CONFIG.lineWidth;
+
+      activeCells.forEach(i => {
         let a = alphas[i];
-        if (a <= 0) continue;
-
         if (now - touched[i] > CONFIG.holdTime) {
           a = Math.max(0, a - fadeStep);
           alphas[i] = a;
-          if (a <= 0) continue;
         }
-        anyVisible = true;
+        if (a <= 0.005) {
+          alphas[i] = 0;
+          activeCells.delete(i);
+          return;
+        }
 
-        const [cx, cy] = cellCenter(i);
-        const gradient = ctx.createRadialGradient(cx, cy, half * 0.1, cx, cy, CONFIG.cellSize);
-        gradient.addColorStop(0, `rgba(${cr}, ${cg}, ${cb}, ${a})`);
-        gradient.addColorStop(1, `rgba(${cr}, ${cg}, ${cb}, 0)`);
-
-        const x = cx - half + 0.5;
-        const y = cy - half + 0.5;
-        const s = CONFIG.cellSize - 1;
+        const cCol = i % cols;
+        const cRow = (i - cCol) / cols;
+        const x = offX + cCol * cs + 0.5;
+        const y = offY + cRow * cs + 0.5;
 
         ctx.beginPath();
-        if (CONFIG.cellRadius > 0) {
-          ctx.roundRect(x, y, s, s, CONFIG.cellRadius);
+        if (hasRoundRect) {
+          ctx.roundRect(x, y, s, s, rad);
         } else {
           ctx.rect(x, y, s, s);
         }
 
         if (CONFIG.fillOpacity > 0) {
-          ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${a * CONFIG.fillOpacity})`;
+          ctx.fillStyle = `${rgbPrefix}${(a * CONFIG.fillOpacity).toFixed(3)})`;
           ctx.fill();
         }
 
-        ctx.strokeStyle = gradient;
-        ctx.lineWidth = CONFIG.lineWidth;
+        ctx.strokeStyle = `${rgbPrefix}${(a * 0.72).toFixed(3)})`;
         ctx.stroke();
-      }
+      });
 
-      if (anyVisible) {
+      if (activeCells.size > 0 || pendingPointer) {
         raf = requestAnimationFrame(draw);
       } else {
         running = false;
-        if (CONFIG.gridOpacity <= 0) ctx.clearRect(0, 0, w, h);
       }
     }
 
     function wake() {
-      if (running) return;
+      if (running || document.hidden) return;
       running = true;
       lastFrame = performance.now();
       raf = requestAnimationFrame(draw);
     }
 
-    // Reacts ONLY when hovering cursor. Zero reaction to clicks.
-    window.addEventListener('pointermove', (e) => {
-      energize(e.clientX, e.clientY);
-      wake();
-    }, { passive: true });
-
-    window.addEventListener('resize', rebuild, { passive: true });
     rebuild();
+
+    // Only animate hover cells on desktop fine-pointer devices with motion enabled
+    if (!prefersReducedMotion && !isTouchDevice) {
+      window.addEventListener('pointermove', (e) => {
+        pendingPointer = { x: e.clientX, y: e.clientY };
+        wake();
+      }, { passive: true });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        running = false;
+      } else if (!document.hidden && activeCells.size > 0) {
+        wake();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(rebuild, 120);
+    }, { passive: true });
   }
 
   if (document.readyState === 'loading') {

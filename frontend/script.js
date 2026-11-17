@@ -47,33 +47,43 @@
    11. Chat bubble + mini mascot
    ========================================================== */
 
-/* ── 1. Matrix rain background canvas ─────────────── */
+/* ── 1. Matrix rain background canvas (Visibility-Aware & Throttled) ──── */
 (function initMatrixRain() {
   const canvas = document.getElementById('matrix-canvas');
   if (!canvas) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
   const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{}[]()<>=+-*/%&|!?;:.,';
   let cols, drops;
   const FONT_SIZE = 13;
   const COLORS = ['#7c3aed', '#ec4899', '#06b6d4', '#f59e0b'];
+  const FRAME_INTERVAL = 65; // ~15fps ambient rain
+  let rafId = 0;
+  let lastDraw = 0;
+  let resizeTimer = null;
 
   function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     cols = Math.floor(canvas.width / FONT_SIZE);
     drops = Array.from({ length: cols }, () => Math.random() * -50);
+    ctx.font = `${FONT_SIZE}px 'Space Mono', monospace`;
   }
 
-  function draw() {
-    // Fade trail
+  function draw(now) {
+    rafId = 0;
+    if (document.hidden) return;
+    rafId = requestAnimationFrame(draw);
+    if (now - lastDraw < FRAME_INTERVAL) return;
+    lastDraw = now;
+
     ctx.fillStyle = 'rgba(10, 10, 10, 0.07)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.font = `${FONT_SIZE}px 'Space Mono', monospace`;
-
     for (let i = 0; i < cols; i++) {
-      // Only draw ~8% of columns at any time (sparse, like Jules)
       if (Math.random() > 0.08) continue;
 
       const char = CHARS[Math.floor(Math.random() * CHARS.length)];
@@ -82,7 +92,6 @@
       ctx.globalAlpha = 0.4 + Math.random() * 0.4;
       ctx.fillText(char, i * FONT_SIZE, drops[i] * FONT_SIZE);
 
-      // Reset drop at bottom
       if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) {
         drops[i] = 0;
       }
@@ -92,8 +101,22 @@
   }
 
   resize();
-  window.addEventListener('resize', resize, { passive: true });
-  setInterval(draw, 60);
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
+  }, { passive: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    } else if (!document.hidden && !rafId) {
+      lastDraw = 0;
+      rafId = requestAnimationFrame(draw);
+    }
+  });
+
+  rafId = requestAnimationFrame(draw);
 })();
 
 /* ── 2. Hero ASCII dynamic logo canvas (exact Jules implementation) ── */
@@ -428,16 +451,30 @@
   }
 
   function loop(time) {
+    animFrameId = 0;
+    if (isPaused || document.hidden) return;
     if (!lastTime) lastTime = time;
     const dt = Math.min(time - lastTime, 100);
     lastTime = time;
 
-    if (!isPaused) {
-      updatePhysics(dt);
-      updateRobot();
-      render();
-    }
+    updatePhysics(dt);
+    updateRobot();
+    render();
     animFrameId = requestAnimationFrame(loop);
+  }
+
+  function startLoop() {
+    if (!animFrameId && !isPaused && !document.hidden) {
+      lastTime = 0;
+      animFrameId = requestAnimationFrame(loop);
+    }
+  }
+
+  function stopLoop() {
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = 0;
+    }
   }
 
   canvas.addEventListener('click', (e) => {
@@ -458,15 +495,26 @@
 
   const observer = new IntersectionObserver(([entry]) => {
     isPaused = !entry.isIntersecting;
+    if (isPaused) stopLoop();
+    else startLoop();
   }, { threshold: 0.05 });
   observer.observe(canvas);
 
-  window.addEventListener('resize', resizeCanvas, { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopLoop();
+    else startLoop();
+  });
+
+  let heroResizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(heroResizeTimer);
+    heroResizeTimer = setTimeout(resizeCanvas, 150);
+  }, { passive: true });
 
   resizeCanvas();
   initInitialEjections();
   initRobot();
-  animFrameId = requestAnimationFrame(loop);
+  startLoop();
 })();
 
 /* ── 3. Floating matrix char sparks ───────────────── */
@@ -526,41 +574,70 @@
     let currentRot = 0;
     let targetRot = 0;
     let hoveredCard = null;
+    let pupilInView = false;
+    let pupilRaf = 0;
+    let cachedPupilRect = null;
+    let pupilRectDirty = true;
 
-    // Track mouse everywhere across the screen when mascot is in view
+    const pupilObserver = new IntersectionObserver(([entry]) => {
+      pupilInView = entry.isIntersecting;
+      if (pupilInView) {
+        pupilRectDirty = true;
+        wakePupil();
+      } else if (pupilRaf) {
+        cancelAnimationFrame(pupilRaf);
+        pupilRaf = 0;
+      }
+    }, { rootMargin: '120px 0px' });
+    pupilObserver.observe(mascotCenter || pupil);
+
+    window.addEventListener('scroll', () => { pupilRectDirty = true; }, { passive: true });
+    window.addEventListener('resize', () => { pupilRectDirty = true; }, { passive: true });
+
+    function getPupilCenter() {
+      if (pupilRectDirty || !cachedPupilRect) {
+        cachedPupilRect = pupil.getBoundingClientRect();
+        pupilRectDirty = false;
+      }
+      return {
+        x: cachedPupilRect.left + cachedPupilRect.width * 0.5,
+        y: cachedPupilRect.top + cachedPupilRect.height * 0.5
+      };
+    }
+
+    function wakePupil() {
+      if (!pupilRaf && pupilInView && !document.hidden) {
+        pupilRaf = requestAnimationFrame(updatePupil);
+      }
+    }
+
+    // Track mouse only when mascot is in view
     window.addEventListener('mousemove', (e) => {
-      if (hoveredCard) return; // Snapped to card
+      if (!pupilInView || hoveredCard) return;
 
-      const rect = pupil.getBoundingClientRect();
-      // Skip calculations if mascot section is scrolled far off-screen
-      if (rect.bottom < -120 || rect.top > window.innerHeight + 120) return;
-
-      const eyeCenterX = rect.left + rect.width / 2;
-      const eyeCenterY = rect.top + rect.height / 2;
-
-      const dx = e.clientX - eyeCenterX;
-      const dy = e.clientY - eyeCenterY;
+      const center = getPupilCenter();
+      const dx = e.clientX - center.x;
+      const dy = e.clientY - center.y;
       const dist = Math.hypot(dx, dy);
 
       if (dist > 0) {
         const angle = Math.atan2(dy, dx);
-        const maxOffset = 8.0; // Visibly distinct tracking within socket
+        const maxOffset = 8.0;
         const factor = Math.min(dist / 380, 1);
         targetX = Math.cos(angle) * maxOffset * factor;
         targetY = Math.sin(angle) * maxOffset * factor;
-        // Pupil rotates dynamically to point in the direction of cursor
         targetRot = (angle * 180 / Math.PI);
+        wakePupil();
       }
     }, { passive: true });
 
-    // When cursor leaves the window or document, gently return to center
     document.addEventListener('mouseleave', () => {
       targetX = 0;
       targetY = 0;
       targetRot = 0;
+      wakePupil();
     });
 
-    // Specific card hover snaps with aligned gaze rotation
     const cardTargets = {
       'feat-search': { x: -7.5, y: -5.5, rot: -135 },
       'feat-deps': { x: -7.5, y: 5.0, rot: 145 },
@@ -576,53 +653,55 @@
           targetX = offset.x;
           targetY = offset.y;
           targetRot = offset.rot;
-        });
+          wakePupil();
+        }, { passive: true });
         card.addEventListener('mouseleave', () => {
           if (hoveredCard === id) {
             hoveredCard = null;
           }
-        });
+        }, { passive: true });
       }
     });
 
-    // Extra sensitive tracking & rotation when hovering directly on mascot
     if (mascotCenter) {
       mascotCenter.addEventListener('mousemove', (e) => {
-        const rect = pupil.getBoundingClientRect();
-        const eyeCenterX = rect.left + rect.width / 2;
-        const eyeCenterY = rect.top + rect.height / 2;
-        const dx = e.clientX - eyeCenterX;
-        const dy = e.clientY - eyeCenterY;
+        if (!pupilInView) return;
+        const center = getPupilCenter();
+        const dx = e.clientX - center.x;
+        const dy = e.clientY - center.y;
         const dist = Math.hypot(dx, dy);
         if (dist > 0) {
           const angle = Math.atan2(dy, dx);
           targetX = Math.cos(angle) * 8.5;
           targetY = Math.sin(angle) * 8.5;
           targetRot = (angle * 180 / Math.PI);
+          wakePupil();
         }
-      });
+      }, { passive: true });
     }
 
     function updatePupil() {
-      // Smooth lerp for position
+      pupilRaf = 0;
+      if (!pupilInView || document.hidden) return;
+
       currentX += (targetX - currentX) * 0.18;
       currentY += (targetY - currentY) * 0.18;
 
-      // Shortest-arc interpolation for rotation
       let diffRot = (targetRot - currentRot) % 360;
       if (diffRot > 180) diffRot -= 360;
       if (diffRot < -180) diffRot += 360;
       currentRot += diffRot * 0.18;
 
-      // Force inline style with !important so CSS animations never override it
       pupil.style.setProperty(
         'transform',
         `translate(calc(-50% + ${currentX.toFixed(2)}px), calc(-50% + ${currentY.toFixed(2)}px)) rotate(${currentRot.toFixed(1)}deg)`,
         'important'
       );
-      requestAnimationFrame(updatePupil);
+
+      if (Math.abs(targetX - currentX) > 0.03 || Math.abs(targetY - currentY) > 0.03 || Math.abs(diffRot) > 0.2) {
+        pupilRaf = requestAnimationFrame(updatePupil);
+      }
     }
-    updatePupil();
   }
 
   // Micro electrical impulses distributed evenly across the entire mechanical half
@@ -780,13 +859,18 @@
         }
       }
 
+      let sparksVisible = false;
+      let sparksRaf = 0;
+
       function drawSparks() {
+        sparksRaf = 0;
+        if (!sparksVisible || document.hidden) return;
+
         ctx.clearRect(0, 0, W, H);
 
         for (let i = sparks.length - 1; i >= 0; i--) {
           const s = sparks[i];
 
-          // Burst cleanup
           if (sparks.length > TOTAL_BASE && s.life >= s.maxLife) {
             sparks.splice(i, 1);
             continue;
@@ -795,21 +879,14 @@
           const nextX = s.x + s.vx;
           const nextY = s.y + s.vy;
 
-          if (isInside(nextX, s.y)) {
-            s.x = nextX;
-          } else {
-            s.vx *= -1;
-          }
+          if (isInside(nextX, s.y)) s.x = nextX;
+          else s.vx *= -1;
 
-          if (isInside(s.x, nextY)) {
-            s.y = nextY;
-          } else {
-            s.vy *= -1;
-          }
+          if (isInside(s.x, nextY)) s.y = nextY;
+          else s.vy *= -1;
 
           s.life++;
 
-          // Respawn in assigned zone to guarantee continuous uniform coverage across all sections
           if (!isInside(s.x, s.y) || s.life > s.maxLife) {
             const fresh = createSpark(s.zone, false);
             s.x = fresh.x;
@@ -823,20 +900,42 @@
           }
 
           const progress = s.life / s.maxLife;
-          const alpha = Math.sin(progress * Math.PI) * 0.95;
+          const alpha = Math.max(0.3, Math.min(1, Math.sin(progress * Math.PI) * 0.95));
+          const rx = Math.round(s.x);
+          const ry = Math.round(s.y);
+          const rs = Math.round(s.size);
 
-          ctx.shadowColor = s.color;
-          ctx.shadowBlur = 4;
+          // Fast glow halo without expensive GPU shadowBlur
           ctx.fillStyle = s.color;
-          ctx.globalAlpha = Math.max(0.3, Math.min(1, alpha));
-          ctx.fillRect(Math.round(s.x), Math.round(s.y), Math.round(s.size), Math.round(s.size));
-          ctx.shadowBlur = 0;
+          ctx.globalAlpha = alpha * 0.28;
+          ctx.fillRect(rx - 1, ry - 1, rs + 2, rs + 2);
+          ctx.globalAlpha = alpha;
+          ctx.fillRect(rx, ry, rs, rs);
         }
 
         ctx.globalAlpha = 1.0;
-        requestAnimationFrame(drawSparks);
+        sparksRaf = requestAnimationFrame(drawSparks);
       }
-      drawSparks();
+
+      const sparksObserver = new IntersectionObserver(([entry]) => {
+        sparksVisible = entry.isIntersecting;
+        if (sparksVisible && !sparksRaf && !document.hidden) {
+          sparksRaf = requestAnimationFrame(drawSparks);
+        } else if (!sparksVisible && sparksRaf) {
+          cancelAnimationFrame(sparksRaf);
+          sparksRaf = 0;
+        }
+      }, { threshold: 0.05 });
+      sparksObserver.observe(energyCanvas);
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && sparksRaf) {
+          cancelAnimationFrame(sparksRaf);
+          sparksRaf = 0;
+        } else if (!document.hidden && sparksVisible && !sparksRaf) {
+          sparksRaf = requestAnimationFrame(drawSparks);
+        }
+      });
     }
 
     // Initialize when image is available
@@ -1194,34 +1293,77 @@
       });
     });
 
-    requestAnimationFrame(render);
+    dotGridRaf = requestAnimationFrame(render);
   }
 
-  window.addEventListener('resize', resize, { passive: true });
+  let dotGridVisible = false;
+  let dotGridRaf = 0;
+  let dotGridResizeTimer = null;
+
+  function startDotGrid() {
+    if (!dotGridRaf && dotGridVisible && !document.hidden) {
+      dotGridRaf = requestAnimationFrame(render);
+    }
+  }
+
+  function stopDotGrid() {
+    if (dotGridRaf) {
+      cancelAnimationFrame(dotGridRaf);
+      dotGridRaf = 0;
+    }
+  }
+
+  const dotGridObserver = new IntersectionObserver(([entry]) => {
+    dotGridVisible = entry.isIntersecting;
+    if (dotGridVisible) startDotGrid();
+    else stopDotGrid();
+  }, { threshold: 0.02 });
+  dotGridObserver.observe(canvas);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopDotGrid();
+    else startDotGrid();
+  });
+
+  window.addEventListener('resize', () => {
+    clearTimeout(dotGridResizeTimer);
+    dotGridResizeTimer = setTimeout(resize, 150);
+  }, { passive: true });
 
   resize();
-  requestAnimationFrame(render);
 })();
 
-/* ── 7. Navbar scroll effect ──────────────────────── */
+/* ── 7. Navbar scroll effect (rAF-Throttled & Cached) ────── */
 (function initNavbar() {
   const nav = document.getElementById('navbar');
   if (!nav) return;
-  const links = nav.querySelectorAll('.nav-link');
+  const links = Array.from(nav.querySelectorAll('.nav-link'));
+  const sections = Array.from(document.querySelectorAll('section[id]'));
+  let navRaf = 0;
+  let lastCurrent = '';
+
+  function onScroll() {
+    navRaf = 0;
+    const scrollY = window.scrollY;
+    nav.classList.toggle('scrolled', scrollY > 30);
+
+    let current = '';
+    for (let i = 0; i < sections.length; i++) {
+      if (scrollY >= sections[i].offsetTop - 100) {
+        current = sections[i].id;
+      }
+    }
+    if (current !== lastCurrent) {
+      lastCurrent = current;
+      const targetHref = `#${current}`;
+      for (let i = 0; i < links.length; i++) {
+        links[i].classList.toggle('active', links[i].getAttribute('href') === targetHref);
+      }
+    }
+  }
 
   window.addEventListener('scroll', () => {
-    nav.classList.toggle('scrolled', window.scrollY > 30);
-
-    // Active section highlighting
-    const sections = document.querySelectorAll('section[id]');
-    let current = '';
-    sections.forEach(s => {
-      const top = s.offsetTop - 100;
-      if (window.scrollY >= top) current = s.id;
-    });
-    links.forEach(l => {
-      l.classList.toggle('active', l.getAttribute('href') === `#${current}`);
-    });
+    if (!navRaf) navRaf = requestAnimationFrame(onScroll);
   }, { passive: true });
 })();
 
@@ -1393,32 +1535,79 @@
   io.observe(diff);
 })();
 
-/* ── 12. Pixel cursor glow on hero ───────────────── */
+/* ── 12. Pixel cursor glow on hero (rAF-Throttled & Cached) ─ */
 (function initPixelCursor() {
   const hero = document.querySelector('.hero');
   if (!hero) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce), (hover: none), (pointer: coarse)').matches) return;
+
+  let cachedRect = null;
+  let dirty = true;
+  let rafId = 0;
+  let mx = 0, my = 0;
+
+  window.addEventListener('scroll', () => { dirty = true; }, { passive: true });
+  window.addEventListener('resize', () => { dirty = true; }, { passive: true });
+
+  function flush() {
+    rafId = 0;
+    if (dirty || !cachedRect) {
+      cachedRect = hero.getBoundingClientRect();
+      dirty = false;
+    }
+    hero.style.setProperty('--cx', `${(mx - cachedRect.left).toFixed(1)}px`);
+    hero.style.setProperty('--cy', `${(my - cachedRect.top).toFixed(1)}px`);
+  }
 
   hero.addEventListener('mousemove', (e) => {
-    const rect = hero.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    hero.style.setProperty('--cx', `${x}px`);
-    hero.style.setProperty('--cy', `${y}px`);
-  });
+    mx = e.clientX;
+    my = e.clientY;
+    if (!rafId) rafId = requestAnimationFrame(flush);
+  }, { passive: true });
 })();
 
-/* ── 13. Zigzag divider draw ─────────────────────── */
+/* ── 13. Zigzag divider draw (Visibility-Gated Single Loop) ── */
 (function initZigzags() {
-  // Already handled by CSS background-image SVG
-  // Add subtle animation
-  document.querySelectorAll('.step-zigzag').forEach((el, i) => {
-    let pos = 0;
-    function animate() {
-      pos += 0.3;
-      el.style.backgroundPositionX = `${pos}px`;
-      requestAnimationFrame(animate);
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const zigzags = Array.from(document.querySelectorAll('.step-zigzag'));
+  if (!zigzags.length) return;
+
+  const visibleSet = new Set();
+  let pos = 0;
+  let rafId = 0;
+  let lastTick = 0;
+
+  function animate(now) {
+    rafId = 0;
+    if (visibleSet.size === 0 || document.hidden) return;
+    rafId = requestAnimationFrame(animate);
+    if (now - lastTick < 33) return; // ~30fps is plenty smooth for subtle divider drift
+    lastTick = now;
+    pos = (pos + 0.6) % 240;
+    visibleSet.forEach(el => {
+      el.style.backgroundPositionX = `${pos.toFixed(1)}px`;
+    });
+  }
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) visibleSet.add(entry.target);
+      else visibleSet.delete(entry.target);
+    });
+    if (visibleSet.size > 0 && !rafId && !document.hidden) {
+      rafId = requestAnimationFrame(animate);
     }
-    animate();
+  }, { threshold: 0.01 });
+
+  zigzags.forEach(el => io.observe(el));
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    } else if (!document.hidden && visibleSet.size > 0 && !rafId) {
+      rafId = requestAnimationFrame(animate);
+    }
   });
 })();
 
@@ -1624,6 +1813,22 @@ function toggleFullscreen() {
     }
   });
 
+  // Only decode/play walkthrough video when scrolled into view
+  const videoObserver = new IntersectionObserver(([entry]) => {
+    const btn = document.getElementById('btn-video-play');
+    if (entry.isIntersecting) {
+      if (isPlaying && video.paused) {
+        video.play().catch(() => { });
+        if (btn) btn.textContent = '⏸ Pause';
+      }
+    } else {
+      if (!video.paused) {
+        video.pause();
+      }
+    }
+  }, { threshold: 0.15 });
+  videoObserver.observe(video);
+
   video.addEventListener('play', () => {
     isPlaying = true;
     const btn = document.getElementById('btn-video-play');
@@ -1642,13 +1847,19 @@ function toggleFullscreen() {
   const buttons = document.querySelectorAll('.btn-solid-pixel, .btn-outline-pixel, .nav-ctas a');
   if (!buttons.length) return;
 
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce), (hover: none), (pointer: coarse)').matches) {
+    return;
+  }
+
   const DISTANCE = 140;      // Proximity distance in px
-  const MAX_SCALE = 1.10;     // Max magnification
+  const MAX_SCALE = 1.08;     // Max magnification
   const STIFFNESS = 0.22;
   const DAMPING = 0.72;
 
   const buttonStates = Array.from(buttons).map(btn => ({
     el: btn,
+    cx: 0,
+    cy: 0,
     scale: 1,
     targetScale: 1,
     transX: 0,
@@ -1658,35 +1869,52 @@ function toggleFullscreen() {
     vx: 0,
     vy: 0,
     vs: 0,
-    isHovered: false
+    isHovered: false,
+    hasTransform: false
   }));
 
+  let rectsDirty = true;
   let isTicking = false;
   let mouse = { x: -9999, y: -9999 };
 
+  function measureCenters() {
+    for (let i = 0; i < buttonStates.length; i++) {
+      const b = buttonStates[i];
+      const rect = b.el.getBoundingClientRect();
+      b.cx = rect.left + rect.width * 0.5;
+      b.cy = rect.top + rect.height * 0.5;
+    }
+    rectsDirty = false;
+  }
+
+  window.addEventListener('scroll', () => { rectsDirty = true; }, { passive: true });
+  window.addEventListener('resize', () => { rectsDirty = true; }, { passive: true });
+
   function update() {
+    if (rectsDirty) measureCenters();
     let active = false;
 
-    buttonStates.forEach(b => {
+    for (let i = 0; i < buttonStates.length; i++) {
+      const b = buttonStates[i];
       if (b.isHovered) {
         b.targetScale = MAX_SCALE;
         b.targetTransX = 0;
         b.targetTransY = -2;
       } else {
-        const rect = b.el.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const dx = mouse.x - centerX;
-        const dy = mouse.y - centerY;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < DISTANCE) {
-          // Smooth cosine curve matching React Bits Dock
-          const norm = (1 + Math.cos((dist / DISTANCE) * Math.PI)) / 2;
-          b.targetScale = 1 + (MAX_SCALE - 1) * norm;
-          // Subtle magnetic pull toward cursor (max 4px)
-          b.targetTransX = (dx / DISTANCE) * 4 * norm;
-          b.targetTransY = (dy / DISTANCE) * 4 * norm;
+        const dx = mouse.x - b.cx;
+        const dy = mouse.y - b.cy;
+        if (Math.abs(dx) < DISTANCE && Math.abs(dy) < DISTANCE) {
+          const dist = Math.hypot(dx, dy);
+          if (dist < DISTANCE) {
+            const norm = (1 + Math.cos((dist / DISTANCE) * Math.PI)) * 0.5;
+            b.targetScale = 1 + (MAX_SCALE - 1) * norm;
+            b.targetTransX = (dx / DISTANCE) * 4 * norm;
+            b.targetTransY = (dy / DISTANCE) * 4 * norm;
+          } else {
+            b.targetScale = 1;
+            b.targetTransX = 0;
+            b.targetTransY = 0;
+          }
         } else {
           b.targetScale = 1;
           b.targetTransX = 0;
@@ -1694,7 +1922,6 @@ function toggleFullscreen() {
         }
       }
 
-      // Spring physics simulation
       const forceS = (b.targetScale - b.scale) * STIFFNESS;
       b.vs = (b.vs + forceS) * DAMPING;
       b.scale += b.vs;
@@ -1713,12 +1940,14 @@ function toggleFullscreen() {
         Math.abs(b.transY) > 0.05 ||
         Math.abs(b.vs) > 0.001
       ) {
-        b.el.style.transform = `scale(${b.scale.toFixed(3)}) translate(${b.transX.toFixed(1)}px, ${b.transY.toFixed(1)}px)`;
+        b.el.style.transform = `translate3d(${b.transX.toFixed(1)}px, ${b.transY.toFixed(1)}px, 0) scale(${b.scale.toFixed(3)})`;
+        b.hasTransform = true;
         active = true;
-      } else {
+      } else if (b.hasTransform) {
         b.el.style.transform = '';
+        b.hasTransform = false;
       }
-    });
+    }
 
     if (active) {
       requestAnimationFrame(update);
@@ -1739,11 +1968,27 @@ function toggleFullscreen() {
   window.addEventListener('mouseleave', () => {
     mouse.x = -9999;
     mouse.y = -9999;
+    if (!isTicking) {
+      isTicking = true;
+      requestAnimationFrame(update);
+    }
   });
 
   buttonStates.forEach(b => {
-    b.el.addEventListener('mouseenter', () => { b.isHovered = true; });
-    b.el.addEventListener('mouseleave', () => { b.isHovered = false; });
+    b.el.addEventListener('mouseenter', () => {
+      b.isHovered = true;
+      if (!isTicking) {
+        isTicking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+    b.el.addEventListener('mouseleave', () => {
+      b.isHovered = false;
+      if (!isTicking) {
+        isTicking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
   });
 })();
 
@@ -1893,31 +2138,46 @@ function toggleFullscreen() {
     currentLift += (targetLift - currentLift) * easeRate;
     currentStretch += (targetStretch - currentStretch) * easeRate;
 
-    const W = editor.clientWidth || editor.offsetWidth || 800;
-    const H = editor.clientHeight || editor.offsetHeight || 400;
+    const W = cachedEditorW || 800;
+    const H = cachedEditorH || 400;
 
     const pt = getPerimeterPoint(currentDist, W, H);
     const finalAngle = pt.edgeLean + currentWaddle;
     const scaleX = (pt.facing * (1 - currentStretch)).toFixed(3);
     const scaleY = (1 + currentStretch).toFixed(3);
 
-    // Anchor tentacle contact point (28px, 50px) right on the border edge (pt.x, pt.y)
     const posX = pt.x - 28;
     const posY = pt.y - 50;
 
     mascot.style.transform = `translate3d(${posX.toFixed(2)}px, ${posY.toFixed(2)}px, 0) rotate(${finalAngle.toFixed(2)}deg) translateY(${-currentLift.toFixed(2)}px) scale(${scaleX}, ${scaleY})`;
 
-    animFrameId = requestAnimationFrame(step);
+    if (patrolVisible && !document.hidden) {
+      animFrameId = requestAnimationFrame(step);
+    } else {
+      animFrameId = 0;
+    }
   }
 
-  // Interactive hover and click handlers
-  mascot.addEventListener('mouseenter', () => {
-    isHovered = true;
-  });
+  let cachedEditorW = editor.clientWidth || editor.offsetWidth || 800;
+  let cachedEditorH = editor.clientHeight || editor.offsetHeight || 400;
+  let patrolVisible = true;
 
-  mascot.addEventListener('mouseleave', () => {
-    isHovered = false;
-  });
+  function startPatrol() {
+    if (!animFrameId && patrolVisible && !document.hidden) {
+      lastTimestamp = 0;
+      animFrameId = requestAnimationFrame(step);
+    }
+  }
+
+  function stopPatrol() {
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = 0;
+    }
+  }
+
+  mascot.addEventListener('mouseenter', () => { isHovered = true; }, { passive: true });
+  mascot.addEventListener('mouseleave', () => { isHovered = false; }, { passive: true });
 
   mascot.addEventListener('click', () => {
     const img = mascot.querySelector('.peeking-octopus-img');
@@ -1928,10 +2188,9 @@ function toggleFullscreen() {
     }, 300);
   });
 
-  // Handle dynamic resize smoothly
   if (window.ResizeObserver) {
-    let lastW = editor.clientWidth;
-    let lastH = editor.clientHeight;
+    let lastW = cachedEditorW;
+    let lastH = cachedEditorH;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const cr = entry.contentRect;
@@ -1939,6 +2198,8 @@ function toggleFullscreen() {
           const oldPt = getPerimeterPoint(currentDist, lastW, lastH);
           lastW = cr.width;
           lastH = cr.height;
+          cachedEditorW = lastW;
+          cachedEditorH = lastH;
           const newPt = getPerimeterPoint(0, lastW, lastH);
           if (oldPt.P > 0 && newPt.P > 0) {
             currentDist = (currentDist / oldPt.P) * newPt.P;
@@ -1949,7 +2210,19 @@ function toggleFullscreen() {
     ro.observe(editor);
   }
 
-  animFrameId = requestAnimationFrame(step);
+  const patrolObserver = new IntersectionObserver(([entry]) => {
+    patrolVisible = entry.isIntersecting;
+    if (patrolVisible) startPatrol();
+    else stopPatrol();
+  }, { threshold: 0.02 });
+  patrolObserver.observe(editor);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopPatrol();
+    else startPatrol();
+  });
+
+  startPatrol();
 })();
 
 // ── Footer 3D Social Buttons Tooltip Controller ──────────

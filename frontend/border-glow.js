@@ -1,9 +1,13 @@
 /**
- * PLUCK — React Bits <BorderGlow /> Engine (Vanilla JS Variant)
- * Replicates the React Bits BorderGlow component behavior across all cards, panels, and containers.
+ * PLUCK — React Bits <BorderGlow /> Engine (High-Performance Vanilla JS Variant)
+ * Optimized with cached card rects, rAF-batched CSS variable writes,
+ * touch-device skip, and debounced MutationObserver.
  */
 (function initBorderGlowEngine() {
   'use strict';
+
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouchDevice = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
 
   function parseHSL(hslStr) {
     if (!hslStr) return { h: 268, s: 85, l: 75 };
@@ -39,7 +43,7 @@
   }
 
   const DEFAULT_COLORS = ['#c084fc', '#f472b6', '#38bdf8'];
-  const DEFAULT_GLOW = '268 85 75'; // Soft Indigo/Violet glow
+  const DEFAULT_GLOW = '268 85 75';
 
   const CARD_SELECTOR = [
     '.feat-card',
@@ -58,6 +62,9 @@
   ].join(', ');
 
   const initializedCards = new WeakSet();
+  let rectCacheVersion = 0;
+  window.addEventListener('scroll', () => { rectCacheVersion++; }, { passive: true });
+  window.addEventListener('resize', () => { rectCacheVersion++; }, { passive: true });
 
   function setupCard(card) {
     if (!card || initializedCards.has(card)) return;
@@ -67,7 +74,6 @@
       card.classList.add('border-glow-card');
     }
 
-    // Insert edge-light layer if not present
     let edgeLight = card.querySelector(':scope > .edge-light');
     if (!edgeLight) {
       edgeLight = document.createElement('span');
@@ -76,11 +82,10 @@
       card.prepend(edgeLight);
     }
 
-    // Set configuration variables
     const glowColor = card.dataset.glowColor || DEFAULT_GLOW;
     const colors = card.dataset.colors ? card.dataset.colors.split(',') : DEFAULT_COLORS;
     const sensitivity = parseInt(card.dataset.edgeSensitivity || '25', 10);
-    const radius = card.dataset.borderRadius || window.getComputedStyle(card).borderRadius || '6px';
+    const radius = card.dataset.borderRadius || '6px';
 
     card.style.setProperty('--border-radius', radius);
     card.style.setProperty('--edge-sensitivity', sensitivity);
@@ -96,13 +101,31 @@
       card.style.setProperty(k, v);
     }
 
-    // Real-time edge proximity & cursor angle math
-    function onPointerMove(e) {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const cx = rect.width / 2;
-      const cy = rect.height / 2;
+    if (prefersReducedMotion || isTouchDevice) return;
+
+    let cachedRect = null;
+    let cachedVersion = -1;
+    let rafId = 0;
+    let lastClientX = 0;
+    let lastClientY = 0;
+
+    function getRect() {
+      if (!cachedRect || cachedVersion !== rectCacheVersion) {
+        cachedRect = card.getBoundingClientRect();
+        cachedVersion = rectCacheVersion;
+      }
+      return cachedRect;
+    }
+
+    function flushGlow() {
+      rafId = 0;
+      const rect = getRect();
+      if (!rect || rect.width === 0 || rect.height === 0) return;
+
+      const x = lastClientX - rect.left;
+      const y = lastClientY - rect.top;
+      const cx = rect.width * 0.5;
+      const cy = rect.height * 0.5;
       const dx = x - cx;
       const dy = y - cy;
 
@@ -114,21 +137,35 @@
 
       let degrees = 0;
       if (dx !== 0 || dy !== 0) {
-        const radians = Math.atan2(dy, dx);
-        degrees = radians * (180 / Math.PI) + 90;
+        degrees = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
         if (degrees < 0) degrees += 360;
       }
 
-      card.style.setProperty('--edge-proximity', `${(edge * 100).toFixed(3)}`);
-      card.style.setProperty('--cursor-angle', `${degrees.toFixed(3)}deg`);
+      card.style.setProperty('--edge-proximity', `${(edge * 100).toFixed(1)}`);
+      card.style.setProperty('--cursor-angle', `${degrees.toFixed(1)}deg`);
     }
 
-    function onPointerLeave() {
+    card.addEventListener('pointerenter', () => {
+      cachedRect = card.getBoundingClientRect();
+      cachedVersion = rectCacheVersion;
+    }, { passive: true });
+
+    card.addEventListener('pointermove', (e) => {
+      lastClientX = e.clientX;
+      lastClientY = e.clientY;
+      if (!rafId) {
+        rafId = requestAnimationFrame(flushGlow);
+      }
+    }, { passive: true });
+
+    card.addEventListener('pointerleave', () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+      cachedRect = null;
       card.style.setProperty('--edge-proximity', '0');
-    }
-
-    card.addEventListener('pointermove', onPointerMove, { passive: true });
-    card.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    }, { passive: true });
   }
 
   function initAllCards() {
@@ -142,7 +179,6 @@
     initAllCards();
   }
 
-  // Observe dynamically mounted cards
   const observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
       for (const node of m.addedNodes) {
@@ -158,7 +194,9 @@
     }
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
 
   window.initBorderGlow = initAllCards;
 })();

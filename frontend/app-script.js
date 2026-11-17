@@ -3,29 +3,47 @@
    Matrix Rain, Cmd+K Palette, Toasts & Common Utilities
    ===================================================== */
 
-// ── 1. Matrix Rain Background ──────────────────────────
+// ── 1. Matrix Rain Background (Visibility-Aware & Throttled) ──────────
 (function initMatrix() {
   const canvas = document.getElementById('matrix-canvas');
   if (!canvas) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
   const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const CHARS = '0123456789ABCDEF{}()<>=+*!?;:_/~$#@';
+  const FONT_SIZE = 14;
+  const FRAME_INTERVAL = 65; // ~15fps smooth ambient rain without burning GPU
+  let cols = 0;
+  let drops = [];
+  let rafId = 0;
+  let lastDraw = 0;
+  let resizeTimer = null;
 
   function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / FONT_SIZE);
+    drops = Array.from({ length: cols }, () => Math.floor(Math.random() * -50));
+    ctx.font = `${FONT_SIZE}px "Space Mono", monospace`;
   }
   resize();
-  window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 150);
+  }, { passive: true });
 
-  const CHARS = '0123456789ABCDEF{}()<>=+*!?;:_/~$#@';
-  const FONT_SIZE = 14;
-  let cols = Math.floor(canvas.width / FONT_SIZE);
-  let drops = Array.from({ length: cols }, () => Math.floor(Math.random() * -50));
+  function draw(now) {
+    rafId = 0;
+    if (document.hidden) return;
+    rafId = requestAnimationFrame(draw);
+    if (now - lastDraw < FRAME_INTERVAL) return;
+    lastDraw = now;
 
-  function draw() {
     ctx.fillStyle = 'rgba(10, 10, 10, 0.08)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.font = `${FONT_SIZE}px "Space Mono", monospace`;
     for (let i = 0; i < drops.length; i++) {
       const ch = CHARS[Math.floor(Math.random() * CHARS.length)];
       ctx.fillStyle = Math.random() < 0.05 ? '#f472b6' : '#7c3aed';
@@ -38,7 +56,17 @@
     }
   }
 
-  setInterval(draw, 50);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    } else if (!document.hidden && !rafId) {
+      lastDraw = 0;
+      rafId = requestAnimationFrame(draw);
+    }
+  });
+
+  rafId = requestAnimationFrame(draw);
 })();
 
 // ── 2. Toast System ───────────────────────────────────
@@ -236,18 +264,24 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
   }
 }
 
-// ── 5. React Bits Dock Magnification Engine for Primary Buttons ──
+// ── 5. React Bits Dock Magnification Engine (Zero Layout Thrashing) ──
 (function initDockButtons() {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce), (hover: none), (pointer: coarse)').matches) {
+    return;
+  }
+
   const buttons = document.querySelectorAll('.btn-solid-pixel, .btn-outline-pixel, .topbar-actions a, .topbar-actions button, .view-mode-btn');
   if (!buttons.length) return;
 
   const DISTANCE = 140;
-  const MAX_SCALE = 1.10;
+  const MAX_SCALE = 1.08;
   const STIFFNESS = 0.22;
   const DAMPING = 0.72;
 
   const buttonStates = Array.from(buttons).map(btn => ({
     el: btn,
+    cx: 0,
+    cy: 0,
     scale: 1,
     targetScale: 1,
     transX: 0,
@@ -257,33 +291,54 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
     vx: 0,
     vy: 0,
     vs: 0,
-    isHovered: false
+    isHovered: false,
+    hasTransform: false
   }));
 
+  let rectsDirty = true;
   let isTicking = false;
   let mouse = { x: -9999, y: -9999 };
 
+  function measureCenters() {
+    // Batch ALL DOM layout reads together before any writes
+    for (let i = 0; i < buttonStates.length; i++) {
+      const b = buttonStates[i];
+      const rect = b.el.getBoundingClientRect();
+      b.cx = rect.left + rect.width * 0.5;
+      b.cy = rect.top + rect.height * 0.5;
+    }
+    rectsDirty = false;
+  }
+
+  window.addEventListener('scroll', () => { rectsDirty = true; }, { passive: true });
+  window.addEventListener('resize', () => { rectsDirty = true; }, { passive: true });
+
   function update() {
+    if (rectsDirty) measureCenters();
+
     let active = false;
 
-    buttonStates.forEach(b => {
+    for (let i = 0; i < buttonStates.length; i++) {
+      const b = buttonStates[i];
       if (b.isHovered) {
         b.targetScale = MAX_SCALE;
         b.targetTransX = 0;
         b.targetTransY = -2;
       } else {
-        const rect = b.el.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const dx = mouse.x - centerX;
-        const dy = mouse.y - centerY;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < DISTANCE) {
-          const norm = (1 + Math.cos((dist / DISTANCE) * Math.PI)) / 2;
-          b.targetScale = 1 + (MAX_SCALE - 1) * norm;
-          b.targetTransX = (dx / DISTANCE) * 4 * norm;
-          b.targetTransY = (dy / DISTANCE) * 4 * norm;
+        const dx = mouse.x - b.cx;
+        const dy = mouse.y - b.cy;
+        if (Math.abs(dx) < DISTANCE && Math.abs(dy) < DISTANCE) {
+          const dist = Math.hypot(dx, dy);
+          if (dist < DISTANCE) {
+            const norm = (1 + Math.cos((dist / DISTANCE) * Math.PI)) * 0.5;
+            b.targetScale = 1 + (MAX_SCALE - 1) * norm;
+            b.targetTransX = (dx / DISTANCE) * 4 * norm;
+            b.targetTransY = (dy / DISTANCE) * 4 * norm;
+          } else {
+            b.targetScale = 1;
+            b.targetTransX = 0;
+            b.targetTransY = 0;
+          }
         } else {
           b.targetScale = 1;
           b.targetTransX = 0;
@@ -309,12 +364,14 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
         Math.abs(b.transY) > 0.05 ||
         Math.abs(b.vs) > 0.001
       ) {
-        b.el.style.transform = `scale(${b.scale.toFixed(3)}) translate(${b.transX.toFixed(1)}px, ${b.transY.toFixed(1)}px)`;
+        b.el.style.transform = `translate3d(${b.transX.toFixed(1)}px, ${b.transY.toFixed(1)}px, 0) scale(${b.scale.toFixed(3)})`;
+        b.hasTransform = true;
         active = true;
-      } else {
+      } else if (b.hasTransform) {
         b.el.style.transform = '';
+        b.hasTransform = false;
       }
-    });
+    }
 
     if (active) {
       requestAnimationFrame(update);
@@ -335,11 +392,27 @@ function copySnippetText(text, label = 'Code copied to clipboard!') {
   window.addEventListener('mouseleave', () => {
     mouse.x = -9999;
     mouse.y = -9999;
+    if (!isTicking) {
+      isTicking = true;
+      requestAnimationFrame(update);
+    }
   });
 
   buttonStates.forEach(b => {
-    b.el.addEventListener('mouseenter', () => { b.isHovered = true; });
-    b.el.addEventListener('mouseleave', () => { b.isHovered = false; });
+    b.el.addEventListener('mouseenter', () => {
+      b.isHovered = true;
+      if (!isTicking) {
+        isTicking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
+    b.el.addEventListener('mouseleave', () => {
+      b.isHovered = false;
+      if (!isTicking) {
+        isTicking = true;
+        requestAnimationFrame(update);
+      }
+    }, { passive: true });
   });
 })();
 

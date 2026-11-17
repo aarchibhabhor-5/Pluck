@@ -1,115 +1,141 @@
 /**
- * PLUCK — Magic Bento Card Engine (React Bits Variant)
- * Hover-Only Execution:
- * Runs concurrently with BorderGlow without conflict.
- * Effects:
- * 1. Ambient Electric Cyan Spotlight following cursor inside card
- * 2. Cyan Border Highlight tracing cursor along card perimeter
- * 3. Twinkling & Floating Star Particles drifting inside card
- * 4. 3D Tilt & Magnetic cursor perspective
- * 5. Click Ripple Effect
- * All effects are strictly contained inside card boundaries.
+ * PLUCK — Magic Bento Card Engine (High-Performance Edition)
+ * Hover-Only Execution with cached rects, rAF-throttled transforms,
+ * DocumentFragment particle batching, and automatic touch/reduced-motion bypass.
  */
 (function initMagicBento() {
   'use strict';
 
+  const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isTouchDevice = window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
   const CONFIG = {
     spotlightRadius: 280,
-    particleCount: 10,
-    enableTilt: true,
-    enableMagnetism: true,
-    clickEffect: true,
-    glowColor: '6, 182, 212', // Electric Cyan
+    particleCount: 6,
+    enableTilt: !prefersReducedMotion && !isTouchDevice,
+    enableMagnetism: !prefersReducedMotion && !isTouchDevice,
+    clickEffect: !prefersReducedMotion,
+    glowColor: '6, 182, 212',
   };
 
   const CARD_SELECTOR = '.snippet-card, .feat-card, .plan-card, .magic-bento-card, .walkthrough-guide-card';
+  const initialized = new WeakSet();
+  const cardParticleState = new WeakMap();
+
+  let rectVersion = 0;
+  window.addEventListener('scroll', () => { rectVersion++; }, { passive: true });
+  window.addEventListener('resize', () => { rectVersion++; }, { passive: true });
 
   function setupMagicBento() {
     const cards = Array.from(document.querySelectorAll(CARD_SELECTOR));
     if (!cards.length) return;
-
-    // Track particle states per card
-    const cardParticleState = new WeakMap();
 
     function getOrMakeFxLayer(card) {
       let layer = card.querySelector(':scope > .bento-fx-layer');
       if (!layer) {
         layer = document.createElement('div');
         layer.className = 'bento-fx-layer';
-        card.prepend(layer);
-      }
-      if (!layer.querySelector('.bento-spotlight')) {
         const spotlight = document.createElement('div');
         spotlight.className = 'bento-spotlight';
         spotlight.setAttribute('aria-hidden', 'true');
-        layer.appendChild(spotlight);
-      }
-      if (!layer.querySelector('.bento-border-highlight')) {
         const borderHighlight = document.createElement('div');
         borderHighlight.className = 'bento-border-highlight';
         borderHighlight.setAttribute('aria-hidden', 'true');
+        layer.appendChild(spotlight);
         layer.appendChild(borderHighlight);
+        card.prepend(layer);
       }
       return layer;
     }
 
     cards.forEach(card => {
+      if (initialized.has(card)) return;
+      initialized.add(card);
+
       card.style.setProperty('--glow-color', CONFIG.glowColor);
       card.style.setProperty('--glow-radius', `${CONFIG.spotlightRadius}px`);
       card.style.setProperty('--glow-intensity', '0');
 
-      // Pre-initialize isolated FX layer & ambient elements
       getOrMakeFxLayer(card);
 
-      // ── Mousemove: ONLY active while cursor is directly inside this card ──
-      card.addEventListener('mousemove', (e) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
+      if (!isTouchDevice && !prefersReducedMotion) {
+        let cachedRect = null;
+        let cachedVer = -1;
+        let rafId = 0;
+        let mx = 0;
+        let my = 0;
 
-        // Dynamic border glow & spotlight follows cursor position inside this card
-        const relX = (x / rect.width) * 100;
-        const relY = (y / rect.height) * 100;
-        card.style.setProperty('--glow-x', `${relX.toFixed(1)}%`);
-        card.style.setProperty('--glow-y', `${relY.toFixed(1)}%`);
-        card.style.setProperty('--glow-intensity', '1');
-
-        // 3D Tilt & subtle cursor magnetism combined with card elevation
-        if (CONFIG.enableTilt || CONFIG.enableMagnetism) {
-          const rotateX = ((y - centerY) / centerY) * -5;
-          const rotateY = ((x - centerX) / centerX) * 5;
-          const magnetX = ((x - centerX) / centerX) * 2;
-          const magnetY = ((y - centerY) / centerY) * 2;
-
-          card.style.transform = `perspective(1200px) translate3d(${magnetX.toFixed(1)}px, calc(-7px + ${magnetY.toFixed(1)}px), 16px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
+        function getRect() {
+          if (!cachedRect || cachedVer !== rectVersion) {
+            cachedRect = card.getBoundingClientRect();
+            cachedVer = rectVersion;
+          }
+          return cachedRect;
         }
-      });
 
-      // ── Mouseenter: Start glow & floating particles on THIS card only ──
-      card.addEventListener('mouseenter', (e) => {
-        const rect = card.getBoundingClientRect();
-        const relX = ((e.clientX - rect.left) / rect.width) * 100;
-        const relY = ((e.clientY - rect.top) / rect.height) * 100;
-        card.style.setProperty('--glow-x', `${relX.toFixed(1)}%`);
-        card.style.setProperty('--glow-y', `${relY.toFixed(1)}%`);
-        card.style.setProperty('--glow-intensity', '1');
+        function flushHover() {
+          rafId = 0;
+          const rect = getRect();
+          if (!rect || rect.width === 0 || rect.height === 0) return;
 
-        spawnCardParticles(card);
-      });
+          const x = mx - rect.left;
+          const y = my - rect.top;
+          const centerX = rect.width * 0.5;
+          const centerY = rect.height * 0.5;
 
-      // ── Mouseleave: Immediately turn off all effects on THIS card ──
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-        card.style.setProperty('--glow-intensity', '0');
-        clearCardParticles(card);
-      });
+          const relX = (x / rect.width) * 100;
+          const relY = (y / rect.height) * 100;
+          card.style.setProperty('--glow-x', `${relX.toFixed(1)}%`);
+          card.style.setProperty('--glow-y', `${relY.toFixed(1)}%`);
+          card.style.setProperty('--glow-intensity', '1');
 
-      // ── Click Ripple Glow Effect strictly inside this card ──
+          if (CONFIG.enableTilt || CONFIG.enableMagnetism) {
+            const rotateX = ((y - centerY) / centerY) * -4.5;
+            const rotateY = ((x - centerX) / centerX) * 4.5;
+            const magnetX = ((x - centerX) / centerX) * 2;
+            const magnetY = ((y - centerY) / centerY) * 2;
+
+            card.style.transform = `perspective(1200px) translate3d(${magnetX.toFixed(1)}px, calc(-6px + ${magnetY.toFixed(1)}px), 14px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg)`;
+          }
+        }
+
+        card.addEventListener('mouseenter', (e) => {
+          cachedRect = card.getBoundingClientRect();
+          cachedVer = rectVersion;
+          card.style.willChange = 'transform';
+
+          const relX = ((e.clientX - cachedRect.left) / Math.max(1, cachedRect.width)) * 100;
+          const relY = ((e.clientY - cachedRect.top) / Math.max(1, cachedRect.height)) * 100;
+          card.style.setProperty('--glow-x', `${relX.toFixed(1)}%`);
+          card.style.setProperty('--glow-y', `${relY.toFixed(1)}%`);
+          card.style.setProperty('--glow-intensity', '1');
+
+          spawnCardParticles(card, cachedRect);
+        }, { passive: true });
+
+        card.addEventListener('mousemove', (e) => {
+          mx = e.clientX;
+          my = e.clientY;
+          if (!rafId) {
+            rafId = requestAnimationFrame(flushHover);
+          }
+        }, { passive: true });
+
+        card.addEventListener('mouseleave', () => {
+          if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = 0;
+          }
+          cachedRect = null;
+          card.style.transform = '';
+          card.style.willChange = 'auto';
+          card.style.setProperty('--glow-intensity', '0');
+          clearCardParticles(card);
+        }, { passive: true });
+      }
+
       if (CONFIG.clickEffect) {
         card.addEventListener('click', (e) => {
-          // Avoid creating multiple ripples if clicking an interactive inner button
           if (e.target.closest('button, a, input, select')) return;
 
           const rect = card.getBoundingClientRect();
@@ -126,7 +152,6 @@
           const fxLayer = getOrMakeFxLayer(card);
           const ripple = document.createElement('div');
           ripple.className = 'bento-ripple';
-          // Anchor the dot exactly at click coordinates without affecting document flow
           ripple.style.left = `${x.toFixed(1)}px`;
           ripple.style.top = `${y.toFixed(1)}px`;
           const targetScale = Math.max((maxDist * 2.2) / 10, 8);
@@ -140,21 +165,20 @@
 
           setTimeout(() => {
             ripple.remove();
-          }, 650);
+          }, 600);
         });
       }
     });
 
-    // ── Floating & Twinkling Star Particle System strictly inside this card ──
-    function spawnCardParticles(card) {
+    function spawnCardParticles(card, rect) {
       clearCardParticles(card);
 
       const fxLayer = getOrMakeFxLayer(card);
-      const rect = card.getBoundingClientRect();
-      const cardW = rect.width;
-      const cardH = rect.height;
+      const cardW = rect ? rect.width : card.offsetWidth;
+      const cardH = rect ? rect.height : card.offsetHeight;
       if (cardW < 40 || cardH < 40) return;
 
+      const frag = document.createDocumentFragment();
       const particles = [];
       const padding = 24;
       const availableW = Math.max(cardW - padding * 2, 20);
@@ -164,34 +188,29 @@
         const p = document.createElement('div');
         p.className = 'bento-particle';
 
-        // Keep initial particle position safely away from borders
         const startX = Math.random() * availableW + padding;
         const startY = Math.random() * availableH + padding;
 
-        const dx = ((Math.random() - 0.5) * 16).toFixed(1);
-        const dy = ((Math.random() - 0.5) * 16).toFixed(1);
-        const dx2 = ((Math.random() - 0.5) * 16).toFixed(1);
-        const dy2 = ((Math.random() - 0.5) * 16).toFixed(1);
-        const duration = (2.2 + Math.random() * 1.6).toFixed(2);
-        const delay = (Math.random() * 0.8).toFixed(2);
-
         p.style.left = `${startX.toFixed(1)}px`;
         p.style.top = `${startY.toFixed(1)}px`;
-        p.style.setProperty('--dx', `${dx}px`);
-        p.style.setProperty('--dy', `${dy}px`);
-        p.style.setProperty('--dx2', `${dx2}px`);
-        p.style.setProperty('--dy2', `${dy2}px`);
-        p.style.setProperty('--duration', `${duration}s`);
-        p.style.setProperty('--delay', `${delay}s`);
+        p.style.setProperty('--dx', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
+        p.style.setProperty('--dy', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
+        p.style.setProperty('--dx2', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
+        p.style.setProperty('--dy2', `${((Math.random() - 0.5) * 16).toFixed(1)}px`);
+        p.style.setProperty('--duration', `${(2.2 + Math.random() * 1.4).toFixed(2)}s`);
+        p.style.setProperty('--delay', `${(Math.random() * 0.6).toFixed(2)}s`);
 
-        fxLayer.appendChild(p);
+        frag.appendChild(p);
         particles.push(p);
-
-        // Smooth fade-in
-        requestAnimationFrame(() => {
-          p.classList.add('active');
-        });
       }
+
+      fxLayer.appendChild(frag);
+
+      requestAnimationFrame(() => {
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].classList.add('active');
+        }
+      });
 
       cardParticleState.set(card, particles);
     }
@@ -202,7 +221,7 @@
         particles.forEach(p => {
           p.classList.remove('active');
           p.style.opacity = '0';
-          setTimeout(() => p.remove(), 250);
+          setTimeout(() => p.remove(), 220);
         });
         cardParticleState.delete(card);
       }

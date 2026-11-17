@@ -2268,3 +2268,32 @@ body {
   box-shadow: 0 5px 18px rgba(244, 63, 94, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   transform: translateY(-1px);
 }
+
+/* ── Global Smoothness, Touch Responsiveness & Reduced-Motion Guard ── */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .border-glow-card::before,
+  .border-glow-card::after,
+  .border-glow-card > .edge-light,
+  .bento-fx-layer {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
